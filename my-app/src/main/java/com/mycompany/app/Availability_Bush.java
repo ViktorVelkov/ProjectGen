@@ -33,7 +33,7 @@ public class Availability_Bush {
                 rs3.close();
         }
 
-        void v_update_BHA_to_Zero(int itime) throws SQLException {
+        void v_update_Bush_to_Zero(int itime) throws SQLException {
             String s=String.valueOf(itime);
             String sql = "UPDATE CURICULUM.availability_halls_bush_house " +
                     "     SET available = 0 " +
@@ -44,7 +44,7 @@ public class Availability_Bush {
             preparedStmt.execute();
         }
 
-        void v_update_BHA_to_One(int itime) throws SQLException {
+        void v_update_Bush_to_One(int itime) throws SQLException {
             String s=String.valueOf(itime);
             String sql = "UPDATE CURICULUM.availability_halls_bush_house " +
                 "     SET available = 1 " +
