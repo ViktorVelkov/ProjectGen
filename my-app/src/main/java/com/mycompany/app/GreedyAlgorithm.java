@@ -62,71 +62,128 @@ public class GreedyAlgorithm {
         }
     }
 
-    void generateGreedySolution()throws SQLException{
-            //1.start by assigning the lectures in the timeslots available from the week days
-            //2.assign the students to the lectures following the simple rules of the hard constraints
-            //3.
-            // find a suitable layout of tutorials and lectures . Only Lectures first. since tutorials are not yet inserted
-            int iCounter = 0;
-            ArrayList<String> mylist = new ArrayList<>();
-            mylist.add("Monday");
-            mylist.add("Tuesday");
-            mylist.add("Wednesday");
-            mylist.add("Thursday");
-            mylist.add("Friday");
-            String sql22 = "SELECT abreviation,hours_twoweeks FROM s_courses WHERE hours_twoweeks != 0";
-            Statement statement = connection.createStatement();
-            ResultSet resSet = statement.executeQuery(sql22);
-            int index = 0;
-            while(resSet.next()){
-                String abrev = resSet.getString("abreviation");
-                int iHours = resSet.getInt("hours_twoweeks")/2;
-                initial.add(new Duplet(abrev,iHours));
-                initial.add(new Duplet(abrev,iHours));
-                System.out.println(initial.get(index));
-                index++;
-                index++;
-            }
-            //create a table of assigned lectures:
-            String sql99 = "DROP TABLE IF EXISTS assigned_lects";
-            String sql33 = "DROP TABLE IF EXISTS halls_availability_tweeks";
-            String sql11 =
-                    "CREATE TABLE assigned_lects(" +
-                    "ABBREV VARCHAR(10), " +
-                    "HOURS INT(2), " +
-                    "HALL VARCHAR(30)," +
-                    "DAYTIME INT(4))";
-            String sql88 =
-                    "CREATE TABLE halls_availability_tweeks(" +
-                    "AVAILABLE INT(1)," +
-                    "HALL VARCHAR(10)," +
-                    "HOUR INT(2), " +
-                    "DAY VARCHAR(10))";
-            String sql44 = "SELECT AVAILABLE, HALL, HOUR FROM availability_halls_bush_house";
-            String sql55 = "SELECT AVAILABLE, HALL, HOUR FROM availability_halls_waterloo";
-            String sql66 = "INSERT INTO halls_availability_tweeks VALUES( ?,?,?,? )";
 
 
-            statement.executeUpdate(sql99);
-            statement.executeUpdate(sql11);
-            statement.executeUpdate(sql33);
-            statement.executeUpdate(sql88);
+    private ArrayList<Duplet> lecturesToBeAssigned() throws SQLException {
 
-            ResultSet rst1 = statement.executeQuery(sql44);
-            PreparedStatement prst = connection.prepareStatement(sql66);
-            while(!mylist.isEmpty()){
-                //iCounter++;
-                while(rst1.next()){
-                    prst.setInt(1, rst1.getInt("AVAILABLE"));
-                    prst.setString(2, rst1.getString("HALL"));
-                    prst.setInt(3, rst1.getInt("HOUR"));
-                    prst.setString(4, mylist.get(iCounter));
-                    prst.executeUpdate();
-                }
-                //System.out.println("Removed" + mylist.get(iCounter));
-                mylist.remove(iCounter);
-                rst1.beforeFirst();
-            }
+        String sql22 = "SELECT abreviation,hours_twoweeks FROM s_courses WHERE hours_twoweeks != 0";
+        Statement statement = connection.createStatement();
+        ResultSet resSet = statement.executeQuery(sql22);
+        int index = 0;
+        while(resSet.next()){
+            String abrev = resSet.getString("abreviation");
+            int iHours = resSet.getInt("hours_twoweeks")/2;
+            initial.add(new Duplet(abrev,iHours));
+            initial.add(new Duplet(abrev,iHours));
+            System.out.println(initial.get(index));
+            index++;
+            index++;
+        }
+        int sum = 0;
+        for(int i = 0; i < initial.size(); i++){
+            sum += initial.get(i).getiHours();
+        }
+        return initial;
 
     }
+
+    private void generateTableAvailabilityOfHalls()throws SQLException{
+        //1.start by assigning the lectures in the timeslots available from the week days
+        //2.assign the students to the lectures following the simple rules of the hard constraints
+        //3.
+        // find a suitable layout of tutorials and lectures . Only Lectures first. since tutorials are not yet inserted
+        int iCounter = 0;
+        ArrayList<String> mylist = new ArrayList<>();
+        mylist.add("Monday");
+        mylist.add("Tuesday");
+        mylist.add("Wednesday");
+        mylist.add("Thursday");
+        mylist.add("Friday");
+        Statement statement = connection.createStatement();
+        String sql33 = "DROP TABLE IF EXISTS halls_availability_tweeks";
+        String sql88 =
+                "CREATE TABLE halls_availability_tweeks(" +
+                        "AVAILABLE INT(1)," +
+                        "HALL VARCHAR(10)," +
+                        "HOUR INT(2), " +
+                        "DAY VARCHAR(10)," +
+                        "DATE INT(2)," +
+                        "MONTH INT(2)," +
+                        "YEAR INT(4))";
+
+        String sql44 = "SELECT AVAILABLE, HALL, HOUR FROM availability_halls_bush_house";
+        String sql55 = "SELECT AVAILABLE, HALL, HOUR FROM availability_halls_waterloo";
+        String sql66 = "INSERT INTO halls_availability_tweeks(AVAILABLE, HALL, HOUR, DAY) VALUES( ?,?,?,? )";
+
+        statement.executeUpdate(sql33);
+        statement.executeUpdate(sql88);
+
+        ResultSet rst1 = statement.executeQuery(sql44);
+        PreparedStatement prst = connection.prepareStatement(sql66);
+        while(!mylist.isEmpty()){
+            //iCounter++;
+            while(rst1.next()){
+                prst.setInt(1, rst1.getInt("AVAILABLE"));
+                prst.setString(2, rst1.getString("HALL"));
+                prst.setInt(3, rst1.getInt("HOUR"));
+                prst.setString(4, mylist.get(iCounter));
+                prst.executeUpdate();
+            }
+            //System.out.println("Removed" + mylist.get(iCounter));
+            mylist.remove(iCounter);
+            rst1.beforeFirst();
+        }
+
+    }
+
+
+    //
+
+
+    private void generateAssignedLecturesTable()throws SQLException{
+        //1.start by assigning the lectures in the timeslots available from the week days
+        //2.assign the students to the lectures following the simple rules of the hard constraints
+        //3.
+        // find a suitable layout of tutorials and lectures . Only Lectures first. since tutorials are not yet inserted
+        String sql22 = "SELECT abreviation,hours_twoweeks FROM s_courses WHERE hours_twoweeks != 0";
+        Statement statement = connection.createStatement();
+        ResultSet resSet = statement.executeQuery(sql22);
+        int index = 0;
+        String sql99 = "DROP TABLE IF EXISTS assigned_lects";
+        String sql11 =
+                "CREATE TABLE assigned_lects(" +
+                        "ABBREV VARCHAR(10), " +
+                        "HOURS INT(2), " +
+                        "HALL VARCHAR(30)," +
+                        "DAYTIME INT(4)," +
+                        "DAY VARCHAR(10)," +
+                        "DATE INT(2)," +
+                        "MONTH INT(2)," +
+                        "YEAR INT(4))";
+
+
+        statement.executeUpdate(sql99);
+        statement.executeUpdate(sql11);
+
+    }
+
+    //
+
+
+
+
+    void generateGreedySolution()throws SQLException{
+        //generate a table for availability and a table for assigning lectures and maybe start updating them
+        generateTableAvailabilityOfHalls();  //table for availability of the halls: available, hall, hour, day (must add date)
+        generateAssignedLecturesTable();     //table for assigned lectures abbrev, hours, halls, daytime
+        ArrayList<Duplet> myList = lecturesToBeAssigned();
+        String sql45 =  "SELECT  FROM halls_availability_tweeks";
+        String sql21 = "UPDATE halls_availability_tweeks set AVAILABILITY = 0 WHERE ";  //not complete
+//        for(){
+//
+
+//        }
+    }
+
+
 }
