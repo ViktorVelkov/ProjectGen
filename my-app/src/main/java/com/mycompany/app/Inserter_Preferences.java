@@ -97,9 +97,10 @@ public class Inserter_Preferences {
                 }
                 System.out.println(rs2.getInt("teachers_id") + " " + rs2.getString("course") + " "+ sWeekDay + " " +iRandom + " " + iRandom2);
             prs.execute();
-
+            prs.close();
         }
         rs2.close();
+
     }
 
     void v_truncate_teachers_preferences() throws SQLException{
@@ -176,7 +177,7 @@ public class Inserter_Preferences {
                         prs2.setInt(5, iRandom*100 + 300);
                     }
                     prs2.execute();
-
+                    prs2.close();
                 }
                 rst.beforeFirst();
 
@@ -191,7 +192,7 @@ public class Inserter_Preferences {
         else {
 
             mylist.add("Saturday");
-            //Still not developed
+            //Still not developed, possibility to add Saturday as a school day
 
             }
         }

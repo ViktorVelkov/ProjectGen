@@ -21,9 +21,10 @@ public class Availability_Bush {
             preparedStmt.setInt(3, iavail);
 
             preparedStmt.execute();
+            preparedStmt.close();
         }
 
-        void v_populate(String sBushHall) throws SQLException {
+        public void v_populate(String sBushHall) throws SQLException {
                 Statement stmt = connection.createStatement();
                 String sql3 = "SELECT hour FROM curiculum.timeslots";
                 ResultSet rs3 = stmt.executeQuery(sql3);
@@ -31,44 +32,86 @@ public class Availability_Bush {
                     v_insert_BushHall(rs3.getInt("hour"), sBushHall , 1);
                 }
                 rs3.close();
+                stmt.close();
         }
 
-        void v_update_Bush_to_Zero(int itime) throws SQLException {
-            String s=String.valueOf(itime);
-            String sql = "UPDATE CURICULUM.availability_halls_bush_house " +
-                    "     SET available = 0 " +
-                    "     WHERE hour = " + s;
+        /////////////////////////////////////----------------------------------------/////////////////////////////////////
 
 
-            PreparedStatement preparedStmt = connection.prepareStatement(sql);
-            preparedStmt.execute();
+        public void v_update_twoWeeksTableToZero(String sHallName, int iDate, int iMonth, int iYear, int iTimeStart, int iTimeEnd) throws SQLException {
+            String sql11 =  "UPDATE two_weeks_availability_halls_bush_house " +
+                    "SET AVAILABLE = 0 " +
+                    "WHERE HALL = '" + sHallName + "' " +
+                    "AND DATE = " + Integer.toString(iDate) + " " +
+                    "AND MONTH = " + Integer.toString(iMonth) + " " +
+                    "AND YEAR = " + Integer.toString(iYear) + " " +
+                    "AND HOUR BETWEEN " + Integer.toString(iTimeStart) + " AND " + Integer.toString(iTimeEnd);
+            Statement statement = connection.createStatement();
+            statement.executeUpdate(sql11);
+            statement.close();
         }
 
-        void v_update_Bush_to_One(int itime) throws SQLException {
-            String s=String.valueOf(itime);
-            String sql = "UPDATE CURICULUM.availability_halls_bush_house " +
-                "     SET available = 1 " +
-                "     WHERE hour = " + s;
 
-
-            PreparedStatement preparedStmt = connection.prepareStatement(sql);
-            preparedStmt.execute();
+        public void v_update_twoWeeksTableToOne(String sHallName,int iDate, int iMonth, int iYear, int iTimeStart, int iTimeEnd) throws SQLException {
+            String sql11 =  "UPDATE two_weeks_availability_halls_bush_house " +
+                    "SET AVAILABLE = 1 " +
+                    "WHERE HALL = '" + sHallName + "' " +
+                    "AND DATE = " + Integer.toString(iDate) + " " +
+                    "AND MONTH = " + Integer.toString(iMonth) + " " +
+                    "AND YEAR = " + Integer.toString(iYear) + " " +
+                    "AND HOUR BETWEEN " + Integer.toString(iTimeStart) + " AND " + Integer.toString(iTimeEnd);
+            Statement statement = connection.createStatement();
+            statement.executeUpdate(sql11);
+            statement.close();
         }
 
-        boolean b_checkAvailableAt(int itime) throws SQLException {
-            String s=String.valueOf(itime);
-            Statement stmt = connection.createStatement();
-            String sql = "SELECT available " +
-                    "     FROM curiculum.timeslots " +
-                    "     WHERE  hour = " + s;
 
+    public boolean v_check_twoWeeks_Availability(String sHallName,int iDate, int iMonth, int iYear, int iTimeStart, int iTimeEnd) throws SQLException {
 
-            ResultSet rs = stmt.executeQuery(sql);
+        int iResult = 0;
+        int iCount = 0;
+        String sql11 =  "SELECT AVAILABLE " +
+                "FROM two_weeks_availability_halls_bush_house " +
+                "WHERE HALL = '" + sHallName + "' " +
+                "AND DATE = " + Integer.toString(iDate) + " " +
+                "AND MONTH = " + Integer.toString(iMonth) + " " +
+                "AND YEAR = " + Integer.toString(iYear) + " " +
+                "AND HOUR BETWEEN " + Integer.toString(iTimeStart) + " AND " + Integer.toString(iTimeEnd);
+        Statement statement = connection.createStatement();
+        ResultSet resultSet= statement.executeQuery(sql11);
 
-            if(rs.getInt("available") == 1){
-                rs.close();
-                return true;
+        while(resultSet.next()){
+            iResult += resultSet.getInt("AVAILABLE");
+            iCount++;
+        }
+
+        resultSet.close();
+        statement.close();
+        return ((iResult == iCount)?true:false);
+    }
+
+    /////////////////////////////////////----------------------------------------/////////////////////////////////////
+
+        public void v_placeReedingWeek(int iTimeStart, int iTimeEnd, int iMonth) throws SQLException {
+                String sql11 =  "UPDATE two_weeks_availability_halls_bush_house " +
+                                "SET AVAILABLE = 0" +
+                                "WHERE DATE BETWEEN " + Integer.toString(iTimeStart) + " AND " + Integer.toString(iTimeEnd) + " " +
+                                "AND MONTH = " + Integer.toString(iMonth);
+                Statement statement = connection.createStatement();
+                statement.executeUpdate(sql11);
+                statement.close();
             }
-            else{ rs.close(); return  false; }
+
+
+        public void v_removeReedingWeek(int iTimeStart, int iTimeEnd, int iMonth) throws SQLException {
+            String sql11 =  "UPDATE two_weeks_availability_halls_bush_house " +
+                            "SET AVAILABLE = 1" +
+                            "WHERE DATE BETWEEN " + Integer.toString(iTimeStart) + " AND " + Integer.toString(iTimeEnd) + " " +
+                            "AND MONTH = " + Integer.toString(iMonth);
+            Statement statement = connection.createStatement();
+            statement.executeUpdate(sql11);
+            statement.close();
         }
+    /////////////////////////////////////----------------------------------------/////////////////////////////////////
+
 }

@@ -1,3 +1,50 @@
+//OGC from Availability_Bush + same for Availability_Waterloo
+
+//        void v_update_Bush_to_Zero(int itime) throws SQLException {
+//            String s=String.valueOf(itime);
+//            String sql = "UPDATE CURICULUM.availability_halls_bush_house " +
+//                    "     SET available = 0 " +
+//                    "     WHERE hour = " + s;
+//
+//
+//            PreparedStatement preparedStmt = connection.prepareStatement(sql);
+//            preparedStmt.execute();
+//            preparedStmt.close();
+//        }
+//
+//        void v_update_Bush_to_One(int itime) throws SQLException {
+//            String s=String.valueOf(itime);
+//            String sql = "UPDATE CURICULUM.availability_halls_bush_house " +
+//                "     SET available = 1 " +
+//                "     WHERE hour = " + s;
+//
+//
+//            PreparedStatement preparedStmt = connection.prepareStatement(sql);
+//            preparedStmt.execute();
+//            preparedStmt.close();
+//        }
+//
+//        boolean b_checkAvailableAt(int itime) throws SQLException {
+//            String s=String.valueOf(itime);
+//            Statement stmt = connection.createStatement();
+//            String sql = "SELECT available " +
+//                    "     FROM curiculum.timeslots " +
+//                    "     WHERE  hour = " + s;
+//
+//
+//            ResultSet rs = stmt.executeQuery(sql);
+//            stmt.close();
+//
+//            if(rs.getInt("available") == 1){
+//                rs.close();
+//                return true;
+//            }
+//            else{ rs.close(); return  false; }
+//
+//        }
+
+
+
 
     //OGC from Greedy Algorithm
 //
