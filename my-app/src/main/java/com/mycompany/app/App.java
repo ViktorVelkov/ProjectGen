@@ -1,36 +1,52 @@
 package com.mycompany.app;
 
+import com.mycompany.app.algorithms.GreedyAlgorithm;
+import com.mycompany.app.inserts.data.Generator;
+import com.mycompany.app.inserts.data.LGT_Inserter;
+import com.mycompany.app.timetabling.*;
 import java.sql.*;
 import java.text.ParseException;
-import java.time.LocalDate;
-import java.util.*;
-
-//
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+//
+
 
 //
 public class App
 {
     public static void main( String[] args ) throws SQLException, ParseException {
-        Connection connection = JDBCHelper.getConnection();
-        Statement stmt = connection.createStatement();
+            Connection connection = JDBCHelper.getConnection();
+            Statement stmt = connection.createStatement();
 
-        GreedyAlgorithm gr = new GreedyAlgorithm(connection);
-        System.out.println("Hello, I am alive ");
-        //gr.v_generateTableAvailabilityOfHalls_and_populate("availability_halls_waterloo", "29-Sep-2020","14-Jan-2021");
-        ParserHalls prsH = new ParserHalls(connection);
-        //prsH.v_parse_initial();
-        prsH.v_update_twoWeeksTable_waterloo_to_Zero("WA0H1",29,8,120, 900,900);
-        prsH.v_update_twoWeeksTable_waterloo_to_One("WA0H1",29,8,120, 900,1000);
-        boolean b = prsH.b_check_twoWeeks_Availability_Waterloo("WA0H1",29,8,120, 900,1000);
+            Generator generator = new Generator(connection);
+        //    generator.v_run_initial("28-Sep-2020", "13-Dec-2020");
 
-        System.out.println(b);
+            GreedyAlgorithm grdAlg = new GreedyAlgorithm(connection);
+            //ArrayList<String> mylist = grdAlg.v_getPreferences_students("5CCS2CSL");
+    //        for(int i = 0 ; i < mylist.size(); i++){
+    //            System.out.println(mylist.get(i));
+    //        }
+    //        String choice = grdAlg.v_getTeachersChoice("5CCS2CSL");
+    //        System.out.println(choice);
+
+//            Week_Timetable week_timetable = grdAlg.myTimetable();
+//            week_timetable.v_print();
+//
+//            System.out.println();
+//            Week_Timetable week_timetable12 = grdAlg.myTimetable(7);
+//            week_timetable12.v_print();
+
+
+        grdAlg.generateGreedySolution("s_courses");
+
+        LGT_Inserter lgt = new LGT_Inserter(connection);
+        lgt.v_dropLGT_Tutorials_table();
+        lgt.v_createLGT_Tutorials_table();
+        lgt.v_populateLGT_table("s_courses");
+
 
         connection.close();
-
 
 
     }
