@@ -11,6 +11,7 @@ public class Timeperiod {
     public Timeperiod(){}
 
     public Timeperiod(String sDay, int iAvailable, int iTime, int iDate, int iMonth, int iYear){
+        this.sDay = sDay;
         this.iAvailable =iAvailable;
         this.iDate = iDate;
         this.iTime = iTime;
@@ -75,6 +76,7 @@ public class Timeperiod {
         return "Timeperiod{" +
                 "iTime=" + iTime +
                 ", iAvailable=" + iAvailable +
+                ", DayOfWeek=" + sDay +
                 ", iDate=" + iDate +
                 ", iMonth=" + iMonth +
                 ", iYear=" + iYear +

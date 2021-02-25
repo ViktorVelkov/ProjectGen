@@ -1,6 +1,6 @@
 package com.mycompany.app.timetabling;
 
-public class Duplet {
+public class Duplet implements Comparable<Duplet>{
 
     private double iHours = 0.0;
     private String sLect = "";
@@ -113,8 +113,16 @@ public class Duplet {
     }
 
     public String toString(){
-        return "lecture:" + sLect + " " + "hours:" +Double.toString(iHours) + " " + preferredDays + "Lecturer: " + sTeachersPreference + "Attending:" + iNumberOfStudentsAttending + "Code:" + Integer.toString(iCode);
+        return "lecture:" + sLect + " " + "hours:" +Double.toString(iHours) + " " + preferredDays + "Lecturer: " + sTeachersPreference + "Attending:" + iNumberOfStudentsAttending + "Code:" + Integer.toString(iCode) + "\n";
     }
 
 
+    @Override
+    public int compareTo(Duplet obj) {
+        if(this.iNumberOfStudentsAttending - obj.iNumberOfStudentsAttending == 0){
+            return (int)(this.getPreferredDays().getDayHeuristics().get(0) - obj.getPreferredDays().getDayHeuristics().get(0));
+        }
+        //return obj.iNumberOfStudentsAttending - this.iNumberOfStudentsAttending;
+        return this.iNumberOfStudentsAttending - obj.iNumberOfStudentsAttending;            //tackle the easiest ones first
+    }
 }

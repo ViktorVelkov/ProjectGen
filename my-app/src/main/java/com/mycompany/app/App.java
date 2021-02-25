@@ -8,6 +8,8 @@ import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 //
 
@@ -40,14 +42,10 @@ public class App
 
         grdAlg.generateGreedySolution("s_courses");
 
-        LGT_Inserter lgt = new LGT_Inserter(connection);
-        lgt.v_dropLGT_Tutorials_table();
-        lgt.v_createLGT_Tutorials_table();
-        lgt.v_populateLGT_table("s_courses");
+
 
 
         connection.close();
-
 
     }
 

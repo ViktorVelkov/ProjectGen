@@ -1,15 +1,13 @@
 package com.mycompany.app.timetabling;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 
-public class Hall {
+public class Hall implements Comparable<Hall>{
     private int iCapacity;
 
     private String sAbbrev;
@@ -18,15 +16,17 @@ public class Hall {
     private Connection connection;
     private int iAdditionalCode;
 
+
     private ArrayList<Timeperiod> availability;
 
 
-    public Hall(Connection connection,int iCapacity, String sAbbrev, String sTimeStart, String sTimeEnd) throws SQLException, ParseException {
+    public Hall(Connection connection,int iCapacity, String sAbbrev, String sTimeStart, String sTimeEnd, int iAdditionalCode) throws SQLException, ParseException {
         this.sAbbrev = sAbbrev;
         this.sTimeStart = sTimeStart;
         this.sTimeEnd = sTimeEnd;
         this.iCapacity = iCapacity;
         this.connection = connection;
+        this.iAdditionalCode = iAdditionalCode;
         String sTableName = "";
 
         if(sAbbrev.startsWith("W")){
@@ -81,7 +81,7 @@ public class Hall {
         ResultSet rst = prst.executeQuery();
         availability = new ArrayList<>();
         while (rst.next()){
-            availability.add(new Timeperiod(rst.getString("DATE")
+            availability.add(new Timeperiod(rst.getString("DAY")
                                             , rst.getInt("AVAILABLE")
                                             , rst.getInt("HOUR")
                                             , rst.getInt("DATE")
@@ -94,6 +94,7 @@ public class Hall {
         
         
     }
+
 
     public Hall(int iCapacity, String sAbbrev, String sTimeStart, String sTimeEnd){
         this.iCapacity = iCapacity;
@@ -110,37 +111,107 @@ public class Hall {
         this.iCapacity = iCapacity;
     }
 
-    public void setAvToZero(int iHourStart, int iHourEnd, int iDate, int iMonth, int iYear){
+
+    public int getiAdditionalCode() {
+        return iAdditionalCode;
+    }
+
+    public void setiAdditionalCode(int iAdditionalCode) {
+        this.iAdditionalCode = iAdditionalCode;
+    }
+
+    public void setAvToZero(int iHourStart, int iHourEnd, String sDay){
 
         for (int i = 0; i < availability.size(); i++){
-            if(availability.get(i).getiTime() >= iHourStart && availability.get(i).getiTime() <= iHourEnd){
-                availability.get(i).setiAvailable(0);
+            String temp = availability.get(i).getsDay().toLowerCase(Locale.ROOT);
+            if(temp.equals(sDay.toLowerCase(Locale.ROOT)) && availability.get(i).getiTime() >= iHourStart && availability.get(i).getiTime() < iHourEnd){
+
+                        availability.get(i).setiAvailable(0);
+
             }
         }
 
     }
 
-    public void setAvToOne(int iHourStart, int iHourEnd, int iDate, int iMonth, int iYear){
+    public void setAvToOne(int iHourStart, int iHourEnd,String sDay){
 
-        for (int i = 0; i < availability.size(); i++){
-            if(availability.get(i).getiTime() >= iHourStart && availability.get(i).getiTime() <= iHourEnd){
-                availability.get(i).setiAvailable(1);
-            }
-        }
-
-    }
-
-    public int getAvailability(int iHourStart, int iHourEnd, int iDate, int iMonth, int iYear) {
         for (int i = 0; i < availability.size(); i++) {
-            if ( availability.get(i).getiTime() == iHourStart ) {
-
-                return availability.get(i).getiAvailable();
+            if (availability.get(i).getsDay().toLowerCase(Locale.ROOT).equals(sDay.toLowerCase(Locale.ROOT))) {
 
             }
         }
+
+    }
+
+    public int getAvailability(int iHourStart, int iHourEnd, String sDay) {
+        int iCount = 0;
+        int iDuration =  iHourEnd - iHourStart;
+        for (int i = 0; i < availability.size(); i++) {
+           String temp = availability.get(i).getsDay().toLowerCase(Locale.ROOT);
+            if(temp.equals(sDay.toLowerCase(Locale.ROOT))) {
+
+                if (availability.get(i).getiTime() >= iHourStart && availability.get(i).getiTime() < iHourEnd && availability.get(i).getiAvailable() == 1) {
+                    iCount++;
+                }
+            }
+        }
+        if(iCount/2 == iDuration/100){return 1;}
         return 0;
     }
 
+    public CoupledData findAvailableSlot(int iHourStart, int iDuration){
+        int iCount = 0;
+        int iTime = 0;
+        CoupledData cp = new CoupledData();
+
+        for(int i = 0; i < availability.size(); i++){
+            if(availability.get(i).getiAvailable() == 1 && availability.get(i).getiTime() >= iHourStart){
+                iCount++;
+                if(iCount == 1){
+                    iTime = availability.get(i).getiTime();
+                }
+            }
+            else { iCount = 0; iTime = 0; };
+
+            if(iCount == (iDuration*2) ){
+                //spot found
+                //I need to return the day and the hour corresponding to the hall
+                cp.setiHour( iTime );
+                cp.setsDay( availability.get(i).getsDay());
+            }
+
+        }
+        return cp;
+    }
+
+
+
+    public int findAvailableSlot_PreferredDay(int iHourStart, int iDuration, String sPrefDay){
+        int iCount = 0;
+        int iTime = 0;
+        int iResult = 0;
+
+        for(int i = 0; i < availability.size(); i++){
+
+            if(availability.get(i).getiAvailable() == 1 && availability.get(i).getiTime() >= iHourStart && availability.get(i).getsDay().equals(sPrefDay)){
+                iCount++;
+                if(iCount == 1){
+                    iTime = availability.get(i).getiTime();
+                }
+
+            }
+            else{ iCount = 0; iTime = 0;}
+
+            if(iCount == (iDuration*2) ){
+                //spot found
+                //first one available
+                //I need to return the day and the hour corresponding to the hall
+                return  iTime;
+            }
+
+        }
+        return iTime;
+    }
 
     @Override
     public String toString() {
@@ -149,12 +220,17 @@ public class Hall {
                 "iCapacity=" + iCapacity +
                 ", sAbbrev='" + sAbbrev + '\'' +
                 ", sTimeStart='" + sTimeStart + '\'' +
-                ", sTimeEnd='" + sTimeEnd + '\'' +'}';
-        for (int i = 0; i < availability.size(); i++){
+                ", iCode=" + iAdditionalCode + "\n";
+         for (int i = 0; i < availability.size(); i++){
             result += " " + availability.get(i).toString();
         }
+         result += "\n";
         return result;
     }
 
 
+    @Override
+    public int compareTo(Hall o) {
+        return this.iCapacity - o.iCapacity;
+    }
 }

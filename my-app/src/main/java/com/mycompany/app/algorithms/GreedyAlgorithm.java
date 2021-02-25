@@ -1,20 +1,14 @@
 package com.mycompany.app.algorithms;
 
 
-import com.mycompany.app.timetabling.Duplet;
-import com.mycompany.app.timetabling.Hall;
-import com.mycompany.app.timetabling.PreferredDays;
-import com.mycompany.app.timetabling.Week_Timetable;
+import com.mycompany.app.timetabling.*;
 
-import java.sql.Statement;
-import java.sql.ResultSet;
-import java.sql.PreparedStatement;
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.sql.*;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Date;
 
 public class GreedyAlgorithm {
     private static String s_mostRecentDate = "";                //maybe a good idea to set it to always be a Monday, create a function to always align this parameter to a Monday
@@ -208,8 +202,8 @@ public class GreedyAlgorithm {
         //empty for peopleVoted
         countPeopleVotedForPrefDays(prefdays, myResult, sCourse);
         prefdays.setDayHeuristics(weightOnChoice);
-        prefdays.setiPrefHour(bestHour);
-        prefdays.setiPrefHour_2(bestHour_2);
+        prefdays.setiPrefHour(preferredHour.get(highestIndex2));
+        prefdays.setiPrefHour_2(preferredHour_2.get(highestIndex3));
         return prefdays;
     }
     
@@ -250,13 +244,14 @@ public class GreedyAlgorithm {
         return sSS;
     }
     // Lectures
-    private ArrayList<Duplet> lecturesToBeAssigned(int iSemester, String sTable) throws SQLException {
+    private ArrayList<Duplet> lecturesToBeAssigned(int iSemester, String sTable , int iYear) throws SQLException {
 
         String sDescription = "SEM" + Integer.toString(iSemester);
         String sql22 = "SELECT abreviation,hours_twoweeks, inside_code " +
                         "FROM  " + sTable + " " +
                         "WHERE hours_twoweeks != 0 " +
-                        "AND DESCRIPTION LIKE ?";
+                        "AND DESCRIPTION LIKE ? " +
+                        "AND YEAR = " + Integer.toString(iYear);
         int iFinalNumber = 0;
         int iCode = 0;
         int iNumberofStudentsAttending = countStudents(1);
@@ -356,12 +351,14 @@ public class GreedyAlgorithm {
         return timetable;
     }
     private ArrayList<Hall> hallsAvailability(String sTimeStart, String sTimeEnd) throws SQLException, ParseException {
+        int iCode =0;
         ArrayList<Hall> hallsList = new ArrayList<>();
         String sql77 = "SELECT inside_code, capacity, intended_for_lectures FROM FACILITIES";
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery(sql77);
         while(resultSet.next()){
-            hallsList.add(new Hall(connection,resultSet.getInt("capacity"),resultSet.getString("inside_code"), sTimeStart, sTimeEnd));
+            iCode++;
+            hallsList.add(new Hall(connection,resultSet.getInt("capacity"),resultSet.getString("inside_code"), sTimeStart, sTimeEnd, iCode));
         }
         return hallsList;
     }
@@ -608,42 +605,350 @@ public class GreedyAlgorithm {
     //for each course we need the heuristics to define a greedy plan
     //also this plan needs to follow constraints
     //and possibly I need a validator that the plan is correct // compare with the use of constraints
+//
+//
+//
+//    public  Week_Timetable recursion(Week_Timetable timetable, ArrayList<Hall> halls, ArrayList<Duplet> duplets,ArrayList<Duplet> assigned, int iNumStudents,int inewNumStudents, int iIndicatorOne, int iIndicatorTwo){
+//        //indicatortwo would be for the number of times this recursion has been called, starts with 0, first time it tries
+//        //to find a hall for 1/2 of the students it would be called once,hence value 1, and so on.
+//        //if it has been called once, that would mean we have split the lecture into two slots,
+//        //so one lecture would be assigned and one would be thrown into the end of the queue
+//        // (is this a good idea? ) is it better to assign the both lectures after the split?
+//        int lectureAssigned = 0;
+//        int Students;
+//        Duplet temp = null;
+//        Week_Timetable myTimetable = timetable;
+//        if(iIndicatorOne == 1 && (iNumStudents > 2)) {//switch to iNewNum
+//            ArrayList<Hall> newhalls = searchForAHall(halls, inewNumStudents);
+//            if (newhalls.isEmpty() ){
+//                if(iNumStudents %2 == 0)
+//                    myTimetable = recursion(myTimetable,myTimetable.getHalls(), myTimetable.getLectures(), myTimetable.getAssignedLectures(),
+//                                            iNumStudents, iNumStudents / 2 , iIndicatorOne, ++iIndicatorTwo);// + 1 here because a lecture could be attendedby an odd number of students
+//                else
+//                    myTimetable = recursion(myTimetable,myTimetable.getHalls(), myTimetable.getLectures(), myTimetable.getAssignedLectures(),
+//                            iNumStudents, iNumStudents / 2 + 1 , iIndicatorOne, ++iIndicatorTwo);// + 1 here because a lecture could be attendedby an odd number of students
+//            }
+//            else{
+//
+//                //assign the corresponding lectures here
+//                for(int i= 0; i < Math.ceil(iNumStudents/inewNumStudents) ; i++){ //means assign it n times
+//                    temp = duplets.get(0);
+//                    temp.setiNumberOfStudentsAttending(temp.getiNumberOfStudentsAttending()/(iNumStudents/inewNumStudents));//CHANGE INDICATOR TO APPROPRIATE VALUE // CHECK PHASE
+//                    //assing the lecture:
+//                    for(int k = 0; k < newhalls.size(); k++){
+//                        //find if there is a hall in the preferred time
+//                        //check availability
+//                        if(lectureAssigned == 1){
+//                            break;
+//                        }
+//                        PreferredDays preferredDays = temp.getPreferredDays();
+//                        String str = preferredDays.getPrefDay().get(0);
+//                        int prefdHour = preferredDays.getiPrefHour();
+//                        int prefdH2 = preferredDays.getiPrefHour_2();
+//                        double duration = temp.getiHours();
+//                        // check:
+//                        int iResult = newhalls.get(k).getAvailability(prefdHour, (int)(prefdHour + duration*100), preferredDays.getPrefDay().get(0));
+//                        int iResult2 = newhalls.get(k).getAvailability(prefdH2, (int)(prefdHour + duration*100), preferredDays.getPrefDay().get(0));
+//                                if(iResult == 1 || iResult2 == 1){
+//                                        //assign to this time slot
+//
+//                                        if(prefdHour == 1){
+//
+//                                        }else{
+//                                            prefdHour = prefdH2;
+//                                        }
+//
+//                                        int hallCode = newhalls.get(k).getiAdditionalCode();
+//                                        for(int z = 0; z < halls.size(); z++){
+//                                            if(halls.get(z).getiAdditionalCode() == hallCode){
+//                                                //set the actual hall to unavailable
+//                                                //this is where I assign
+//                                                myTimetable.getHalls().get(z).setAvToZero(prefdHour, (int)(prefdHour + duration*100), preferredDays.getPrefDay().get(0));
+//                                                myTimetable.getAssignedLectures().add(temp);
+//
+//                                                lectureAssigned = 1; //assigned here,  exit
+//                                                duplets.remove(0);
+//                                                duplets.add(temp);              //MORE DUPLETS MIGHT NEED TO BE
+//                                                return myTimetable;  //MORE DUPLETS MIGHT NEED TO BE ADDED, HOW DO I PROCEED HERE ?;
+//
+//                                            }
+//                                        }
+//                                        //there would need to be a class taking note of the days with lectures assigned Week_Timetable possibly
+//                                    }
+//                                //Corrections made here:
+//                                else{
+//                                    ArrayList<String> sTempOne = myTimetable.getLectures().get(0).getPreferredDays().getPrefDay();
+//                                    //try next preferred day, if not available, assign randomly
+//                                    if(sTempOne.size() > 1) {
+//                                        for (int x = 1; x < sTempOne.size(); x++) {
+//
+//                                            for (int j = 0; j < newhalls.size(); j++) {
+//                                                int data = newhalls.get(j).findAvailableSlot_PreferredDay(900, (int) duration, sTempOne.get(x));
+//                                                if (data != 0) {
+//                                                    //first available possition found. Should it be used in this fashion ? Probably suitable for GreedyAlg. WHAT IF THERE IS NO SUITABLE ONE!
+//                                                    int iAddCode = newhalls.get(j).getiAdditionalCode();
+//                                                    for(int t =0; t < halls.size(); t++){
+//                                                        if(halls.get(t).getiAdditionalCode() == iAddCode){
+//                                                            myTimetable.getHalls().get(t).setAvToZero(data, (int)(data + duration*100), sTempOne.get(x)); //ADD to Assigned and return
+//                                                            myTimetable.getAssignedLectures().add(temp);
+//
+//                                                            lectureAssigned = 1; //assigned here,  exit
+//                                                            duplets.remove(0);
+//                                                            duplets.add(temp);
+//                                                            return myTimetable;  //MORE DUPLETS MIGHT NEED TO BE ADDED, HOW DO I PROCEED HERE ?;
+//                                                        }
+//                                                    }
+//
+//                                                }
+//                                            }
+//
+//                                        }
+//                                    }
+//                                    else{
+//
+//                                        for (int j = 0; j < newhalls.size(); j++) {     //THIS IS IF WE FIND A SUITABLE TIME IN THESE HALLS, WHAT IF NOT??
+//                                            CoupledData data = newhalls.get(j).findAvailableSlot(900, (int) duration);
+//                                            if (!data.getsDay().isEmpty() && data.getiHour() != 0) {
+//                                                //first available possition found. Should it be used in this fashion ? Probably suitable for GreedyAlg
+//                                                int iAddCode = newhalls.get(j).getiAdditionalCode();
+//                                                for(int t =0; t < halls.size(); t++){
+//                                                    if(halls.get(t).getiAdditionalCode() == iAddCode){
+//                                                        timetable.getHalls().get(t).setAvToZero(data.getiHour(), (int)(data.getiHour() + duration*100), data.getsDay());   //CHECK AVTOZERO
+//                                                        //add to assigned lectures ?
+//                                                        //assign to a day as well !
+//                                                        myTimetable.getAssignedLectures().add(temp);
+//
+//                                                        lectureAssigned = 1; //assigned here,  exit
+//                                                        duplets.remove(0);
+//                                                        duplets.add(temp);
+//                                                        return myTimetable;  //MORE DUPLETS MIGHT NEED TO BE ADDED, HOW DO I PROCEED HERE ?;
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//
+//                                    }
+//                                }
+//
+//                    }
+//                    if(lectureAssigned == 0){
+//                        //assign randomly to a different timeslot
+//                    }
+//                    //do the following line after assigning
+//                    temp.setiScheduledMoreThanOnce(1);
+//                    //
+//
+//                }
+//
+//                return myTimetable;  //MORE DUPLETS MIGHT NEED TO BE ADDED, HOW DO I PROCEED HERE ?;
+//            }
+//        }
+//        else{
+//            Duplet elseTemp =timetable.getLectures().get(0);
+//            System.out.println("Halls not available for lecture " + elseTemp.getsLect() +", 2 students or less. \tHalls not available");
+//
+//            timetable.getLectures().remove(0);
+//            timetable.getLectures().add(elseTemp);
+//        }
+//
+//        return myTimetable;  //MORE DUPLETS MIGHT NEED TO BE ADDED, HOW DO I PROCEED HERE ?;
+//    }
+
+
+
+    public  Week_Timetable recursion(Week_Timetable timetable, ArrayList<Hall> halls, ArrayList<Duplet> duplets,ArrayList<Duplet> assigned, int iNumStudents,int inewNumStudents, int iIndicatorOne, int iIndicatorTwo){
+        //indicatortwo would be for the number of times this recursion has been called, starts with 0, first time it tries
+        //to find a hall for 1/2 of the students it would be called once,hence value 1, and so on.
+        //if it has been called once, that would mean we have split the lecture into two slots,
+        //so one lecture would be assigned and one would be thrown into the end of the queue
+        // (is this a good idea? ) is it better to assign the both lectures after the split?
+        int lectureAssigned = 0;
+        int Students;
+        Duplet temp = null;
+        Week_Timetable myTimetable = timetable;
+        if(iIndicatorOne == 1 && (iNumStudents > 2)) {//switch to iNewNum
+            ArrayList<Hall> newhalls = searchForAHall(halls, inewNumStudents);
+            if (newhalls.isEmpty() ){
+                if(iNumStudents %2 == 0)
+                    myTimetable = recursion(myTimetable,myTimetable.getHalls(), myTimetable.getLectures(), myTimetable.getAssignedLectures(),
+                            iNumStudents, iNumStudents / 2 , iIndicatorOne, ++iIndicatorTwo);// + 1 here because a lecture could be attendedby an odd number of students
+                else
+                    myTimetable = recursion(myTimetable,myTimetable.getHalls(), myTimetable.getLectures(), myTimetable.getAssignedLectures(),
+                            iNumStudents, iNumStudents / 2 + 1 , iIndicatorOne, ++iIndicatorTwo);// + 1 here because a lecture could be attendedby an odd number of students
+            }
+            else{
+
+                    temp = duplets.get(0);
+                    temp.setiNumberOfStudentsAttending(temp.getiNumberOfStudentsAttending()/(iNumStudents/inewNumStudents));//CHANGE INDICATOR TO APPROPRIATE VALUE // CHECK PHASE
+                    PreferredDays preferredDays = temp.getPreferredDays();
+                    String str = preferredDays.getPrefDay().get(0);
+                    int prefdHour = preferredDays.getiPrefHour();
+                    int prefdH2 = preferredDays.getiPrefHour_2();
+                    double duration = temp.getiHours();
+                    //assing the lecture:
+                    for(int k = 0; k < newhalls.size(); k++) {
+                        //find if there is a hall in the preferred time
+                        //check availability
+                        if (lectureAssigned == 1) {
+                            break;
+                        }
+
+                        // check:
+                        int iResult = newhalls.get(k).getAvailability(prefdHour, (int) (prefdHour + duration * 100), preferredDays.getPrefDay().get(0));
+                        int iResult2 = newhalls.get(k).getAvailability(prefdH2, (int) (prefdHour + duration * 100), preferredDays.getPrefDay().get(0));
+                        if (iResult == 1 || iResult2 == 1) {
+                            //assign to this time slot
+
+                            if (prefdHour == 1) {
+
+                            } else {
+                                prefdHour = prefdH2;
+                            }
+
+                            int hallCode = newhalls.get(k).getiAdditionalCode();
+                            for (int z = 0; z < halls.size(); z++) {
+                                if (halls.get(z).getiAdditionalCode() == hallCode) {
+                                    //set the actual hall to unavailable
+                                    //this is where I assign
+                                    myTimetable.getHalls().get(z).setAvToZero(prefdHour, (int) (prefdHour + duration * 100), preferredDays.getPrefDay().get(0));
+                                    myTimetable.getAssignedLectures().add(temp);
+
+                                    lectureAssigned = 1; //assigned here,  exit
+                                    duplets.remove(0);
+                                    duplets.add(temp);              //MORE DUPLETS MIGHT NEED TO BE
+                                    return myTimetable;  //MORE DUPLETS MIGHT NEED TO BE ADDED, HOW DO I PROCEED HERE ?;
+
+                                }
+                            }
+                            //there would need to be a class taking note of the days with lectures assigned Week_Timetable possibly
+                        }
+                    }
+
+                    //enters here if no preferred availability is found
+                    for(int k = 0; k < newhalls.size(); k++) {
+                        if(lectureAssigned == 1){break;}
+                        //Corrections made here:
+                        else{
+                            ArrayList<String> sTempOne = myTimetable.getLectures().get(0).getPreferredDays().getPrefDay();
+                            //try next preferred day, if not available, assign randomly
+                            if(sTempOne.size() > 1) {
+                                for (int x = 1; x < sTempOne.size(); x++) {
+
+                                    for (int j = 0; j < newhalls.size(); j++) {
+                                        int data = newhalls.get(j).findAvailableSlot_PreferredDay(900, (int) duration, sTempOne.get(x));
+                                        if (data != 0) {
+                                            //first available possition found. Should it be used in this fashion ? Probably suitable for GreedyAlg. WHAT IF THERE IS NO SUITABLE ONE!
+                                            int iAddCode = newhalls.get(j).getiAdditionalCode();
+                                            for(int t =0; t < halls.size(); t++){
+                                                if(halls.get(t).getiAdditionalCode() == iAddCode){
+                                                    myTimetable.getHalls().get(t).setAvToZero(data, (int)(data + duration*100), sTempOne.get(x)); //ADD to Assigned and return
+                                                    myTimetable.getAssignedLectures().add(temp);
+
+                                                    lectureAssigned = 1; //assigned here,  exit
+                                                    duplets.remove(0);
+                                                    duplets.add(temp);
+                                                    return myTimetable;  //MORE DUPLETS MIGHT NEED TO BE ADDED, HOW DO I PROCEED HERE ?;
+                                                }
+                                            }
+
+                                        }
+                                    }
+
+                                }
+                            }
+                            else{
+
+                                for (int j = 0; j < newhalls.size(); j++) {     //THIS IS IF WE FIND A SUITABLE TIME IN THESE HALLS, WHAT IF NOT??
+                                    CoupledData data = newhalls.get(j).findAvailableSlot(900, (int) duration);
+                                    if (!data.getsDay().isEmpty() && data.getiHour() != 0) {
+                                        //first available possition found. Should it be used in this fashion ? Probably suitable for GreedyAlg
+                                        int iAddCode = newhalls.get(j).getiAdditionalCode();
+                                        for(int t =0; t < halls.size(); t++){
+                                            if(halls.get(t).getiAdditionalCode() == iAddCode){
+                                                timetable.getHalls().get(t).setAvToZero(data.getiHour(), (int)(data.getiHour() + duration*100), data.getsDay());   //CHECK AVTOZERO
+                                                //add to assigned lectures ?
+                                                //assign to a day as well !
+                                                myTimetable.getAssignedLectures().add(temp);
+
+                                                lectureAssigned = 1; //assigned here,  exit
+                                                duplets.remove(0);
+                                                duplets.add(temp);
+                                                return myTimetable;  //MORE DUPLETS MIGHT NEED TO BE ADDED, HOW DO I PROCEED HERE ?;
+                                            }
+                                        }
+                                    }
+                                }
+
+                            }
+                        }
+
+                    }
+                    if(lectureAssigned == 0){
+                        //assign randomly to a different timeslot
+                    }
+                    //do the following line after assigning
+                    temp.setiScheduledMoreThanOnce(1);
+                    //
+
+                }
+
+                return myTimetable;  //MORE DUPLETS MIGHT NEED TO BE ADDED, HOW DO I PROCEED HERE ?;
+
+        }
+        else{
+            temp =timetable.getLectures().get(0);
+            System.out.println("Halls not available for lecture " + temp.getsLect() +", 2 students or less. \tHalls not available");
+
+            timetable.getLectures().remove(0);
+            timetable.getLectures().add(temp);
+        }
+
+        return myTimetable;  //MORE DUPLETS MIGHT NEED TO BE ADDED, HOW DO I PROCEED HERE ?;
+    }
+
 
 
     public void generateGreedySolution(String sTable) throws SQLException, ParseException {
 
-
         Week_Timetable week_timetableont = myTimetable(7);
         Week_Timetable week_timetabletwo = myTimetable(7);
 
-        week_timetableont.v_print();
-        week_timetabletwo.v_print();
+//        week_timetableont.v_print();
+//        week_timetabletwo.v_print();
 
         ArrayList <Duplet> assignedLectures = new ArrayList<>();
         ArrayList <Duplet> updatedLectures = new ArrayList<>();
 
-        ArrayList <Duplet> myarr = lecturesToBeAssigned(1, sTable);  //this ARRAY contains all the info for the lectures
+        ArrayList <Duplet> myarr = lecturesToBeAssigned(1, sTable,2019);  //this ARRAY contains all the info for the lectures
         ArrayList <Duplet> weekOne = new ArrayList<>();
         ArrayList <Duplet> weekTwo = new ArrayList<>();
-
 
         for(int i = 0; i < myarr.size(); i++){
             myarr.get(i).setPreferredDays( o_getPreferencesStudents(    myarr.get(i).getsLect() , 1  ,5));
             myarr.get(i).setsTeachersPreference( s_getLecturersChoice(    myarr.get(i).getsLect()   ));
-            myarr.get(i).print();
+          //  myarr.get(i).print();
         }
+
+        Collections.sort(myarr);                        //sort my array to start searching for the lectures with least students (asc order)
 
         for(int i = 0; i < myarr.size(); i++){
             if(i % 2 == 0){ weekOne.add(myarr.get(i));}
             else{weekTwo.add(myarr.get(i));}
         }
-        System.out.println(weekOne.size() + " " + weekTwo.size());
+
+        week_timetableont.setLectures(weekOne);
+        week_timetabletwo.setLectures(weekTwo);
+        //System.out.println(weekOne.size() + " " + weekTwo.size());
 
 
         //only to check on which is available when
         ArrayList<Hall> halls = hallsAvailability("28-Sep-2020", "04-Oct-2020");
-        //halls.forEach((n)->System.out.println(n));
+        halls.forEach((n)->System.out.println(n));
+        week_timetableont.setHalls(halls);
 
+
+
+        Collections.sort(halls);
         //
         //assign lectures to Halls here :
         // i need to find a way to make the algorithm tell if there is no solution
@@ -651,48 +956,48 @@ public class GreedyAlgorithm {
         //
 
         int iCounter = 0;
-        /*
-            while (iCounter != myarr.size()*10){
-            PreferredDays preferredDays= myarr.get(0).getPreferredDays();
-            ArrayList<String> prefs = preferredDays.getPrefDay();
-            if(prefs.size() == 1){                                                          //if not able to allocate, try second best preference
-                int iStudents = myarr.get(0).getiNumberOfStudentsAttending();
-                ArrayList<Hall> newhalls = searchForAHall(halls, iStudents);                //searchForASuitableHall in this day , if not able to find one split lecture in two smaller halls, assign as two lectures;
 
 
-                if(newhalls.isEmpty()){
-                    newhalls = searchForAHall(halls, iStudents/2);
-                    if(newhalls.isEmpty()){
-                        newhalls = searchForAHall(halls,iStudents/4);
-                        if(newhalls.isEmpty()){ continue; }
-                        else{
-                            
-                        }
-                    }
-                    else{                                                                   //allocate the lecture to a hall
-                        for(int j = 0; j < newhalls.size(); j++){
-                                //week_timetable.assingLecture(new String(Integer.toString()), newhalls);
+        while (iCounter != myarr.size()*10){
 
-                        }
-                    }
+
+            ArrayList<String> prefs = myarr.get(0).getPreferredDays().getPrefDay();
+                                                                   //if not able to allocate, try second best preference
+                int iStudents = week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending();
+                ArrayList<Hall> newhalls = searchForAHall(halls , iStudents);                //searchForASuitableHall in this day , if not able to find one split lecture in two smaller halls, assign as two lectures;
+
+
+                if(newhalls.isEmpty()) {
+                    week_timetableont = recursion(week_timetableont,week_timetableont.getHalls(), week_timetableont.getLectures(),week_timetableont.getAssignedLectures(),
+                                                    week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending() ,week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending(),
+                                        1,0);
                 }
                 else{
-
+                    System.out.println("halls are available");
+                    //assign the first lecture
+                    //week_timetableont
                 }
+
+                iCounter++;
+
             }
 
-
-        }
-        */
-
-        Statement statement = connection.createStatement();
-
+        System.out.println("Assigned Lectures:");
+        System.out.println(week_timetableont.getAssignedLectures());
+            if(myarr.size() == 0 ){
+                // solution found
+            }
+            else{
+                //opt for running the algorithm again, maybe a bit differently or choose to run another algorithm
+            }
+        /**/
 
     }
 
 
 
     /**/
+
 
 
     //END of Class

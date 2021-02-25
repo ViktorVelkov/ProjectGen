@@ -13,6 +13,10 @@ public class Week_Timetable {
     private ArrayList<Day> weekTimet = new ArrayList<>();
     private String sStartDay = "";
     private String sEndDay = "";
+    ArrayList<Hall> halls;
+    ArrayList <Duplet> lectures;
+    ArrayList <Duplet> assignedLectures = new ArrayList<>();
+
     public Week_Timetable() {
 //        this.iNumDays = 6;
 //        //only six, I include Saturday here, because if there aren't many available
@@ -53,10 +57,18 @@ public class Week_Timetable {
     }
 
     public void v_print(){
-        System.out.println("Days:" + iNumDays + " Start:" + sStartDay + " End:" + sEndDay + "/");
+        System.out.println("Days:" + iNumDays + " Start:" + sStartDay + " End:" + sEndDay + " LecturesAssigned:" + assignedLectures);
         for(int i = 0; i < weekTimet.size(); i++){
             System.out.println(weekTimet.get(i));
         }
+    }
+
+    public ArrayList<Duplet> getAssignedLectures() {
+        return assignedLectures;
+    }
+
+    public void setAssignedLectures(ArrayList<Duplet> assignedLectures) {
+        this.assignedLectures = assignedLectures;
     }
 
     public void setiNumDays(int iNumDays) {
@@ -77,6 +89,22 @@ public class Week_Timetable {
 
     public void setsEndDay(String sEndDay) {
         this.sEndDay = sEndDay;
+    }
+
+    public ArrayList<Hall> getHalls() {
+        return halls;
+    }
+
+    public void setHalls(ArrayList<Hall> halls) {
+        this.halls = halls;
+    }
+
+    public ArrayList<Duplet> getLectures() {
+        return lectures;
+    }
+
+    public void setLectures(ArrayList<Duplet> lectures) {
+        this.lectures = lectures;
     }
 
     public int assingLecture(Date date, ArrayList<Hall> halls)throws ParseException {
