@@ -1,5 +1,6 @@
 package com.mycompany.app;
 
+import com.mycompany.app.algorithms.BetterGreedyAlgorithm;
 import com.mycompany.app.algorithms.GreedyAlgorithm;
 import com.mycompany.app.inserts.data.Generator;
 import com.mycompany.app.inserts.data.LGT_Inserter;
@@ -42,7 +43,8 @@ public class App
 
         grdAlg.generateGreedySolution("s_courses");
 
-
+        BetterGreedyAlgorithm bgt = new BetterGreedyAlgorithm(connection);
+        //bgt.generateGreedySolution("s_courses");
 
 
         connection.close();

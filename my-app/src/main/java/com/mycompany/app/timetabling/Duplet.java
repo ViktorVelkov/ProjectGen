@@ -1,6 +1,6 @@
 package com.mycompany.app.timetabling;
 
-public class Duplet implements Comparable<Duplet>{
+public class Duplet implements Comparable<Duplet>, Cloneable{
 
     private double iHours = 0.0;
     private String sLect = "";
@@ -113,7 +113,7 @@ public class Duplet implements Comparable<Duplet>{
     }
 
     public String toString(){
-        return "lecture:" + sLect + " " + "hours:" +Double.toString(iHours) + " " + preferredDays + "Lecturer: " + sTeachersPreference + "Attending:" + iNumberOfStudentsAttending + "Code:" + Integer.toString(iCode) + "\n";
+        return "lecture:" + sLect + " " + "hours:" +Double.toString(iHours) + " " + preferredDays + "Lecturer's pref: " + sTeachersPreference + " Attending:" + iNumberOfStudentsAttending + " Code:" + Integer.toString(iCode) + "\n";
     }
 
 
@@ -124,5 +124,10 @@ public class Duplet implements Comparable<Duplet>{
         }
         //return obj.iNumberOfStudentsAttending - this.iNumberOfStudentsAttending;
         return this.iNumberOfStudentsAttending - obj.iNumberOfStudentsAttending;            //tackle the easiest ones first
+    }
+
+    @Override
+    public Object clone()throws CloneNotSupportedException{
+        return super.clone();
     }
 }

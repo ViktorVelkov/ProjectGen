@@ -4,11 +4,17 @@ public class Timeperiod {
     private int iTime;
     private int iAvailable;
     private String sDay;
+    private String sLectureHall;
     private int iDate;
     private int iMonth;
     private int iYear;
 
-    public Timeperiod(){}
+    public Timeperiod(int iHour, double v, String sLectureHall, int i){
+        this.iTime = iHour;
+        this.sLectureHall = sLectureHall;
+        this.iAvailable = i;
+    }
+
 
     public Timeperiod(String sDay, int iAvailable, int iTime, int iDate, int iMonth, int iYear){
         this.sDay = sDay;
@@ -19,6 +25,7 @@ public class Timeperiod {
         this.iYear = iYear;
 
     }
+
 
 
     public String getsDay() {
@@ -69,17 +76,20 @@ public class Timeperiod {
         this.iAvailable = iAvailable;
     }
 
-
+    public String s_forTimeSlotClass(){
+        return Integer.toString(iTime) + " " + sLectureHall + " " + Integer.toString(iAvailable) + "\n";
+    }
 
     @Override
+
     public String toString() {
-        return "Timeperiod{" +
-                "iTime=" + iTime +
-                ", iAvailable=" + iAvailable +
-                ", DayOfWeek=" + sDay +
-                ", iDate=" + iDate +
-                ", iMonth=" + iMonth +
-                ", iYear=" + iYear +
+        return "{" +
+                "" + iTime +
+                ", " + iAvailable +
+                ", " + sDay +
+                ", " + iDate +
+                ", " + iMonth +
+                ", " + iYear +
                 '}' + "\n";
     }
 

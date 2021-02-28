@@ -122,3 +122,185 @@
 //    }
 
     //
+
+
+/*
+    private Double d_TotalHoursOfHallsAvailable_Bush_House(String sStardDate, String sEndDate) throws ParseException, SQLException {
+
+            double dHours = 0.0;
+            Date date1 = new SimpleDateFormat("dd-MMM-yyyy").parse(sStardDate);
+            Date date2 = new SimpleDateFormat("dd-MMM-yyyy").parse(sEndDate);
+            String sql34 = "";
+            PreparedStatement prst;
+            if(date1.getMonth() != date2.getMonth() && date2.getMonth() - date1.getMonth() == 1){
+                sql34 = " SELECT COUNT(*) FROM two_weeks_availability_halls_bush_house WHERE AVAILABLE = 1 AND MONTH = ? AND DATE >= ? " +
+                        " UNION " +
+                        " SELECT COUNT(*) FROM two_weeks_availability_halls_bush_house WHERE AVAILABLE = 1 AND MONTH = ? AND DATE <= ? ";
+                prst = connection.prepareStatement(sql34);
+                prst.setInt(1, date1.getMonth());
+                prst.setInt(2, date1.getDate());
+                prst.setInt(3, date2.getMonth());
+                prst.setInt(4,date2.getDate());
+            }
+            else {
+                sql34 = " SELECT COUNT(*) FROM two_weeks_availability_halls_bush_house WHERE AVAILABLE = 1 AND MONTH = ? AND DATE >= ? UNION";
+                int iCounter = 1;
+                int iSecondCounter = 0;
+
+                for (int i = date1.getMonth() + 1; i < date2.getMonth(); i++) {
+                    sql34 += " SELECT COUNT(*) FROM two_weeks_availability_halls_bush_house WHERE AVAILABLE = 1 AND MONTH = ? UNION ";
+                    iSecondCounter++;
+                }
+                sql34 += " SELECT COUNT(*) FROM two_weeks_availability_halls_bush_house WHERE AVAILABLE = 1 AND MONTH = ? AND DATE <= ?";
+
+
+                prst = connection.prepareStatement(sql34);
+                prst.setInt(iCounter, date1.getMonth());
+                prst.setInt(++iCounter, date1.getDate());
+                for (int i = 1; i < iSecondCounter + 1; i++) {
+                    prst.setInt(++iCounter, date2.getMonth() - i);
+                }
+                prst.setInt(++iCounter, date2.getMonth()); //check this
+                prst.setInt(++iCounter, date2.getDate());    //check this
+
+            }
+            ResultSet rst = prst.executeQuery();
+            double dSum = 0.0;
+            while (rst.next()){
+                dSum += rst.getInt(1);
+            }
+
+
+            return dSum/2;
+        }
+        private Double d_TotalHoursOfHallsAvailable_Waterloo(String sStardDate, String sEndDate) throws ParseException, SQLException {
+            double dHours = 0.0;
+            Date date1 = new SimpleDateFormat("dd-MMM-yyyy").parse(sStardDate);
+            Date date2 = new SimpleDateFormat("dd-MMM-yyyy").parse(sEndDate);
+            String sql34 = "";
+            PreparedStatement prst;
+            if(date1.getMonth() != date2.getMonth() && date2.getMonth() - date1.getMonth() == 1){
+                sql34 = " SELECT * FROM two_weeks_availability_halls_waterloo WHERE AVAILABLE = 1 AND MONTH = ? AND DATE >= ? " +
+                        " UNION " +
+                        " SELECT * FROM two_weeks_availability_halls_waterloo WHERE AVAILABLE = 1 AND MONTH = ? AND DATE <= ? ";
+                prst = connection.prepareStatement(sql34);
+                prst.setInt(1, date1.getMonth());
+                prst.setInt(2, date1.getDate());
+                prst.setInt(3, date2.getMonth());
+                prst.setInt(4,date2.getDate());
+            }
+            else {
+                sql34 = " SELECT COUNT(*) FROM two_weeks_availability_waterloo WHERE AVAILABLE = 1 AND MONTH = ? AND DATE >= ? UNION";
+                int iCounter = 1;
+                int iSecondCounter = 0;
+
+                for (int i = date1.getMonth() + 1; i < date2.getMonth(); i++) {
+                    sql34 += " SELECT COUNT(*) FROM two_weeks_availability_waterloo WHERE AVAILABLE = 1 AND MONTH = ? UNION ";
+                    iSecondCounter++;
+                }
+                sql34 += " SELECT COUNT(*) FROM two_weeks_availability_waterloo WHERE AVAILABLE = 1 AND MONTH = ? AND DATE <= ?";
+
+
+                prst = connection.prepareStatement(sql34);
+                prst.setInt(iCounter, date1.getMonth());
+                prst.setInt(++iCounter, date1.getDate());
+                for (int i = 1; i < iSecondCounter + 1; i++) {
+                    prst.setInt(++iCounter, date2.getMonth() - i);
+                }
+                prst.setInt(++iCounter, date2.getMonth()); //check this
+                prst.setInt(++iCounter, date2.getDate());    //check this
+
+            }
+            ResultSet rst = prst.executeQuery();
+            double dSum = 0.0;
+            while (rst.next()){
+                dSum += rst.getInt(1);
+            }
+
+
+            return dSum/2;
+        }
+        private Double d_TotalHoursOfHallsAvailable_Waterloo_SpecificHall(String sName, String sStardDate, String sEndDate) throws ParseException, SQLException {
+            double dHours = 0.0;
+            Date date1 = new SimpleDateFormat("dd-MMM-yyyy").parse(sStardDate);
+            Date date2 = new SimpleDateFormat("dd-MMM-yyyy").parse(sEndDate);
+            String sql34 = "";
+            PreparedStatement prst;
+            if(date1.getMonth() != date2.getMonth() && date2.getMonth() - date1.getMonth() == 1){
+                sql34 = " SELECT COUNT(*) FROM two_weeks_availability_halls_waterloo WHERE AVAILABLE = 1 AND MONTH = ? AND DATE >= ? AND HALL = ?" +
+                        " UNION " +
+                        " SELECT COUNT(*) FROM two_weeks_availability_halls_waterloo WHERE AVAILABLE = 1 AND MONTH = ? AND DATE <= ? AND HALL = ?";
+                prst = connection.prepareStatement(sql34);
+                prst.setInt(1, date1.getMonth());
+                prst.setInt(2, date1.getDate());
+                prst.setString(3, sName);
+                prst.setInt(4, date2.getMonth());
+                prst.setInt(5,date2.getDate());
+                prst.setString(6, sName);
+            }
+            else {
+                sql34 = " SELECT COUNT(*) FROM two_weeks_availability_halls_waterloo WHERE AVAILABLE = 1 AND MONTH = ? AND DATE >= ? AND HALL = ? UNION";
+                int iCounter = 1;
+                int iSecondCounter = 0;
+
+                for (int i = date1.getMonth() + 1; i < date2.getMonth(); i++) {
+                    sql34 += " SELECT COUNT(*) FROM two_weeks_availability_halls_waterloo WHERE AVAILABLE = 1 AND MONTH = ? AND HALL = ? UNION ";
+                    iSecondCounter++;
+                }
+                sql34 += " SELECT COUNT(*) FROM two_weeks_availability_halls_waterloo WHERE AVAILABLE = 1 AND MONTH = ? AND DATE <= ? AND HALL = ? ";
+
+
+                prst = connection.prepareStatement(sql34);
+                prst.setInt(iCounter, date1.getMonth());
+                prst.setInt(++iCounter, date1.getDate());
+                prst.setString(++iCounter, sName);
+                for (int i = 1; i < iSecondCounter + 1; i++) {
+                    prst.setInt(++iCounter, date2.getMonth() - i);
+                    prst.setString(++iCounter, sName);
+                }
+                prst.setInt(++iCounter, date2.getMonth()); //check this
+                prst.setInt(++iCounter, date2.getDate());    //check this
+                prst.setString(++iCounter, sName);
+            }
+            ResultSet rst = prst.executeQuery();
+            double dSum = 0.0;
+            while (rst.next()){
+                dSum += rst.getInt(1);
+            }
+
+
+            return dSum/2;
+        }
+
+        private Double d_TotalHoursOfHallsAvailable(String sStardDate, String sEndDate) throws ParseException, SQLException {
+            return d_TotalHoursOfHallsAvailable_Bush_House(sStardDate,sEndDate) + d_TotalHoursOfHallsAvailable_Waterloo(sStardDate, sEndDate);
+        }
+        private int d_AllHallsCapacity() throws  SQLException{
+            int iResult = 0;
+            String sql99 = "SELECT SUM(CAPACITY) FROM FACILITIES";
+            PreparedStatement prst = connection.prepareStatement(sql99);
+            ResultSet rst = prst.executeQuery();
+            while(rst.next()){
+                iResult = rst.getInt(1);
+            }
+            return iResult;
+        }
+        private int d_SpicificHallCapacity(String sName) throws  SQLException{
+            int iResult = 0;
+            String sql99 = "SELECT CAPACITY FROM FACILITIES WHERE inside_code = ?";
+            PreparedStatement prst = connection.prepareStatement(sql99);
+            prst.setString(1, sName);
+            ResultSet rst = prst.executeQuery();
+            while(rst.next()){
+                iResult = rst.getInt(1);
+            }
+            return iResult;
+        }
+        /**/
+        private double d_capacityPerHour_Waterloo_SpecificHall(String sName,String sStartDate,String sEndDate) throws SQLException, ParseException {
+            double iResult = d_SpicificHallCapacity(sName);
+            double sHours = d_TotalHoursOfHallsAvailable_Waterloo_SpecificHall(sName, sStartDate, sEndDate);
+
+            return sHours*iResult / 55;
+        }
+*/

@@ -13,9 +13,10 @@ public class Week_Timetable {
     private ArrayList<Day> weekTimet = new ArrayList<>();
     private String sStartDay = "";
     private String sEndDay = "";
-    ArrayList<Hall> halls;
-    ArrayList <Duplet> lectures;
-    ArrayList <Duplet> assignedLectures = new ArrayList<>();
+    private ArrayList<Hall> halls;
+    private ArrayList <Duplet> lectures;
+    private ArrayList <Duplet> assignedLectures = new ArrayList<>();
+    private int previousRecursionWorked = 0;
 
     public Week_Timetable() {
 //        this.iNumDays = 6;
@@ -56,13 +57,6 @@ public class Week_Timetable {
         return weekTimet;
     }
 
-    public void v_print(){
-        System.out.println("Days:" + iNumDays + " Start:" + sStartDay + " End:" + sEndDay + " LecturesAssigned:" + assignedLectures);
-        for(int i = 0; i < weekTimet.size(); i++){
-            System.out.println(weekTimet.get(i));
-        }
-    }
-
     public ArrayList<Duplet> getAssignedLectures() {
         return assignedLectures;
     }
@@ -99,6 +93,14 @@ public class Week_Timetable {
         this.halls = halls;
     }
 
+    public int getPreviousRecursionWorked() {
+        return previousRecursionWorked;
+    }
+
+    public void setPreviousRecursionWorked(int previousRecursionWorked) {
+        this.previousRecursionWorked = previousRecursionWorked;
+    }
+
     public ArrayList<Duplet> getLectures() {
         return lectures;
     }
@@ -117,6 +119,14 @@ public class Week_Timetable {
             }
         }
         return 0;
+    }
+
+
+    public void v_print(){
+        System.out.println("Days:" + iNumDays + " Start:" + sStartDay + " End:" + sEndDay + "\nLecturesAssigned:" + assignedLectures);
+        for(int i = 0; i < weekTimet.size(); i++){
+            System.out.println(weekTimet.get(i));
+        }
     }
 
     public String toString(){

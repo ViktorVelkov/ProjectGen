@@ -20,7 +20,7 @@ public class Hall implements Comparable<Hall>{
     private ArrayList<Timeperiod> availability;
 
 
-    public Hall(Connection connection,int iCapacity, String sAbbrev, String sTimeStart, String sTimeEnd, int iAdditionalCode) throws SQLException, ParseException {
+    public Hall(Connection connection, int iCapacity, String sAbbrev, String sTimeStart, String sTimeEnd, int iAdditionalCode) throws SQLException, ParseException {
         this.sAbbrev = sAbbrev;
         this.sTimeStart = sTimeStart;
         this.sTimeEnd = sTimeEnd;
@@ -120,6 +120,14 @@ public class Hall implements Comparable<Hall>{
         this.iAdditionalCode = iAdditionalCode;
     }
 
+    public String getsAbbrev() {
+        return sAbbrev;
+    }
+
+    public void setsAbbrev(String sAbbrev) {
+        this.sAbbrev = sAbbrev;
+    }
+
     public void setAvToZero(int iHourStart, int iHourEnd, String sDay){
 
         for (int i = 0; i < availability.size(); i++){
@@ -159,13 +167,29 @@ public class Hall implements Comparable<Hall>{
         return 0;
     }
 
+
+
+
+    public ArrayList<Timeperiod> getArrayTimeperiods() {
+        return availability;
+    }
+
+    public void setArrayTimeriods(ArrayList<Timeperiod> availability) {
+        this.availability = availability;
+    }
+
     public CoupledData findAvailableSlot(int iHourStart, int iDuration){
         int iCount = 0;
         int iTime = 0;
         CoupledData cp = new CoupledData();
+        String sDay = "";
+        String sPrevDay = "";
+        for(int i = 0; i < availability.size(); i++){               //this doesn't account for the timeperiots being in the same day
 
-        for(int i = 0; i < availability.size(); i++){
-            if(availability.get(i).getiAvailable() == 1 && availability.get(i).getiTime() >= iHourStart){
+            sDay = availability.get(i).getsDay();
+            //sPrevDay = availability.get(i).getsDay();
+
+            if(sDay.equals(sPrevDay) && availability.get(i).getiAvailable() == 1 && availability.get(i).getiTime() >= iHourStart){
                 iCount++;
                 if(iCount == 1){
                     iTime = availability.get(i).getiTime();
@@ -178,8 +202,9 @@ public class Hall implements Comparable<Hall>{
                 //I need to return the day and the hour corresponding to the hall
                 cp.setiHour( iTime );
                 cp.setsDay( availability.get(i).getsDay());
+                break;
             }
-
+            sPrevDay = availability.get(i).getsDay();
         }
         return cp;
     }

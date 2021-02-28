@@ -1,6 +1,8 @@
 package com.mycompany.app.timetabling;
 
 
+import java.util.ArrayList;
+
 public class Day {
 
     private String sname = "";
@@ -9,19 +11,8 @@ public class Day {
     private int iMonth = 0;
     private int iYear = 0;
 
-        public static Timeslot[] oDSlot = new Timeslot[22];
-
-    @Override
-    public String toString() {
-        return "Day{" +
-                "sname='" + sname + '\'' +
-                ", sDate='" + sDate + '\'' +
-                ", iDate=" + iDate +
-                ", iMonth=" + iMonth +
-                ", iYear=" + iYear +
-                '}';
-    }
-
+    private static Timeslot[] oDSlot = new Timeslot[22];
+    private ArrayList<Timeslot> oDslot2 = new ArrayList<>( );
     public Day(){
         int j = 0;
         for(int i = 1; i <= 22; i++) {
@@ -96,43 +87,36 @@ public class Day {
         this.iYear = iYear;
     }
 
+    public ArrayList<Timeslot> getoDslot2() {
+        return oDslot2;
+    }
+
+    public void setoDslot2(ArrayList<Timeslot> oDslot2) {
+        this.oDslot2 = oDslot2;
+    }
 
     /**/
 
-    public void v_assignEvent(int sTimeStart, int sTimeEnd, String sHall, String sActivity){
-        int iFlag = 0;
-        for(int i = 0; i < oDSlot.length ; i++) {    //Check if slots are available
-            if (oDSlot[i].getItime() == sTimeStart) {
-                if (oDSlot[i].getiEmpty() == 1) {
-                    iFlag++;
-                }
-            }
-        }
-
-        if(iFlag == 0) {
-            for (int i = 0; i < oDSlot.length; i++) {
-                if (oDSlot[i].getItime() == sTimeStart) {
-                    int j = i;
-                    while (oDSlot[j].getItime() != sTimeEnd) {
-                        oDSlot[j].setiEmpty(1);
-                        oDSlot[j].setsHall(sHall);
-                        oDSlot[j].setsActivity(sActivity);
-                        j++;
-                    }
-                }
-            }
-        }else{
-            System.out.println();
-            System.out.println("Error[");
-            System.out.println("can't assign to this time period, timeslot(s) are taken");
-            System.out.println("Failed: " + sTimeStart + "-" + sTimeEnd + " " + sHall + " " + sActivity + "]");
-            System.out.println();
-        }
+    public void v_assignEvent(int iHourStart, double duration, String sHall, String sActivity, String sLecture){
+        //old functionality of the code
+        //        for(int i = 0; i < oDSlot.length; i++){
+//            if(oDSlot[i].getItime() >= sTimeStart && oDSlot[i].getItime() < sTimeEnd) {
+//                oDSlot[i].setiEmpty(0);
+//                oDSlot[i].setsActivity(sActivity);
+//                oDSlot[i].setsHall(sHall);
+//                oDSlot[i].setsName(sLecture);
+//            }
+//        }
+        oDslot2.add(new Timeslot(duration, iHourStart, sHall,sActivity));
     }
 
-    public void v_reassign_event(int sTimeStart, int sTimeEnd, String sHall, String sActivity){
+
+    //don't use this one works with the previous functionality of the class
+    public void v_reassign_event(int sTimeStart, int sTimeEnd, String sHall, String sActivity, String sLecture){
         //this means assigning to a slot already taken,
         // if taken, remove the whole event, and put the new one
+        System.out.println("Please don't use me, I am v_reassign_event inside the Day class");
+
         int iFlag = 0;
         String s_reassign = "";
         for(int i = 0; i < oDSlot.length ; i++) {
@@ -149,7 +133,7 @@ public class Day {
                     oDSlot[i].setiEmpty(0);
                 }
             }
-        v_assignEvent(sTimeStart,sTimeEnd,sHall,sActivity);
+        v_assignEvent(sTimeStart,sTimeEnd,sHall,sActivity, sLecture);
     }
 
     public void v_anull(){
@@ -179,4 +163,22 @@ public class Day {
 
     /**/
 
+    @Override
+    public String toString() {
+        String sResult =  "Day{" +
+                "sname='" + sname +
+                ", sDate='" + sDate  +
+                ", iDate=" + iDate +
+                ", iMonth=" + iMonth +
+                ", iYear=" + iYear +
+                '}' + "\n";
+        for(Timeslot t: oDslot2){        //if you want the previous functionality, which was wrong, because it overlapped
+                                        // events, swithc back to oDSlot
+            sResult += t.toString() + "\n";
+        }
+        return sResult;
+    }
+
+
 }
+
