@@ -10,7 +10,11 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
     private int iNumberOfStudentsAttending = 0;
     private int iScheduledMoreThanOnce = 0;                                         // scheduled 0 == no changes made, 1 == scheduled multiple times
     private int iCode = 0;
-
+    private String sDayOfWeek = "";
+    private int iHourScheduled = 0;
+    private int iDayScheduled = -1;
+    private int iMonthScheduled = -1;
+    private int iYearScheduled = -1;
     //private LGT lgt;
     //private SGT sgt;
     //private Constraint_Tutorials_Lectures ctl;
@@ -103,8 +107,48 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
         this.iCode = iCode;
     }
 
-    public void print(){
-        //System.out.println("%-10s %-10s %-10s %-10s\n", "Lecture","Duration", "Students", "Teacher");
+
+    public String getsDayOfWeek() {
+        return sDayOfWeek;
+    }
+
+    public void setsDayOfWeek(String sDayOfWeek) {
+        this.sDayOfWeek = sDayOfWeek;
+    }
+
+    public int getiDayScheduled() {
+        return iDayScheduled;
+    }
+
+    public void setiDayScheduled(int iDayScheduled) {
+        this.iDayScheduled = iDayScheduled;
+    }
+
+    public int getiMonthScheduled() {
+        return iMonthScheduled;
+    }
+
+    public void setiMonthScheduled(int iMonthScheduled) {
+        this.iMonthScheduled = iMonthScheduled;
+    }
+
+    public int getiYearScheduled() {
+        return iYearScheduled;
+    }
+
+    public void setiYearScheduled(int iYearScheduled) {
+        this.iYearScheduled = iYearScheduled;
+    }
+
+    public int getiHourScheduled() {
+        return iHourScheduled;
+    }
+
+    public void setiHourScheduled(int iHourScheduled) {
+        this.iHourScheduled = iHourScheduled;
+    }
+
+    public void print(){        //System.out.println("%-10s %-10s %-10s %-10s\n", "Lecture","Duration", "Students", "Teacher");
 
         for(int i = 0; i < preferredDays.getPrefDay().size(); i++){
             //System.out.printf("%-10s %-10f %-10s %-10s %-10d\n", sLect, iHours, preferredDays.getPrefDay().get(i) , sTeachersPreference, iNumberOfStudentsAttending);
@@ -113,7 +157,7 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
     }
 
     public String toString(){
-        return "lecture:" + sLect + " " + "hours:" +Double.toString(iHours) + " " + preferredDays + "Lecturer's pref: " + sTeachersPreference + " Attending:" + iNumberOfStudentsAttending + " Code:" + Integer.toString(iCode) + "\n";
+        return sLect + " "  +Double.toString(iHours) + " " + preferredDays + " " + iNumberOfStudentsAttending + " Scheduled:" + sDayOfWeek + " " + Integer.toString(iCode) +  " " + Integer.toString(iDayScheduled) + " " + Integer.toString(iMonthScheduled)+ " " + Integer.toString(iYearScheduled) + "\n";
     }
 
 
@@ -130,4 +174,5 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
     public Object clone()throws CloneNotSupportedException{
         return super.clone();
     }
+
 }

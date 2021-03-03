@@ -3,6 +3,7 @@ package com.mycompany.app;
 import com.mycompany.app.algorithms.BetterGreedyAlgorithm;
 import com.mycompany.app.algorithms.GreedyAlgorithm;
 import com.mycompany.app.inserts.data.Generator;
+import com.mycompany.app.inserts.data.Inserter_LecturesAssigned;
 import com.mycompany.app.inserts.data.LGT_Inserter;
 import com.mycompany.app.timetabling.*;
 import java.sql.*;
@@ -41,12 +42,15 @@ public class App
 //            week_timetable12.v_print();
 
 
-        grdAlg.generateGreedySolution("s_courses");
+        //grdAlg.generateGreedySolution("s_courses");
 
         BetterGreedyAlgorithm bgt = new BetterGreedyAlgorithm(connection);
         //bgt.generateGreedySolution("s_courses");
 
-
+        Inserter_LecturesAssigned lecturesAssigned = new Inserter_LecturesAssigned(connection);
+        lecturesAssigned.createTable();
+        lecturesAssigned.populateTable("courses", "s_students");
+        lecturesAssigned.finalTable(5, 21, "courses", "s_students");
         connection.close();
 
     }
