@@ -23,37 +23,22 @@ public class App
             Connection connection = JDBCHelper.getConnection();
             Statement stmt = connection.createStatement();
 
-            Generator generator = new Generator(connection);
-        //    generator.v_run_initial("28-Sep-2020", "13-Dec-2020");
+            Generator generator = new Generator(connection, "s_students", "courses");
+            generator.v_run_initial("28-Sep-2020", "14-Dec-2020");
 
             GreedyAlgorithm grdAlg = new GreedyAlgorithm(connection);
-            //ArrayList<String> mylist = grdAlg.v_getPreferences_students("5CCS2CSL");
-    //        for(int i = 0 ; i < mylist.size(); i++){
-    //            System.out.println(mylist.get(i));
-    //        }
-    //        String choice = grdAlg.v_getTeachersChoice("5CCS2CSL");
-    //        System.out.println(choice);
+            grdAlg.setTwoInts(generator.getEvents());
+            grdAlg.generateGreedySolution("courses", 5, 21);
 
-//            Week_Timetable week_timetable = grdAlg.myTimetable();
-//            week_timetable.v_print();
-//
-//            System.out.println();
-//            Week_Timetable week_timetable12 = grdAlg.myTimetable(7);
-//            week_timetable12.v_print();
-
-
-        //grdAlg.generateGreedySolution("s_courses");
 
         BetterGreedyAlgorithm bgt = new BetterGreedyAlgorithm(connection);
         //bgt.generateGreedySolution("s_courses");
 
-        Inserter_LecturesAssigned lecturesAssigned = new Inserter_LecturesAssigned(connection);
-        lecturesAssigned.createTable();
-        lecturesAssigned.populateTable("courses", "s_students");
-        lecturesAssigned.finalTable(5, 21, "courses", "s_students");
+
         connection.close();
 
     }
+
 
 
 

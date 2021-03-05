@@ -1,6 +1,8 @@
 package com.mycompany.app.algorithms;
 
 
+import com.mycompany.app.inserts.data.Inserter_LecturesAssigned;
+import com.mycompany.app.inserts.data.TwoInts;
 import com.mycompany.app.timetabling.*;
 
 import java.sql.*;
@@ -16,6 +18,16 @@ public class GreedyAlgorithm {
     private Connection connection;
     private ArrayList<Duplet> initial = new ArrayList<>();
     private ArrayList<Duplet> assigned = new ArrayList<>();
+    private ArrayList<TwoInts> twoInts;
+
+    public ArrayList<TwoInts> getTwoInts() {
+        return twoInts;
+    }
+
+    public void setTwoInts(ArrayList<TwoInts> twoInts) {
+        this.twoInts = twoInts;
+    }
+
     public GreedyAlgorithm(Connection connection){
         this.connection = connection;
     }
@@ -244,6 +256,43 @@ public class GreedyAlgorithm {
         return sSS;
     }
     // Lectures
+    private ArrayList<Duplet> lecturesToBeAssigned2(ArrayList<TwoInts> codesOfLectures, int iSemester, String sTable) throws SQLException {
+        ArrayList<Duplet> initial2 = new ArrayList<>();
+        String sql77 = "SELECT abreviation, hours_twoweeks "+
+                "FROM " + sTable + " " +
+                "WHERE hours_twoweeks != 0 " +
+                "AND DESCRIPTION LIKE ? " +
+                "AND inside_code = ?" ;
+
+        PreparedStatement preparedStatement = connection.prepareStatement(sql77);
+        preparedStatement.setString(1, "SEM" + Integer.toString(iSemester) + "%");
+        Iterator iter = codesOfLectures.iterator();
+
+        while(iter.hasNext()){
+            TwoInts twoInts = (TwoInts) iter.next();
+            preparedStatement.setInt(2, twoInts.getiCode());
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()){
+                double iHours = resultSet.getInt("hours_twoweeks")/2; // remember that some lectures may have 5 hours per two weeks split 2 + 3
+                double iCheck = iHours/0.5;
+                if(iCheck*(int)iHours != iHours*iCheck){
+                    initial2.add(new Duplet(resultSet.getString(1),iHours - 0.5,twoInts.getiAttending(), twoInts.getiCode()));
+                    initial2.add(new Duplet(resultSet.getString(1),iHours + 0.5,twoInts.getiAttending(), twoInts.getiCode()));
+                }
+                else{
+                    initial2.add(new Duplet(resultSet.getString(1),iHours,twoInts.getiAttending(), twoInts.getiCode()));
+                    initial2.add(new Duplet(resultSet.getString(1),iHours,twoInts.getiAttending(), twoInts.getiCode()));
+                }
+            }
+            resultSet.close();
+        }
+
+        preparedStatement.close();
+
+
+        return initial2;
+    }
+
     private ArrayList<Duplet> lecturesToBeAssigned(int iSemester, String sTable , int iYear) throws SQLException {
 
         String sDescription = "SEM" + Integer.toString(iSemester);
@@ -363,6 +412,7 @@ public class GreedyAlgorithm {
         return hallsList;
     }
     /**/
+
 
     /**/
     public String getS_mostRecentDate() {
@@ -1106,7 +1156,7 @@ public class GreedyAlgorithm {
     //also this plan needs to follow constraints
     //and possibly I need a validator that the plan is correct // compare with the use of constraints
 
-    public int generateGreedySolution(String sTable) throws SQLException, ParseException {
+    public int generateGreedySolution(String sTable, int min, int max) throws SQLException, ParseException {
 
         Week_Timetable week_timetableont = myTimetable(7);
         Week_Timetable week_timetabletwo = myTimetable(7);
@@ -1117,7 +1167,8 @@ public class GreedyAlgorithm {
         ArrayList <Duplet> assignedLectures = new ArrayList<>();
         ArrayList <Duplet> updatedLectures = new ArrayList<>();
 
-        ArrayList <Duplet> myarr = lecturesToBeAssigned(1, sTable,2019);  //this ARRAY contains all the info for the lectures
+        //ArrayList <Duplet> myarr2 = lecturesToBeAssigned(1, sTable,2019);  //this ARRAY contains all the info for the lectures
+        ArrayList <Duplet> myarr = lecturesToBeAssigned2( getTwoInts() ,1, sTable);  //this ARRAY contains all the info for the lectures
         ArrayList <Duplet> weekOne = new ArrayList<>();
         ArrayList <Duplet> weekTwo = new ArrayList<>();
 
@@ -1157,7 +1208,7 @@ public class GreedyAlgorithm {
 
         int iCounter = 0;
 
-        //week_timetableont.getLectures().forEach((n) -> System.out.print(n));
+        week_timetableont.getLectures().forEach((n) -> System.out.print(n));
         System.out.println();
         System.out.println();
 

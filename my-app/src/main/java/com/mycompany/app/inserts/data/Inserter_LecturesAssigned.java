@@ -2,6 +2,7 @@ package com.mycompany.app.inserts.data;
 
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /*
 * Description:
@@ -50,6 +51,7 @@ public class Inserter_LecturesAssigned {
                         "  `kings_id` int unsigned NOT NULL, " +
                         "  `lecture_code` int unsigned NOT NULL," +
                         "  `electable` int unsigned NOT NULL, " +
+                        "  `semester` int unsigned NOT NULL, " +
                         "  PRIMARY KEY (`kings_id`,`lecture_code`), " +
                         "  KEY `lecture_code` (`lecture_code`), " +
                         "  CONSTRAINT `students_lectures_ibfk_1` FOREIGN KEY (`kings_id`) REFERENCES `students` (`KINGS_ID`), " +
@@ -73,21 +75,21 @@ public class Inserter_LecturesAssigned {
 
         public void truncateTable() throws SQLException {
             Statement statement= connection.createStatement();
-            String sq221 = "TRUNCATE TABLE IF EXISTS students_lectures";
+            String sq221 = "TRUNCATE TABLE students_lectures";
             statement.executeUpdate(sq221);
             statement.close();
         }
 
 
-        public void populateTable(String sCourses, String sStudents) throws SQLException {
+        public void populateTable(String sCourses, String sStudents, int iSemester) throws SQLException {
 
-            String sql11 = "SELECT inside_code, elective_subject, year FROM " + sCourses + " WHERE ABREVIATION LIKE '4CCS%'";
-            String sql33 = "SELECT inside_code, elective_subject, year FROM " + sCourses + " WHERE ABREVIATION LIKE '5CCS%'";
-            String sql99 = "SELECT inside_code, elective_subject, year FROM " + sCourses + " WHERE ABREVIATION LIKE '6CCS%'";
-            String sql80 = "INSERT INTO students_lectures VALUES (?, ? ,?)";
-            String sql90 = "SELECT kings_id FROM " + sStudents + " WHERE kings_id like '18%'";
+            String sql11 = "SELECT inside_code, elective_subject, year FROM " + sCourses + " WHERE ABREVIATION LIKE '4CCS%' AND DESCRIPTION LIKE 'SEM" + Integer.toString(iSemester) + "%" + "'";
+            String sql33 = "SELECT inside_code, elective_subject, year FROM " + sCourses + " WHERE ABREVIATION LIKE '5CCS%' AND DESCRIPTION LIKE 'SEM" + Integer.toString(iSemester) + "%" + "'";
+            String sql99 = "SELECT inside_code, elective_subject, year FROM " + sCourses + " WHERE ABREVIATION LIKE '6CCS%' AND DESCRIPTION LIKE 'SEM" + Integer.toString(iSemester) + "%" + "'";
+            String sql80 = "INSERT INTO students_lectures VALUES (?, ? ,?, ?)";
+            String sql90 = "SELECT kings_id FROM " + sStudents + " WHERE kings_id like '20%'";
             String sql901 = "SELECT kings_id FROM " + sStudents + " WHERE kings_id like '19%'";
-            String sql71 = "SELECT kings_id FROM " + sStudents + " WHERE kings_id like '20%'";          //these are hard coded, in the future, those numbers will change
+            String sql71 = "SELECT kings_id FROM " + sStudents + " WHERE kings_id like '18%'";          //these are hard coded, in the future, those numbers will change
 
             Statement statement = connection.createStatement();
             Statement statement2 = connection.createStatement();
@@ -110,6 +112,8 @@ public class Inserter_LecturesAssigned {
                     preparedStatement.setInt(1, resSet.getInt(1));
                     preparedStatement.setInt(2, rst.getInt(1));
                     preparedStatement.setInt(3, rst.getInt(2));
+                    preparedStatement.setInt(4, iSemester);
+
                     preparedStatement.executeUpdate();
                 }
                 rst.beforeFirst();
@@ -145,9 +149,9 @@ public class Inserter_LecturesAssigned {
 
             while (rS1.next()) {
                 //assign the ones which are mandatory first ?
-                for (int i = 0; i < 8 - iSize; i++) {
+                for (int i = 0; i < 4 - iSize; i++) {
                     //pick at random
-                    int iRandom = (int) (Math.random() * (electableEvents.size()));         //there is a flaw with this, it cannot guarantee that every random number is different
+                    int iRandom = (int) (Math.random() * (electableEvents.size()));
                     mandatoryEvents.add(electableEvents.get(iRandom));
                     //to fix the problem let's remove that ones selected from the electbleEvents
                     electableEvents.remove(iRandom);
@@ -198,9 +202,9 @@ public class Inserter_LecturesAssigned {
 
             while (rS4.next()) {
                 //assign the ones which are mandatory first ?
-                for (int i = 0; i < 8 - iSize; i++) {
+                for (int i = 0; i < 4 - iSize; i++) {
                     //pick at random
-                    int iRandom = (int) (Math.random() * (electableEvents.size()));         //there is a flaw with this, it cannot guarantee that every random number is different
+                    int iRandom = (int) (Math.random() * (electableEvents.size()));
                     mandatoryEvents.add(electableEvents.get(iRandom));
                     //to fix the problem let's remove that ones selected from the electbleEvents
                     electableEvents.remove(iRandom);
@@ -262,14 +266,24 @@ public class Inserter_LecturesAssigned {
             return 0;
         }
 
-    public void finalTable(int min,int max, String sCourses, String sStudents) throws SQLException {
-        //use method populate table here
-        //populateTable(sCourses, sStudents);
+
+
+    public ArrayList<TwoInts> finalTable(int min,int max, String sCourses, String sStudents) throws SQLException {
+
+
         ArrayList<TwoInts> values = new ArrayList<>();
+        ArrayList<TwoInts> values2 = new ArrayList<>();
+        ArrayList<Integer> initial_values = new ArrayList<>();
+        ArrayList<Integer> initial_values_attendance = new ArrayList<>();
         HashMap<Integer,Integer> map = new HashMap<>();
-        String sql11 = "SELECT lecture_code FROM students_lectures";
+        HashMap<Integer,Integer> map2 = new HashMap<>();
+        String sql11 = "SELECT lecture_code FROM students_lectures WHERE kings_id < 2000000"; //hard coded again, exclude the first year courses
+        String sql12 = "SELECT lecture_code FROM students_lectures WHERE kings_id > 2000000"; //hard coded again, include the first year courses
+
         Statement statement = connection.createStatement();
+        Statement statement33 = connection.createStatement();
         ResultSet rst = statement.executeQuery(sql11);
+        ResultSet rst2 = statement33.executeQuery(sql12);
 
         while(rst.next()){
             int temp = rst.getInt(1);
@@ -279,47 +293,109 @@ public class Inserter_LecturesAssigned {
             else{
                 map.put(rst.getInt(1), 1);
             }
+
         }
-        //now from that data on courses and participants decide on what to do:
-        //we have a max and min quota, if someone is above the quota or below it,
-        //they get transferred to another course
-//LEAVING IT FOR NOW
+
+        while(rst2.next()){
+            int temp = rst2.getInt(1);
+            if(map2.containsKey(rst2.getInt(1))){
+                map2.put(rst2.getInt(1), map2.get(rst2.getInt(1) ) + 1);
+            }
+            else{
+                map2.put(rst2.getInt(1), 1);
+            }
+
+        }
+
+
+        //Array 'values' corresponds to courses which have enough capacity in them
+        //to be held. Those remaining, who don't will have the students reassigned
+
         for(Map.Entry<Integer, Integer> mapElement : map.entrySet()){
-            if(mapElement. getValue() > min && mapElement.getValue() <= max){
+            if(mapElement. getValue() >= min && mapElement.getValue() <= max){
                 values.add(new TwoInts(mapElement.getKey(), mapElement.getValue()));
+                map.remove(mapElement);
+            }
+            else{
+                initial_values.add(mapElement.getKey());
+                initial_values_attendance.add(mapElement.getValue());
             }
         }
 
-        if(values.size() < 8){
 
-            //not enough lectures here
-            //what do I do??? -> I try to add values so that I have at least 8 attendable courses
-//            Iterator iterator = map.entrySet().iterator();
-//            while(iterator.hasNext()){
-//                if(iterator.next())
-//            }
-
+        for(Map.Entry<Integer, Integer> mapElement : map2.entrySet()){
+                values2.add(new TwoInts(mapElement.getKey(), mapElement.getValue()));
         }
 
 
-        for(TwoInts tp : values){
-            //courses that have too few students
-            //assign students to other events/courses
-            for(int i = 0; i < tp.getiAttending(); i++){
-                String sql123 = "SELECT kings_id FROM students_lectures WHERE lecture_code = " + Integer.toString(tp.getiCode());
+        //these are the the courses codes which don't have enough people in them
+        //or have too many
+        //I reassign the students in the students_lectures table to different courses
+        ArrayList<Integer> choices = new ArrayList<>();
+        ArrayList<Integer> joinRandomly = new ArrayList<>();
+        ArrayList<Integer> notAssigned = new ArrayList<>();
 
-                ResultSet rS5 = statement.executeQuery(sql123);
-                Iterator iterator = map.entrySet().iterator();
+        for(int i = 0; i < initial_values.size(); i++) {
+            String sql13 = "SELECT kings_id FROM students_lectures WHERE lecture_code = " + initial_values.get(i);
 
-                while(rS5.next()){
-                    String sql09 = "UPDATE students_lectures SET lecture_code = ? WHERE lecture_code = ? AND kings_id = " + Integer.toString(rS5.getInt(1));
-                    PreparedStatement statement1 = connection.prepareStatement(sql09);
-                    statement1.setInt(1,tp.getiCode());         //fix this one
-                    statement1.setInt(2, tp.getiCode());
+            ResultSet resultSet = statement.executeQuery(sql13);
+            while (resultSet.next()) {
+                String sql44 = "SELECT lecture_code FROM students_lectures WHERE kings_id = " + resultSet.getInt(1)
+                                + " AND lecture_code != " + initial_values.get(i);
+                ResultSet resultSet1 = statement33.executeQuery(sql44);
+                while(resultSet1.next()){
+                    choices.add(resultSet1.getInt(1));
                 }
+                resultSet1.close();
+                //now the process of reassigning
+
+                for(int k = 0; k < values.size(); k++){
+                    int iterator = 0;
+                    for(int x = 0; x < choices.size(); x++){
+                        if(values.get(k).getiCode() != choices.get(x) && (values.get(k).getiAttending() + 1 <= max)){
+                            iterator++;
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                    if(iterator == choices.size()){
+                        //means not a chosen course by the student already
+                        joinRandomly.add(values.get(k).getiCode());
+                    }
+                }
+
+                if( !joinRandomly.isEmpty() ) {
+                    int iRandom = (int) (Math.random() * (choices.size()));
+                    Statement statement77 = connection.createStatement();
+                    String sql43 = "UPDATE students_lectures SET lecture_code = " + joinRandomly.get(iRandom)
+                                 + " WHERE lecture_code = " + initial_values.get(i) + " AND kings_id = " + resultSet.getInt(1);
+                    statement77.executeUpdate(sql43);
+                    statement77.close();
+                }else{
+                    notAssigned.add(initial_values.get(i));
+                }
+                joinRandomly.clear();
+                choices.clear();
             }
 
         }
-        System.out.println(values);
+        if(!notAssigned.isEmpty()){
+            //there is some reassigning left to do
+            if(notAssigned.size() == 1){
+                //assign to different courses anyway, overflowing the limit by a little
+
+            }
+            else{
+                //combine them to create a course that fits the limits
+
+            }
+        }
+
+        for(TwoInts v1: values){
+            values2.add(v1);
+        }
+        return values2;
+        //System.out.println(values);
     }
 }

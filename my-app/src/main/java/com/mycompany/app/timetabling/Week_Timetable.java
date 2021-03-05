@@ -16,6 +16,7 @@ public class Week_Timetable {
     private ArrayList<Hall> halls;
     private ArrayList <Duplet> lectures;
     private ArrayList <Duplet> assignedLectures = new ArrayList<>();
+    private ArrayList <Duplet> lectureEvents;
     private int previousRecursionWorked = 0;
 
     public Week_Timetable() {

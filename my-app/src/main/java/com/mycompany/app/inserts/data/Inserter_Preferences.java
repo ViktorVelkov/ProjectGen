@@ -53,11 +53,13 @@ public class Inserter_Preferences {
     }
 
     public void v_populate_preferences_initial() throws SQLException {
+
+
+        v_truncatePreferencesTable();
         Statement stmt = connection.createStatement();
         String sql2 = "SELECT kings_id " +
                       "FROM students";
         ResultSet rs2 = stmt.executeQuery(sql2);
-        v_truncatePreferencesTable();
 
         int counterA = 0;
         while (rs2.next()) {
@@ -103,8 +105,6 @@ public class Inserter_Preferences {
                 "  `preftime` int DEFAULT NULL, " +
                 "  `preftime_secondchoice` int DEFAULT NULL, " +
                 "  UNIQUE KEY `kings_id_fk` (`kings_id_fk`,`course_abreviation`)," +
-                "  KEY `course_abreviation` (`course_abreviation`)," +
-                "  CONSTRAINT `main_preferences_lectures_students_ibfk_1` FOREIGN KEY (`course_abreviation`) REFERENCES `s_courses` (`abreviation`), " +
                 "  CONSTRAINT `main_preferences_lectures_students_ibfk_2` FOREIGN KEY (`kings_id_fk`) REFERENCES `students` (`KINGS_ID`) " +
                 ") ";
         Statement statement = connection.createStatement();
@@ -167,17 +167,28 @@ public class Inserter_Preferences {
         rst.close();
 
     }
+    void v_truncate_students_preferences() throws SQLException{
 
-    void v_populate_students_preferences_initial(int iOption, int iChoiceOnDays, int iSemester, int iAcademicYear) throws SQLException {
+        Statement stmt = connection.createStatement();
+        String sql = "TRUNCATE CURICULUM.main_preferences_lectures_students";
+        stmt.executeUpdate(sql);
+        stmt.close();
+
+    }
+
+    /*
+    * This method inserts preferences for the lectures' days
+    * */
+    void v_populate_students_preferences_initial(int iOption, int iChoiceOnDays, int iSemester, int iAcademicYear, String sTableStudents, String sTableCourses) throws SQLException {
 
         String sCourses = "";
         String sDescription = "SEM" + Integer.toString(iSemester);
         String sql31 = "SELECT kings_id " +
-                     "FROM CURICULUM.students " +
+                     "FROM  " + sTableStudents + " " +
                      "WHERE year_od_study = " + Integer.toString(iAcademicYear);
 
         String sql2 = "SELECT abreviation " +
-                      "FROM CURICULUM.s_courses " +
+                      "FROM " + sTableCourses + " " +
                       "WHERE abreviation LIKE ? " +
                       "AND description LIKE ?";
 
@@ -194,7 +205,7 @@ public class Inserter_Preferences {
 
         if (iChoiceOnDays == 0) {
 
-            if(iAcademicYear == 1){
+            if(iAcademicYear == 1){//can be switched to else if
                 sCourses = "4CCS";
             }
             if(iAcademicYear == 2){
@@ -266,6 +277,110 @@ public class Inserter_Preferences {
             }
         }
 
+
+
+
+
+
+    void v_populate_students_preferences_initial2(ArrayList<TwoInts> events, int iOption, int iChoiceOnDays, int iSemester, int iAcademicYear, String sTableStudents, String sTableCourses) throws SQLException {
+            //events array is all the lectures which are going to be assigned
+            //I need the preferreces for those
+
+        String sCourses = "";
+        String sDescription = "SEM" + Integer.toString(iSemester);
+        String sql31 = "SELECT kings_id " +
+                "FROM  " + sTableStudents + " " +
+                "WHERE year_od_study = " + Integer.toString(iAcademicYear);
+
+        String sql44 = "SELECT c.abreviation " +
+                        "FROM  (select a.abreviation from courses a join students_lectures b on a.inside_code = b.lecture_code WHERE b.kings_id = ? AND b.semester = " + Integer.toString(iSemester) + " ) as c";
+
+
+        ArrayList<String> mylist = new ArrayList<>(4);
+        mylist.add("Monday");
+        mylist.add("Tuesday");
+        mylist.add("Wednesday");
+        mylist.add("Thursday");
+        if(iOption != 0){
+            mylist.add("Friday");
+        }
+
+
+
+        if (iChoiceOnDays == 0) {
+
+            if(iAcademicYear == 1){//can be switched to else if
+                sCourses = "4CCS";
+            }
+            if(iAcademicYear == 2){
+                sCourses = "5CCS";
+            }
+            if(iAcademicYear == 3){
+                sCourses = "6CCS";
+            }
+            Statement stmt = connection.createStatement();
+            PreparedStatement prst = connection.prepareStatement(sql44);
+            ResultSet resSet = stmt.executeQuery(sql31);
+
+
+            while(resSet.next()) {
+
+                ArrayList<String> onelist = new ArrayList<>(mylist);
+                prst.setInt(1, resSet.getInt(1));
+                ResultSet rst = prst.executeQuery();
+
+                while (rst.next()) {
+                    String sDay = "";
+                    int iRandom = (int) (Math.random() * (15 - 9 + 0) + 9);
+                    int iRandom2 = (int) (Math.random() * (15 - 9 + 0) + 9);
+                    int iRand2 = (int)(Math.random()*((onelist.size() - 1)-0 +1) + 0);
+
+                    sDay = onelist.get(iRand2);         //the way I have implemented this, is that each student can pick just one day for a lecture/event,and that day cannot be then picked for another lecture
+                                                        //maybe I can change that, and allow for two different lectures to be picked on the same day
+                    //onelist.remove(iRand2);
+
+                    String sql23 = "INSERT INTO main_preferences_lectures_students VALUES(?,?,?,?,?)";
+                    PreparedStatement prs2 = connection.prepareStatement(sql23);
+                    prs2.setInt(1,resSet.getInt("kings_id"));
+                    prs2.setString(2,rst.getString("abreviation"));
+                    prs2.setString(3, sDay);
+                    if(iRandom2 % 2 == 1){
+                        //this will implement the hours preference for each lecture/event
+                        prs2.setInt(4, iRandom*100 + 30);
+                        iRandom = (int) (Math.random() * (15 - 9 + 0) + 9);
+                        iRand2 = (int)(Math.random()*((10 - 1)-0 +1) + 0);
+                        if(iRand2 % 2 == 1){
+                            prs2.setInt(5, iRandom*100);
+                        }
+                        else{
+                            prs2.setInt(5, iRandom*100 + 30);
+                        }
+                    }
+                    else{
+                        prs2.setInt(4, iRandom*100 );
+
+                        iRandom = (int) (Math.random() * (15 - 9 + 0) + 9);
+                        iRand2 = (int)(Math.random()*((10 - 1)-0 +1) + 0);
+                        if(iRand2 % 2 == 1){
+                            prs2.setInt(5, iRandom*100);
+                        }
+                        else{
+                            prs2.setInt(5, iRandom*100 + 30);
+                        }                    }
+                    prs2.execute();
+                    prs2.close();
+                }
+                rst.beforeFirst();
+
+            }
+
+        }
+        else {
+
+            mylist.add("Saturday");
+            //Still not developed, possibility to add Saturday as a school day
+
+        }}
 
     }
 

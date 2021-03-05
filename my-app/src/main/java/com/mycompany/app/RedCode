@@ -304,3 +304,61 @@
             return sHours*iResult / 55;
         }
 */
+
+
+
+//from inserter_lectures_assigned method finalTable
+while(iCounter != 80){
+            iCounter++;
+            //find the attendance where values are too low = below the min
+            if(initial_values.size() != 0) {
+                if (initial_values_attendance.get(0) < min) {
+                    for (int j = 0; j < values.size(); j++) {
+                        //too few
+                        if (values.get(j).getiAttending() > min && values.get(j).getiAttending() + initial_values_attendance.get(0) < max) {
+                            //suitable solution found
+                            iStudentsReassigned += initial_values_attendance.get(0);
+                            values.set(j, new TwoInts(values.get(j).getiCode(), values.get(j).getiAttending() + initial_values_attendance.get(0)));
+//something I noticed about this method is that it is going to pick the first available course every time,
+                            initial_values_attendance.remove(0);
+                            initial_values.remove(0);
+                            iAssigned = 1;
+                            String sql77 = "UPDATE students_lectures SET lecture_code = " + Integer.toString(values.get(j).getiCode()) + " WHERE lecture_code = " + Integer.toString(initial_values.get(0));
+                            Statement statement2 = connection.createStatement();
+                            statement2.executeUpdate(sql77);
+                            break; // before breaking this would need updating
+                        } else {
+                            //no suitable courses found: how do we proceed?? -> assign to the next available course in the current list
+
+                        }
+                    }
+                    if (iAssigned == 0) {
+                        initial_values_attendance.add(initial_values_attendance.get(0));
+                        initial_values_attendance.remove(0);
+                        initial_values.add(initial_values.get(0));
+                        initial_values.remove(0);
+                    }
+                    iAssigned = 0;
+                }
+            }
+            else if (initial_values.size() != 0 && initial_values_attendance.get(0) > max){
+
+            }
+            else{
+                if(initial_values.size() != 0 && initial_values_attendance.get(0) < min ){
+                    continue;
+                }else if(initial_values.size() != 0 && initial_values_attendance.get(0) > max ){
+                    //add to values array
+
+                }
+                else {
+                    continue;
+                }
+            }
+
+        }
+////
+
+
+
+
