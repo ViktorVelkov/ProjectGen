@@ -675,4 +675,26 @@ public class Inserter_LecturesAssigned {
     }
 
 
+    public ArrayList<TwoInts> events() throws SQLException {
+        ArrayList<TwoInts> events = new ArrayList<>();
+        String sql99 = "SELECT DISTINCT lecture_code FROM students_lectures";
+        String sql89 = "SELECT COUNT(*) FROM students_lectures WHERE lecture_code = ? ";
+
+        Statement statement = connection.createStatement();
+        PreparedStatement statement66 = connection.prepareStatement(sql89);
+
+        ResultSet resultSet = statement.executeQuery(sql99);
+        while (resultSet.next()){
+            statement66.setInt(1, resultSet.getInt(1));
+            ResultSet resultSet66 = statement66.executeQuery();
+            while(resultSet66.next()){
+                events.add(new TwoInts(resultSet.getInt(1), resultSet66.getInt(1)));
+            }
+        }
+        statement66.close();
+        statement.close();
+
+        return events;
+    }
+
 }

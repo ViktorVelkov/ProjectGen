@@ -24,12 +24,16 @@ public class App
             Statement stmt = connection.createStatement();
 
             Generator generator = new Generator(connection, "students", "courses");
-            generator.v_run_initial("28-Sep-2020", "14-Dec-2020");
-            generator.v_finalevents(40,100);
-            generator.v_run_preferences(1);
+
+              generator.v_run_populate_availability("28-Sep-2020", "14-Dec-2020");
+              //generator.populateChoicesOfLectures(1);
+//            generator.v_finalevents(40,100);
+//            generator.v_run_preferences(1);
 //            generator.v_finalevents(10,100);
+
+            System.out.println(generator.getLectureEvents());
             GreedyAlgorithm grdAlg = new GreedyAlgorithm(connection);
-            grdAlg.setTwoInts(generator.getEvents());
+            grdAlg.setTwoInts(generator.getLectureEvents());
             grdAlg.generateGreedySolution("courses", 5, 21);
 
 

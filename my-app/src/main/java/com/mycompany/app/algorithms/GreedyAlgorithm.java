@@ -404,6 +404,19 @@ public class GreedyAlgorithm {
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery(sql77);
         while(resultSet.next()){
+            if(resultSet.getInt(3) == 0) {
+                iCode++;
+                hallsList.add(new Hall(connection, resultSet.getInt("capacity"), resultSet.getString("inside_code"), sTimeStart, sTimeEnd, iCode));
+            }
+        }
+        return hallsList;
+    }private ArrayList<Hall> hallsAvailability_forlectures(String sTimeStart, String sTimeEnd) throws SQLException, ParseException {
+        int iCode =0;
+        ArrayList<Hall> hallsList = new ArrayList<>();
+        String sql77 = "SELECT inside_code, capacity, intended_for_lectures FROM FACILITIES";
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(sql77);
+        while(resultSet.next()){
             if(resultSet.getInt(3) == 1) {
                 iCode++;
                 hallsList.add(new Hall(connection, resultSet.getInt("capacity"), resultSet.getString("inside_code"), sTimeStart, sTimeEnd, iCode));
@@ -1185,15 +1198,17 @@ public class GreedyAlgorithm {
             else{weekTwo.add(myarr.get(i));}
         }
 
-        week_timetableont.setLectures(myarr);
 
-//         week_timetableont.setLectures(weekOne);
+         week_timetableont.setLectures(weekOne);
 //        week_timetabletwo.setLectures(weekTwo);
+//        week_timetableont.setLectures(myarr);
+
         //System.out.println(weekOne.size() + " " + weekTwo.size());
 
 
         //only to check on which is available when
-        ArrayList<Hall> halls = hallsAvailability("28-Sep-2020", "04-Oct-2020");
+        //ArrayList<Hall> halls = hallsAvailability("28-Sep-2020", "04-Oct-2020");
+        ArrayList<Hall> halls = hallsAvailability_forlectures("28-Sep-2020", "04-Oct-2020");
         //halls.forEach((n)->System.out.println(n));
         week_timetableont.setHalls(halls);
 

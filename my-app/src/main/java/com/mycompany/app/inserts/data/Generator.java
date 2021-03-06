@@ -101,7 +101,7 @@ public class Generator {
     }
 
 
-    public int v_run_initial(String sStartSemester, String sEndSemeseter) throws SQLException, ParseException {
+    public int v_run_populate_availability(String sStartSemester, String sEndSemeseter) throws SQLException, ParseException {
 
 
         Date date = new SimpleDateFormat("dd-MMM-yyyy").parse(sStartSemester);
@@ -116,13 +116,6 @@ public class Generator {
         }
 
         {
-            lecturesAssigned.createTable();
-            lecturesAssigned.truncateTable();
-            lecturesAssigned.populateTable(sTableCourses, sTableStudents, 1);
-            //lecturesAssigned.populateTable(sTableCourses, sTableStudents, 2);
-                                                                                                        //but we need the courses sorted out before they could be used for preferences
-        }
-        {
 
             prsHalls.v_parse_initial();
             twoWeeks.v_generateTable_and_populate("availability_halls_bush_house",sStartSemester,sEndSemeseter);
@@ -132,6 +125,15 @@ public class Generator {
         return 0;
     }
 
+
+    public void populateChoicesOfLectures(int iSemester) throws SQLException {
+        {
+            lecturesAssigned.createTable();
+            lecturesAssigned.truncateTable();
+            lecturesAssigned.populateTable(sTableCourses, sTableStudents, iSemester);
+            //but we need the courses sorted out before they could be used for preferences
+        }
+    }
 
     public void v_run_preferences(int iNumSemesters) throws SQLException {
         {
@@ -158,6 +160,10 @@ public class Generator {
 
     public void v_finalevents(int min, int max) throws SQLException {
         this.setEvents(lecturesAssigned.finalTable2(min, max, sTableCourses, sTableStudents));            // this function will probably be called elsewhere or two ints must be added to the Generator constructor, max and min
+    }
+
+    public ArrayList<TwoInts> getLectureEvents() throws SQLException {
+        return lecturesAssigned.events();
     }
 
     /**/
