@@ -23,9 +23,11 @@ public class App
             Connection connection = JDBCHelper.getConnection();
             Statement stmt = connection.createStatement();
 
-            Generator generator = new Generator(connection, "s_students", "courses");
+            Generator generator = new Generator(connection, "students", "courses");
             generator.v_run_initial("28-Sep-2020", "14-Dec-2020");
-
+            generator.v_finalevents(40,100);
+            generator.v_run_preferences(1);
+//            generator.v_finalevents(10,100);
             GreedyAlgorithm grdAlg = new GreedyAlgorithm(connection);
             grdAlg.setTwoInts(generator.getEvents());
             grdAlg.generateGreedySolution("courses", 5, 21);

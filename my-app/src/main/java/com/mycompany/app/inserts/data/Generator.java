@@ -119,22 +119,8 @@ public class Generator {
             lecturesAssigned.createTable();
             lecturesAssigned.truncateTable();
             lecturesAssigned.populateTable(sTableCourses, sTableStudents, 1);
-            lecturesAssigned.populateTable(sTableCourses, sTableStudents, 2);
-            this.setEvents(lecturesAssigned.finalTable(10, 100, sTableCourses, sTableStudents));            // this function will probably be called elsewhere or two ints must be added to the Generator constructor, max and min
+            //lecturesAssigned.populateTable(sTableCourses, sTableStudents, 2);
                                                                                                         //but we need the courses sorted out before they could be used for preferences
-        }
-
-        {
-            prefs.v_createTablePreferences();
-            prefs.v_populate_preferences_initial();
-            prefs.v_create_studentsp_table();
-            prefs.v_create_teachersp_table();
-            prefs.v_truncate_students_preferences();
-
-            prefs.v_populate_students_preferences_initial2(this.getEvents(),0,0, 1,1, sTableStudents, sTableCourses);
-            prefs.v_populate_students_preferences_initial2(this.getEvents(),0,0, 1,2, sTableStudents, sTableCourses);
-            prefs.v_populate_students_preferences_initial2(this.getEvents(),0,0, 1,3, sTableStudents, sTableCourses);
-            prefs.v_populate_teachers_preferences_initial(0);
         }
         {
 
@@ -146,6 +132,33 @@ public class Generator {
         return 0;
     }
 
+
+    public void v_run_preferences(int iNumSemesters) throws SQLException {
+        {
+            prefs.v_createTablePreferences();
+            prefs.v_populate_preferences_initial();
+            prefs.v_create_studentsp_table();
+            prefs.v_create_teachersp_table();
+            prefs.v_truncate_students_preferences();
+
+            prefs.v_populate_students_preferences_initial2(this.getEvents(),0,0, 1,1, sTableStudents, sTableCourses);
+            prefs.v_populate_students_preferences_initial2(this.getEvents(),0,0, 1,2, sTableStudents, sTableCourses);
+            prefs.v_populate_students_preferences_initial2(this.getEvents(),0,0, 1,3, sTableStudents, sTableCourses);
+
+            if(iNumSemesters != 1) {
+                            prefs.v_populate_students_preferences_initial2(this.getEvents(),0,0, 2,1, sTableStudents, sTableCourses);
+                            prefs.v_populate_students_preferences_initial2(this.getEvents(),0,0, 2,2, sTableStudents, sTableCourses);
+                            prefs.v_populate_students_preferences_initial2(this.getEvents(),0,0, 2,3, sTableStudents, sTableCourses);
+            }
+
+            prefs.v_populate_teachers_preferences_initial(0);
+
+        }
+    }
+
+    public void v_finalevents(int min, int max) throws SQLException {
+        this.setEvents(lecturesAssigned.finalTable2(min, max, sTableCourses, sTableStudents));            // this function will probably be called elsewhere or two ints must be added to the Generator constructor, max and min
+    }
 
     /**/
 

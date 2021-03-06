@@ -261,16 +261,14 @@ public class GreedyAlgorithm {
         String sql77 = "SELECT abreviation, hours_twoweeks "+
                 "FROM " + sTable + " " +
                 "WHERE hours_twoweeks != 0 " +
-                "AND DESCRIPTION LIKE ? " +
                 "AND inside_code = ?" ;
 
         PreparedStatement preparedStatement = connection.prepareStatement(sql77);
-        preparedStatement.setString(1, "SEM" + Integer.toString(iSemester) + "%");
         Iterator iter = codesOfLectures.iterator();
 
         while(iter.hasNext()){
             TwoInts twoInts = (TwoInts) iter.next();
-            preparedStatement.setInt(2, twoInts.getiCode());
+            preparedStatement.setInt(1, twoInts.getiCode());
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()){
                 double iHours = resultSet.getInt("hours_twoweeks")/2; // remember that some lectures may have 5 hours per two weeks split 2 + 3
@@ -406,8 +404,10 @@ public class GreedyAlgorithm {
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery(sql77);
         while(resultSet.next()){
-            iCode++;
-            hallsList.add(new Hall(connection,resultSet.getInt("capacity"),resultSet.getString("inside_code"), sTimeStart, sTimeEnd, iCode));
+            if(resultSet.getInt(3) == 1) {
+                iCode++;
+                hallsList.add(new Hall(connection, resultSet.getInt("capacity"), resultSet.getString("inside_code"), sTimeStart, sTimeEnd, iCode));
+            }
         }
         return hallsList;
     }
@@ -689,7 +689,7 @@ public class GreedyAlgorithm {
 
                 //HERE FOR EVERY AVAILABLE HALL CHECK FOR A PREFERRED TIME FROM THE LECTURE'S PREFERENCES
 
-                for (int k = 0; k < newhalls.size(); k++) {     //fix needed here, all for loops should be insside this one
+                for (int k = 0; k < newhalls.size(); k++) {
                     if (lectureAssigned == 1) {
                         break;
                     }
@@ -902,7 +902,7 @@ public class GreedyAlgorithm {
 
                 //HERE FOR EVERY AVAILABLE HALL CHECK FOR A PREFERRED TIME FROM THE LECTURE'S PREFERENCES
 
-                for(int k = 0; k < newhalls.size(); k++) {     //fix needed here, all for loops should be insside this one
+                for(int k = 0; k < newhalls.size(); k++) {
                     if (lectureAssigned == 1) {
                         break;
                     }
