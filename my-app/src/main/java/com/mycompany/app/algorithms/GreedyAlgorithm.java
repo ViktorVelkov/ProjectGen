@@ -5,6 +5,10 @@ import com.mycompany.app.inserts.data.Inserter_LecturesAssigned;
 import com.mycompany.app.inserts.data.TwoInts;
 import com.mycompany.app.timetabling.*;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -341,6 +345,7 @@ public class GreedyAlgorithm {
     //please check comments on line
     public Week_Timetable myTimetable(int iNumDays_TellMeHowManyDaysYouWant) throws SQLException, ParseException {
 
+        Week_Timetable timetable1 = new Week_Timetable();
         List<Date> datesList = new ArrayList<>();
         String s_Temp = "";
 
@@ -369,21 +374,19 @@ public class GreedyAlgorithm {
                     Calendar calendar = Calendar.getInstance();
                     calendar.setTime(date1);
                     calendar.add(Calendar.DAY_OF_MONTH, iNumDays_TellMeHowManyDaysYouWant);
-                    Date date2;
-                    date2 = calendar.getTime();
+                    Date date2 = calendar.getTime();
                     s_Temp = Integer.toString(date2.getDate()) + "/" + Integer.toString(date2.getMonth() + 1) + "/" + Integer.toString(date2.getYear()+1900);
 
             /* end of update   */
             }
 
 
-            timetable = new Week_Timetable();                                                                   //assign a new Week_Timetable object
-            timetable.setiNumDays(iNumDays_TellMeHowManyDaysYouWant);                                           //set parameters
-            timetable.setsStartDay(s_mostRecentDate);
+            timetable1.setiNumDays(iNumDays_TellMeHowManyDaysYouWant);                                           //set parameters
+            timetable1.setsStartDay(s_mostRecentDate);
             datesList = getDaysBetweenDates(new SimpleDateFormat("dd/MM/yyyy").parse(s_mostRecentDate), new SimpleDateFormat("dd/MM/yyyy").parse(s_Temp));
             s_lastmostRecentDate = s_mostRecentDate;
             s_mostRecentDate = s_Temp;                                                                          //most recent date updated
-            timetable.setsEndDay(s_mostRecentDate);
+            timetable1.setsEndDay(s_mostRecentDate);
 
             for(int i = 0; i < datesList.size(); i++){
                 String sDay = "";
@@ -392,15 +395,15 @@ public class GreedyAlgorithm {
                 if(datesList.get(i).getDay() == 3){sDay = "Wednesday";}
                 if(datesList.get(i).getDay() == 4){sDay = "Thursday";}
                 if(datesList.get(i).getDay() == 5){sDay = "Friday";}
-                timetable.addDay(datesList.get(i).getDate(),datesList.get(i).getMonth(),datesList.get(i).getYear(), sDay );
+                timetable1.addDay(datesList.get(i).getDate(),datesList.get(i).getMonth(),datesList.get(i).getYear(), sDay );
             }
 
-        return timetable;
+        return timetable1;
     }
-    private ArrayList<Hall> hallsAvailability(String sTimeStart, String sTimeEnd) throws SQLException, ParseException {
+    private ArrayList<Hall> hallsAvailability_Tutorials(String sTimeStart, String sTimeEnd) throws SQLException, ParseException {
         int iCode =0;
         ArrayList<Hall> hallsList = new ArrayList<>();
-        String sql77 = "SELECT inside_code, capacity, intended_for_lectures FROM FACILITIES";
+        String sql77 = "SELECT inside_code, capacity, intended_for_lectures FROM FACILITIES WHERE intended_for_lectures = 0";
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery(sql77);
         while(resultSet.next()){
@@ -410,7 +413,9 @@ public class GreedyAlgorithm {
             }
         }
         return hallsList;
-    }private ArrayList<Hall> hallsAvailability_forlectures(String sTimeStart, String sTimeEnd) throws SQLException, ParseException {
+    }
+
+    private ArrayList<Hall> hallsAvailability_forlectures(String sTimeStart, String sTimeEnd) throws SQLException, ParseException {
         int iCode =0;
         ArrayList<Hall> hallsList = new ArrayList<>();
         String sql77 = "SELECT inside_code, capacity, intended_for_lectures FROM FACILITIES";
@@ -667,221 +672,6 @@ public class GreedyAlgorithm {
 
     //
 
-    public  Week_Timetable recursion(Week_Timetable timetable, ArrayList<Hall> halls, ArrayList<Duplet> duplets,ArrayList<Duplet> assigned, int iNumStudents,int inewNumStudents, int iIndicatorOne, int iIndicatorTwo){
-        //indicatortwo would be for the number of times this recursion has been called, starts with 0, first time it tries
-        //to find a hall for 1/2 of the students it would be called once,hence value 1, and so on.
-        //if it has been called once, that would mean we have split the lecture into two slots,
-        //so one lecture would be assigned and one would be thrown into the end of the queue
-        // (is this a good idea? ) is it better to assign the both lectures after the split?
-        int lectureAssigned = 0;
-        int Students;
-        Duplet temp = null;
-        Week_Timetable myTimetable = timetable;
-        if(iIndicatorOne == 1 && (inewNumStudents > 2) && myTimetable.getLectures().size() != 0) {//switch to iNewNum
-            ArrayList<Hall> newhalls = searchForAHall(halls, inewNumStudents);
-            if (newhalls.isEmpty() ){
-                if(iNumStudents %2 == 0)
-                    myTimetable = recursion(myTimetable,myTimetable.getHalls(), myTimetable.getLectures(), myTimetable.getAssignedLectures(),
-                            iNumStudents, iNumStudents / 2 , iIndicatorOne, ++iIndicatorTwo);// + 1 here because a lecture could be attendedby an odd number of students
-                else
-                    myTimetable = recursion(myTimetable,myTimetable.getHalls(), myTimetable.getLectures(), myTimetable.getAssignedLectures(),
-                            iNumStudents, iNumStudents / 2 + 1 , iIndicatorOne, ++iIndicatorTwo);// + 1 here because a lecture could be attendedby an odd number of students
-            }
-            else {
-                try {
-                    temp = (Duplet) duplets.get(0).clone();
-                } catch (CloneNotSupportedException e) {
-                    e.printStackTrace();
-                }
-                temp.setiNumberOfStudentsAttending(inewNumStudents); //changes here
-                PreferredDays preferredDays = temp.getPreferredDays();
-                String str = preferredDays.getPrefDay().get(0);
-                int prefdHour = preferredDays.getiPrefHour();
-                int prefdH2 = preferredDays.getiPrefHour_2();
-                double duration = temp.getiHours();
-
-                //HERE FOR EVERY AVAILABLE HALL CHECK FOR A PREFERRED TIME FROM THE LECTURE'S PREFERENCES
-
-                for (int k = 0; k < newhalls.size(); k++) {
-                    if (lectureAssigned == 1) {
-                        break;
-                    }
-                    //AS WE SAID THERE ARE PREFERENCE ATTACHED TO EVERY LECTURE (EVEN THOUGH THEY COULD BE MISSING HENCE = 0)
-                    //THIS LOOP COMPARES EVERY PREFERENCE FOR A DAY + TIME FROM THE ARRAY OF PREFERRED DAYS INSIDE LECTURE
-
-                    for (int i = 0; i < temp.getPreferredDays().getPrefDay().size(); i++) {
-
-                        //EVERY LECTURE HAS TWO MOST PREFERRED HOURS, I CHECK FOR AVAILABILITY HERE
-
-                        int iResult = newhalls.get(k).getAvailability(prefdHour, (int) (prefdHour + duration * 100), preferredDays.getPrefDay().get(i));
-                        int iResult2 = newhalls.get(k).getAvailability(prefdH2, (int) (prefdH2 + duration * 100), preferredDays.getPrefDay().get(i));
-
-                        if (iResult == 1 || iResult2 == 1) {
-
-                            if (iResult == 1) {
-
-                            } else {
-                                prefdHour = prefdH2;            //IF FIRST PREFD HOUR IS NOT AVAILABLE, USE THE SECOND ONE
-                            }
-
-                            int hallCode = newhalls.get(k).getiAdditionalCode();                // every hall has a code to it, distinguishing it from the others, to update the real array of halls, I need to get the code from the available halls and find it in the bigger array
-                            for (int z = 0; z < myTimetable.getHalls().size(); z++) {           // traversing the bigger array, actual array of halls
-                                if (myTimetable.getHalls().get(z).getiAdditionalCode() == hallCode) {
-
-                                    myTimetable.getHalls().get(z).setAvToZero(prefdHour, (int) (prefdHour + duration * 100), preferredDays.getPrefDay().get(i));            //set the actual hall to unavailable
-                                    //if(iIndicatorTwo != 0) { myTimetable.getLectures().add(temp) ; }  //put brackets here
-
-                                    lectureAssigned = 1; //assigned here,  exit
-                                    myTimetable.getLectures().remove(0);
-                                    temp.setiNumberOfStudentsAttending(inewNumStudents);
-                                    myTimetable.getAssignedLectures().add(temp);      //this is implemented on the following lines below
-
-                                    for (int u = 0; u < myTimetable.getWeekTimet().size(); u++) {
-                                        if (myTimetable.getDay(u).getSname().toLowerCase(Locale.ROOT).equals(preferredDays.getPrefDay().get(i).toLowerCase(Locale.ROOT))) {
-                                            myTimetable.getDay(u).v_assignEvent(prefdHour, duration, newhalls.get(k).getsAbbrev(), temp.getsLect(), "event");
-                                        }
-
-                                    }
-
-                                    if (iIndicatorTwo != 0) {
-                                        for (int s = 0; s < Math.ceil(iNumStudents / inewNumStudents) - 1; s++) {// - 1
-                                            myTimetable.getLectures().add(temp);
-                                        } //else here ??!!
-                                    }
-                                    myTimetable.setPreviousRecursionWorked(1);
-
-                                    return myTimetable;
-
-                                }
-                            }
-                            //there would need to be a class taking note of the days with lectures assigned Week_Timetable possibly
-                        }
-                    }
-
-                }
-
-
-                for (int j = 0; j < newhalls.size(); j++) {
-                    if (lectureAssigned == 1) {
-                        break;
-                    }
-                    //THIS IS IF WE FIND A SUITABLE TIME IN THESE HALLS, WHAT IF DO NOT??
-                    for (int x = 0; x < temp.getPreferredDays().getPrefDay().size(); x++) {
-
-                        int data = newhalls.get(j).findAvailableSlot_PreferredDay(900, (int) duration, myTimetable.getLectures().get(0).getPreferredDays().getPrefDay().get(x));//check firs findAvailableSlot_PreferredDay
-
-                        if (data != 0) {
-                            //first available position found. Should it be used in this fashion? Probably suitable for GreedyAlg
-                            int iAddCode = newhalls.get(j).getiAdditionalCode();
-                            for (int t = 0; t < myTimetable.getHalls().size(); t++) {
-                                if (myTimetable.getHalls().get(t).getiAdditionalCode() == iAddCode) {
-                                    timetable.getHalls().get(t).setAvToZero(data, (int) (data + duration * 100), myTimetable.getLectures().get(0).getPreferredDays().getPrefDay().get(x));   //CHECK AVTOZERO
-                                    //add to assigned lectures ?
-                                    //assign to a day as well !
-                                    if (iIndicatorTwo != 0) {
-                                        for (int z = 0; z < Math.ceil(iNumStudents / inewNumStudents) - 1; z++) {
-                                            myTimetable.getLectures().add(temp);
-                                        }
-                                    }
-                                    lectureAssigned = 1; //assigned here,  exit
-                                    myTimetable.setPreviousRecursionWorked(1);
-                                    myTimetable.getLectures().remove(0);
-                                    myTimetable.getAssignedLectures().add(temp);//assigned.add, quick fix
-
-                                    for (int u = 0; u < myTimetable.getWeekTimet().size(); u++) {
-                                        if (myTimetable.getWeekTimet().get(u).getSname().toLowerCase(Locale.ROOT).equals(temp.getPreferredDays().getPrefDay().get(x).toLowerCase(Locale.ROOT))) {
-                                            myTimetable.getDay(u).v_assignEvent(data, duration, newhalls.get(j).getsAbbrev(), temp.getsLect(), "event");
-                                        }
-                                    }
-                                    return myTimetable;  //MORE DUPLETS MIGHT NEED TO BE ADDED, HOW DO I PROCEED HERE ?;
-                                }
-                            }
-                        }
-                    }
-                }
-
-
-                for (int j = 0; j < newhalls.size(); j++) {
-                    //THIS IS IF WE FIND A SUITABLE TIME IN THESE HALLS, WHAT IF NOT??
-                    if (lectureAssigned == 1) {
-                                    break;
-                    }
-                        CoupledData data = newhalls.get(j).findAvailableSlot(900, (int) duration);//check firs findAvailableSlot_PreferredDay
-
-                        if (!data.getsDay().isEmpty() && data.getiHour() != 0) {
-                            //first available position found. Should it be used in this fashion? Probably suitable for GreedyAlg
-                            int iAddCode = newhalls.get(j).getiAdditionalCode();
-                            for (int t = 0; t < myTimetable.getHalls().size(); t++) {//CHANGE TO MYTABLE.GETHALLS
-                                if (myTimetable.getHalls().get(t).getiAdditionalCode() == iAddCode) {
-                                    timetable.getHalls().get(t).setAvToZero(data.getiHour(), (int) (data.getiHour() + duration * 100), data.getsDay());   //CHECK AVTOZERO
-                                    //add to assigned lectures ?
-                                    //assign to a day as well !
-
-                                    if (iIndicatorTwo != 0) {
-                                        for (int z = 0; z < Math.ceil(iNumStudents / inewNumStudents) - 1; z++) { //SET Z < .. - 1
-                                            myTimetable.getLectures().add(temp);
-                                        }
-                                    }
-
-                                    lectureAssigned = 1; //assigned here,  exit
-                                    myTimetable.setPreviousRecursionWorked(1);
-                                    myTimetable.getLectures().remove(0);
-                                    myTimetable.getAssignedLectures().add(temp);//assigned.add, quick fix
-
-                                    for (int f = 0; f < myTimetable.getWeekTimet().size(); f++) {
-                                        if (myTimetable.getWeekTimet().get(f).getSname().toLowerCase(Locale.ROOT).equals(data.getsDay().toLowerCase(Locale.ROOT))) {
-                                            myTimetable.getWeekTimet().get(f).v_assignEvent(data.getiHour(), duration, newhalls.get(j).getsAbbrev(), temp.getsLect(), "event");
-                                        }
-                                    }
-                                    return myTimetable;
-                                }
-                            }
-                        }
-                    }
-
-
-                    if (lectureAssigned == 0 && myTimetable.getLectures().size() != 0) {
-
-
-                        //System.out.println("No solution found, weirdly enough");
-                        // maybe explore the possibility of using the unused or remaining halls somehow even if
-                        //  assign randomly to a different timeslot
-                        //  call the algorithm again with half the attending students
-
-                        /* UP FOR TESTING --> SEEMS TO WORK */
-
-                        ///.............
-
-                        if (iNumStudents % 2 == 0) {
-                            myTimetable = recursion(myTimetable, myTimetable.getHalls(), myTimetable.getLectures(), myTimetable.getAssignedLectures(),
-                                    iNumStudents, inewNumStudents / 2, iIndicatorOne, ++iIndicatorTwo);// + 1 here because a lecture could be attendedby an odd number of students
-                        } else {
-                            myTimetable = recursion(myTimetable, myTimetable.getHalls(), myTimetable.getLectures(), myTimetable.getAssignedLectures(),
-                                    iNumStudents, inewNumStudents / 2 + 1, iIndicatorOne, ++iIndicatorTwo);// + 1 here because a lecture could be attendedby an odd number of students
-                        }
-                        ///.............
-
-
-                    }
-
-                }
-            }
-
-
-        else {
-            try {
-                temp = (Duplet) myTimetable.getLectures().get(0).clone();
-            } catch (CloneNotSupportedException e) {
-                e.printStackTrace();
-            }
-            myTimetable.getLectures().remove(0);
-            myTimetable.getLectures().add(temp);
-        }
-                return myTimetable;
-            //changes made involve moving the last two for loops inside the newhalls.size() array
-            // + I commented out the if statement after that same loop is done
-    }
-
 
 
     public  Week_Timetable recursion2(Week_Timetable timetable, ArrayList<Hall> halls, ArrayList<Duplet> duplets,ArrayList<Duplet> assigned, int iNumStudents,int inewNumStudents, int iIndicatorOne, int iIndicatorTwo, int arbitraryNumber){
@@ -908,7 +698,7 @@ public class GreedyAlgorithm {
                 }
                 temp.setiNumberOfStudentsAttending(inewNumStudents); //changes here
                 PreferredDays preferredDays = temp.getPreferredDays();
-                String str = preferredDays.getPrefDay().get(0);
+               // String str = preferredDays.getPrefDay().get(0);
                 int prefdHour = preferredDays.getiPrefHour();
                 int prefdH2 = preferredDays.getiPrefHour_2();
                 double duration = temp.getiHours();
@@ -924,18 +714,31 @@ public class GreedyAlgorithm {
 
                     for(int i = 0; i < temp.getPreferredDays().getPrefDay().size(); i++){
 
-                        //EVERY LECTURE HAS TWO MOST PREFERRED HOURS, I CHECK FOR AVAILABILITY HERE
+                        //EVERY LECTURE HAS TWO MOST PREFERRED HOURS, CHECK FOR AVAILABILITY HERE
 
                         int iResult = newhalls.get(k).getAvailability(prefdHour, (int) (prefdHour + duration * 100), preferredDays.getPrefDay().get(i));
                         int iResult2 = newhalls.get(k).getAvailability(prefdH2, (int) (prefdH2 + duration * 100), preferredDays.getPrefDay().get(i));
 
-                        if (iResult == 1 || iResult2 == 1) {
+                        //the following lines just for testing:
+                        CoupledData test1 = newhalls.get(k).findAvailableSlotTimeline(prefdHour, (int)(prefdHour + duration*100), temp);
+                        CoupledData test2 = newhalls.get(k).findAvailableSlotTimeline(prefdH2, (int)(prefdH2 + duration*100), temp);
 
-                            if (iResult == 1) {
+
+//                        if (iResult == 1 || iResult2 == 1) {
+//
+//                            if (iResult == 1) {
+//
+//                            } else {
+//                                prefdHour = prefdH2;            //IF FIRST PREFD HOUR IS NOT AVAILABLE, USE THE SECOND ONE
+//                            }
+                        if (test1.getiHour() != 0 || test2.getiHour() != 0) {
+
+                            if (test1.getiHour() != 0 ) {
 
                             } else {
                                 prefdHour = prefdH2;            //IF FIRST PREFD HOUR IS NOT AVAILABLE, USE THE SECOND ONE
                             }
+
 
                             int hallCode = newhalls.get(k).getiAdditionalCode();                // every hall has a code to it, distinguishing it from the others, to update the real array of halls, I need to get the code from the available halls and find it in the bigger array
                             int iDate = 0;
@@ -960,6 +763,13 @@ public class GreedyAlgorithm {
                                             iDate = myTimetable.getDay(u).getiDate();
                                             iMonth = myTimetable.getDay(u).getiMonth();
                                             iYear = myTimetable.getDay(u).getiYear();
+                                            temp.setiHourScheduled(prefdHour);
+                                            temp.setiDayScheduled(iDate);
+                                            temp.setiMonthScheduled(iMonth);
+                                            temp.setiYearScheduled(iYear);
+                                            temp.setsDayOfWeek(prefDay);
+                                            temp.setsLectureHall(myTimetable.getHalls().get(z).getsAbbrev());
+
                                         }
 
                                     }
@@ -968,11 +778,11 @@ public class GreedyAlgorithm {
                                         try {
 
                                             Duplet duplet = (Duplet) temp.clone();
-                                            duplet.setiHourScheduled(prefdHour);
-                                            duplet.setiDayScheduled(iDate);
-                                            duplet.setiMonthScheduled(iMonth);
-                                            duplet.setiYearScheduled(iYear);
-                                            duplet.setsDayOfWeek(prefDay);
+                                            duplet.setiHourScheduled(0);
+                                            duplet.setiDayScheduled(-1);
+                                            duplet.setiMonthScheduled(-1);
+                                            duplet.setiYearScheduled(-1);
+                                            duplet.setsDayOfWeek("");
                                             duplet.setiNumberOfStudentsAttending(myTimetable.getLectures().get(0).getiNumberOfStudentsAttending() - inewNumStudents);
                                             myTimetable.getLectures().add(duplet);
 
@@ -1020,6 +830,13 @@ public class GreedyAlgorithm {
                                             iDate = myTimetable.getWeekTimet().get(u).getiDate();
                                             iMonth = myTimetable.getWeekTimet().get(u).getiMonth();
                                             iYear = myTimetable.getWeekTimet().get(u).getiYear();
+                                            temp.setiHourScheduled(data);
+                                            temp.setiDayScheduled(iDate);
+                                            temp.setiMonthScheduled(iMonth);
+                                            temp.setiYearScheduled(iYear);
+                                            temp.setsDayOfWeek(temp.getPreferredDays().getPrefDay().get(x));
+                                            temp.setsLectureHall(myTimetable.getHalls().get(j).getsAbbrev());
+
                                         }
                                     }
 
@@ -1028,11 +845,12 @@ public class GreedyAlgorithm {
 
                                             Duplet duplet = (Duplet) temp.clone();
                                             duplet.setiNumberOfStudentsAttending(myTimetable.getLectures().get(0).getiNumberOfStudentsAttending() - inewNumStudents);
-                                            duplet.setiHourScheduled(data);
-                                            duplet.setsDayOfWeek(temp.getPreferredDays().getPrefDay().get(x));
-                                            duplet.setiDayScheduled(iDate);
-                                            duplet.setiMonthScheduled(iMonth);
-                                            duplet.setiYearScheduled(iYear);
+                                            duplet.setiHourScheduled(0);
+                                            duplet.setiDayScheduled(-1);
+                                            duplet.setiMonthScheduled(-1);
+                                            duplet.setiYearScheduled(-1);
+                                            duplet.setsDayOfWeek("");
+
                                             myTimetable.getLectures().add(duplet);
 
                                         } catch (CloneNotSupportedException e) {
@@ -1079,6 +897,14 @@ public class GreedyAlgorithm {
                                         iDate = myTimetable.getWeekTimet().get(f).getiDate();
                                         iMonth = myTimetable.getWeekTimet().get(f).getiMonth();
                                         iYear = myTimetable.getWeekTimet().get(f).getiYear();
+
+                                        temp.setiHourScheduled(data.getiHour());
+                                        temp.setiDayScheduled(iDate);
+                                        temp.setiMonthScheduled(iMonth);
+                                        temp.setiYearScheduled(iYear);
+                                        temp.setsDayOfWeek(data.getsDay());
+                                        temp.setsLectureHall(myTimetable.getHalls().get(t).getsAbbrev());
+
                                     }
                                 }
 
@@ -1088,12 +914,11 @@ public class GreedyAlgorithm {
 
                                         Duplet duplet = (Duplet) temp.clone();
                                         duplet.setiNumberOfStudentsAttending(myTimetable.getLectures().get(0).getiNumberOfStudentsAttending() - inewNumStudents);
-                                        duplet.setiHourScheduled(data.getiHour());
-                                        duplet.setsDayOfWeek(data.getsDay());
-                                        duplet.setiDayScheduled(iDate);
-                                        duplet.setiMonthScheduled(iMonth);
-                                        duplet.setiYearScheduled(iYear);
-                                        myTimetable.getLectures().add(duplet);
+                                        duplet.setiHourScheduled(0);
+                                        duplet.setiDayScheduled(-1);
+                                        duplet.setiMonthScheduled(-1);
+                                        duplet.setiYearScheduled(-1);
+                                        duplet.setsDayOfWeek("");                                        myTimetable.getLectures().add(duplet);
 
                                     } catch (CloneNotSupportedException e) {
                                         e.printStackTrace();
@@ -1157,62 +982,855 @@ public class GreedyAlgorithm {
 
 
 
+    public  Week_Timetable recursion2_testing(Week_Timetable timetable, ArrayList<Hall> halls, ArrayList<Duplet> duplets,ArrayList<Duplet> assigned, int iNumStudents,int inewNumStudents, int iIndicatorOne, int iIndicatorTwo, int arbitraryNumber){
+
+        int lectureAssigned = 0;
+        int Students;
+        Duplet temp = null;
+        Week_Timetable myTimetable = timetable;
+        if(iIndicatorOne == 1 && (inewNumStudents > 2) && myTimetable.getLectures().size() != 0) {//switch to iNewNum
+            ArrayList<Hall> newhalls = searchForAHall(halls, inewNumStudents);
+            if (newhalls.isEmpty() ){
+                if(iNumStudents %2 == 0)
+                    myTimetable = recursion2(myTimetable,myTimetable.getHalls(), myTimetable.getLectures(), myTimetable.getAssignedLectures(),
+                            iNumStudents, inewNumStudents - arbitraryNumber, iIndicatorOne, ++iIndicatorTwo,arbitraryNumber);// + 1 here because a lecture could be attendedby an odd number of students
+                else
+                    myTimetable = recursion2(myTimetable,myTimetable.getHalls(), myTimetable.getLectures(), myTimetable.getAssignedLectures(),
+                            iNumStudents, inewNumStudents - arbitraryNumber, iIndicatorOne, ++iIndicatorTwo,arbitraryNumber);// + 1 here because a lecture could be attendedby an odd number of students
+            }
+            else{
+                try {
+                    temp = (Duplet) duplets.get(0).clone();
+                } catch (CloneNotSupportedException e) {
+                    e.printStackTrace();
+                }
+                temp.setiNumberOfStudentsAttending(inewNumStudents); //changes here
+                PreferredDays preferredDays = temp.getPreferredDays();
+                // String str = preferredDays.getPrefDay().get(0);
+                int prefdHour = preferredDays.getiPrefHour();
+                int prefdH2 = preferredDays.getiPrefHour_2();
+                double duration = temp.getiHours();
+
+                //HERE FOR EVERY AVAILABLE HALL CHECK FOR A PREFERRED TIME FROM THE LECTURE'S PREFERENCES
+
+                for(int k = 0; k < newhalls.size(); k++) {
+                    if (lectureAssigned == 1) {
+                        break;
+                    }
+                    //AS WE SAID THERE ARE PREFERENCE ATTACHED TO EVERY LECTURE (EVEN THOUGH THEY COULD BE MISSING HENCE = 0)
+                    //THIS LOOP COMPARES EVERY PREFERENCE FOR A DAY + TIME FROM THE ARRAY OF PREFERRED DAYS INSIDE LECTURE
+
+                    for(int i = 0; i < temp.getPreferredDays().getPrefDay().size(); i++){
+
+                        //EVERY LECTURE HAS TWO MOST PREFERRED HOURS, CHECK FOR AVAILABILITY HERE
+
+                        int iResult = newhalls.get(k).getAvailability(prefdHour, (int) (prefdHour + duration * 100), preferredDays.getPrefDay().get(i));
+                        int iResult2 = newhalls.get(k).getAvailability(prefdH2, (int) (prefdH2 + duration * 100), preferredDays.getPrefDay().get(i));
+
+                        //the following lines just for testing:
+                        CoupledData test1 = newhalls.get(k).findAvailableSlotTimeline(prefdHour, (int)(prefdHour + duration*100), temp);
+                        CoupledData test2 = newhalls.get(k).findAvailableSlotTimeline(prefdH2, (int)(prefdH2 + duration*100), temp);
+
+
+//                        if (iResult == 1 || iResult2 == 1) {
+//
+//                            if (iResult == 1) {
+//
+//                            } else {
+//                                prefdHour = prefdH2;            //IF FIRST PREFD HOUR IS NOT AVAILABLE, USE THE SECOND ONE
+//                            }
+                        if (test1.getiHour() != 0 || test2.getiHour() != 0) {
+
+                            if (test1.getiHour() != 0 ) {
+
+                            } else {
+                                prefdHour = prefdH2;            //IF FIRST PREFD HOUR IS NOT AVAILABLE, USE THE SECOND ONE
+                            }
+
+
+                            int hallCode = newhalls.get(k).getiAdditionalCode();                // every hall has a code to it, distinguishing it from the others, to update the real array of halls, I need to get the code from the available halls and find it in the bigger array
+                            int iDate = 0;
+                            int iMonth = 0;
+                            int iYear = 0;
+                            String prefDay = "";
+
+                            for (int z = 0; z < myTimetable.getHalls().size(); z++) {           // traversing the bigger array, actual array of halls
+                                if (myTimetable.getHalls().get(z).getiAdditionalCode() == hallCode) {
+
+                                    myTimetable.getHalls().get(z).setAvToZero(prefdHour, (int) (prefdHour + duration * 100), preferredDays.getPrefDay().get(i));            //set the actual hall to unavailable
+                                    //if(iIndicatorTwo != 0) { myTimetable.getLectures().add(temp) ; }  //put brackets here
+
+                                    lectureAssigned = 1; //assigned here,  exit
+                                    temp.setiNumberOfStudentsAttending(inewNumStudents);
+                                    myTimetable.getAssignedLectures().add(temp);      //this is implemented on the following lines below
+
+                                    for(int u = 0; u < myTimetable.getWeekTimet().size(); u++){
+                                        if(myTimetable.getDay(u).getSname().toLowerCase(Locale.ROOT).equals(preferredDays.getPrefDay().get(i).toLowerCase(Locale.ROOT))){
+                                            myTimetable.getDay(u).v_assignEvent(prefdHour,duration,newhalls.get(k).getsAbbrev(), temp.getsLect(),"event");
+                                            prefDay = myTimetable.getDay(u).getSname();
+                                            iDate = myTimetable.getDay(u).getiDate();
+                                            iMonth = myTimetable.getDay(u).getiMonth();
+                                            iYear = myTimetable.getDay(u).getiYear();
+                                            temp.setiHourScheduled(prefdHour);
+                                            temp.setiDayScheduled(iDate);
+                                            temp.setiMonthScheduled(iMonth);
+                                            temp.setiYearScheduled(iYear);
+                                            temp.setsDayOfWeek(prefDay);
+                                            temp.setsLectureHall(myTimetable.getHalls().get(z).getsAbbrev());
+
+                                        }
+
+                                    }
+
+                                    if (iIndicatorTwo != 0) {
+                                        try {
+
+                                            Duplet duplet = (Duplet) temp.clone();
+                                            duplet.setiHourScheduled(0);
+                                            duplet.setiDayScheduled(-1);
+                                            duplet.setiMonthScheduled(-1);
+                                            duplet.setiYearScheduled(-1);
+                                            duplet.setsDayOfWeek("");
+                                            duplet.setiNumberOfStudentsAttending(myTimetable.getLectures().get(0).getiNumberOfStudentsAttending() - inewNumStudents);
+                                            myTimetable.getLectures().add(duplet);
+
+                                        } catch (CloneNotSupportedException e) {
+                                            e.printStackTrace();
+                                        }
+
+                                    }
+                                    myTimetable.setPreviousRecursionWorked(1);
+                                    myTimetable.getLectures().remove(0);
+
+                                    return myTimetable;
+
+                                }
+                            }
+                            //there would need to be a class taking note of the days with lectures assigned Week_Timetable possibly
+                        }
+                    }
+
+                }
+
+                //THIS IS IF WE FIND A SUITABLE TIME IN THESE HALLS
+
+                for (int j = 0; j < newhalls.size(); j++) {
+
+                    for(int x = 0; x < temp.getPreferredDays().getPrefDay().size(); x++) {
+
+                        int data = newhalls.get(j).findAvailableSlot_PreferredDay(900, (int) duration ,myTimetable.getLectures().get(0).getPreferredDays().getPrefDay().get(x));//check firs findAvailableSlot_PreferredDay
+                        int iDate = 0;
+                        int iMonth = 0;
+                        int iYear = 0;
+
+                        if (data != 0 ) {
+                            //first available position found. Should it be used in this fashion? Probably suitable for GreedyAlg
+                            int iAddCode = newhalls.get(j).getiAdditionalCode();
+                            for (int t = 0; t < myTimetable.getHalls().size(); t++) {
+                                if (myTimetable.getHalls().get(t).getiAdditionalCode() == iAddCode) {
+                                    timetable.getHalls().get(t).setAvToZero(data, (int) (data + duration * 100),myTimetable.getLectures().get(0).getPreferredDays().getPrefDay().get(x) );   //CHECK AVTOZERO
+                                    //add to assigned lectures ?
+                                    //assign to a day as well !
+
+                                    for(int u = 0; u < myTimetable.getWeekTimet().size(); u++){
+                                        if(myTimetable.getWeekTimet().get(u).getSname().toLowerCase(Locale.ROOT).equals(temp.getPreferredDays().getPrefDay().get(x).toLowerCase(Locale.ROOT))){
+                                            myTimetable.getDay(u).v_assignEvent(data,duration,newhalls.get(j).getsAbbrev(), temp.getsLect(), "event");
+                                            iDate = myTimetable.getWeekTimet().get(u).getiDate();
+                                            iMonth = myTimetable.getWeekTimet().get(u).getiMonth();
+                                            iYear = myTimetable.getWeekTimet().get(u).getiYear();
+                                            temp.setiHourScheduled(data);
+                                            temp.setiDayScheduled(iDate);
+                                            temp.setiMonthScheduled(iMonth);
+                                            temp.setiYearScheduled(iYear);
+                                            temp.setsDayOfWeek(temp.getPreferredDays().getPrefDay().get(x));
+                                            temp.setsLectureHall(myTimetable.getHalls().get(j).getsAbbrev());
+
+                                        }
+                                    }
+
+                                    if (iIndicatorTwo != 0) {
+                                        try {
+
+                                            Duplet duplet = (Duplet) temp.clone();
+                                            duplet.setiNumberOfStudentsAttending(myTimetable.getLectures().get(0).getiNumberOfStudentsAttending() - inewNumStudents);
+                                            duplet.setiHourScheduled(0);
+                                            duplet.setiDayScheduled(-1);
+                                            duplet.setiMonthScheduled(-1);
+                                            duplet.setiYearScheduled(-1);
+                                            duplet.setsDayOfWeek("");
+
+                                            myTimetable.getLectures().add(duplet);
+
+                                        } catch (CloneNotSupportedException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                    lectureAssigned = 1; //assigned here,  exit
+                                    myTimetable.setPreviousRecursionWorked(1);
+                                    myTimetable.getLectures().remove(0);
+                                    myTimetable.getAssignedLectures().add(temp);//assigned.add, quick fix
+
+
+                                    return myTimetable;  //MORE DUPLETS MIGHT NEED TO BE ADDED, HOW DO I PROCEED HERE ?;
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+
+                for (int j = 0; j < newhalls.size(); j++) {
+                    //THIS IS IF WE FIND A SUITABLE TIME IN THESE HALLS, WHAT IF NOT??
+
+                    int iDate = 0;
+                    int iMonth = 0;
+                    int iYear = 0;
+                    CoupledData data = newhalls.get(j).findAvailableSlot(900, (int) duration);//check firs findAvailableSlot_PreferredDay
+
+                    if (!data.getsDay().isEmpty() && data.getiHour() != 0) {
+                        //first available position found. Should it be used in this fashion? Probably suitable for GreedyAlg
+                        int iAddCode = newhalls.get(j).getiAdditionalCode();
+
+                        for(int t =0; t < myTimetable.getHalls().size(); t++){//CHANGE TO MYTABLE.GETHALLS
+                            if(myTimetable.getHalls().get(t).getiAdditionalCode() == iAddCode){
+                                timetable.getHalls().get(t).setAvToZero(data.getiHour(), (int)(data.getiHour() + duration*100), data.getsDay());   //CHECK AVTOZERO
+                                //add to assigned lectures ?
+                                //assign to a day as well !
+
+
+                                for(int f = 0; f < myTimetable.getWeekTimet().size(); f++){
+                                    if(myTimetable.getWeekTimet().get(f).getSname().toLowerCase(Locale.ROOT).equals(data.getsDay().toLowerCase(Locale.ROOT))) {
+                                        myTimetable.getWeekTimet().get(f).v_assignEvent(data.getiHour(), duration, newhalls.get(j).getsAbbrev(),  temp.getsLect(), "event");
+                                        iDate = myTimetable.getWeekTimet().get(f).getiDate();
+                                        iMonth = myTimetable.getWeekTimet().get(f).getiMonth();
+                                        iYear = myTimetable.getWeekTimet().get(f).getiYear();
+
+                                        temp.setiHourScheduled(data.getiHour());
+                                        temp.setiDayScheduled(iDate);
+                                        temp.setiMonthScheduled(iMonth);
+                                        temp.setiYearScheduled(iYear);
+                                        temp.setsDayOfWeek(data.getsDay());
+                                        temp.setsLectureHall(myTimetable.getHalls().get(t).getsAbbrev());
+
+                                    }
+                                }
+
+
+                                if(iIndicatorTwo != 0) {
+                                    try {
+
+                                        Duplet duplet = (Duplet) temp.clone();
+                                        duplet.setiNumberOfStudentsAttending(myTimetable.getLectures().get(0).getiNumberOfStudentsAttending() - inewNumStudents);
+                                        duplet.setiHourScheduled(0);
+                                        duplet.setiDayScheduled(-1);
+                                        duplet.setiMonthScheduled(-1);
+                                        duplet.setiYearScheduled(-1);
+                                        duplet.setsDayOfWeek("");                                        myTimetable.getLectures().add(duplet);
+
+                                    } catch (CloneNotSupportedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
+                                lectureAssigned = 1; //assigned here,  exit
+                                myTimetable.setPreviousRecursionWorked(1);
+                                myTimetable.getLectures().remove(0);
+                                myTimetable.getAssignedLectures().add(temp);//assigned.add, quick fix
+
+                                return myTimetable;
+                            }
+                        }
+                    }
+                }
+
+
+
+                if(lectureAssigned == 0 && myTimetable.getLectures().size() != 0 ){
+
+
+                    //System.out.println("No solution found, weirdly enough");
+                    // maybe explore the possibility of using the unused or remaining halls somehow even if
+                    //  assign randomly to a different timeslot
+                    //  call the algorithm again with half the attending students
+
+                    /* UP FOR TESTING --> SEEMS TO WORK */
+
+                    ///.............
+
+                    if(iNumStudents %2 == 0) {
+                        myTimetable = recursion2(myTimetable, myTimetable.getHalls(), myTimetable.getLectures(), myTimetable.getAssignedLectures(),
+                                iNumStudents, inewNumStudents - arbitraryNumber, iIndicatorOne, ++iIndicatorTwo, arbitraryNumber);// + 1 here because a lecture could be attendedby an odd number of students
+                    }else {
+                        myTimetable = recursion2(myTimetable, myTimetable.getHalls(), myTimetable.getLectures(), myTimetable.getAssignedLectures(),
+                                iNumStudents, inewNumStudents -arbitraryNumber , iIndicatorOne, ++iIndicatorTwo,arbitraryNumber);// + 1 here because a lecture could be attendedby an odd number of students
+                    }
+                    ///.............
+
+
+                }
+
+            }
+
+        }
+
+        else {
+            try {
+                temp = (Duplet) myTimetable.getLectures().get(0).clone();
+            } catch (CloneNotSupportedException e) {
+                e.printStackTrace();
+            }
+            myTimetable.getLectures().remove(0);
+            myTimetable.getLectures().add(temp);
+        }
+        return myTimetable;
+        //changes made involve moving the last two for loops inside the newhalls.size() array
+        // + I commented out the if statement after that same loop is done
+    }
+
+
+
+    public  Week_Timetable recursion_for_lectures(Week_Timetable timetable, ArrayList<Hall> halls, ArrayList<Duplet> duplets,ArrayList<Duplet> assigned, int iNumStudents,int inewNumStudents, int iIndicatorOne, int iIndicatorTwo, int arbitraryNumber) throws CloneNotSupportedException {
+
+        int lectureAssigned = 0;
+        int Students;
+        Duplet temp = null;
+        Week_Timetable myTimetable = timetable;
+        if(iIndicatorOne == 1 && (inewNumStudents > 2) && myTimetable.getLectures().size() != 0) {//switch to iNewNum
+            ArrayList<Hall> newhalls = searchForAHall(halls, inewNumStudents);
+            if (newhalls.isEmpty() ){
+                //add to the back;
+                try {
+                    temp = (Duplet) myTimetable.getLectures().get(0).clone();
+                } catch (CloneNotSupportedException e) {
+                    e.printStackTrace();
+                }
+                myTimetable.getLectures().remove(0);
+                myTimetable.getLectures().add(temp);
+
+            }
+            else{
+                try {
+                    temp = (Duplet) duplets.get(0).clone();
+                } catch (CloneNotSupportedException e) {
+                    e.printStackTrace();
+                }
+                temp.setiNumberOfStudentsAttending(inewNumStudents); //changes here
+                double duration = temp.getiHours();
+                int iDate = 0;
+                int iMonth = 0;
+                int iYear = 0;
+                String abbrev = temp.getsLect();
+                ArrayList<String> daysToBeUsed = new ArrayList<>();
+                ArrayList<Integer> howManyPerDay = new ArrayList<>();
+                howManyPerDay.add(0);
+                howManyPerDay.add(0);
+                howManyPerDay.add(0);
+                howManyPerDay.add(0);
+                howManyPerDay.add(0);
+
+
+            //the following lines are here to make sure that no 2 4CCS lectures appear in the same day
+                //first count how many occurrences of lectures from a specific year in a day
+                //because with this algorithm I would allow for allocations of more than 2 for examples 4CCS modules per day
+                //and they would be assigned all in Monday
+                //soft constraint
+
+
+                for(int z = 0; z < myTimetable.getAssignedLectures().size(); z++){
+                    if(abbrev.startsWith("4CCS") && myTimetable.getAssignedLectures().get(z).getsLect().startsWith("4CCS")){
+                        if(myTimetable.getAssignedLectures().get(z).getsDayOfWeek().toLowerCase(Locale.ROOT).equals("monday")){
+                            howManyPerDay.set(0, howManyPerDay.get(0) + 1);
+                        }else if(myTimetable.getAssignedLectures().get(z).getsDayOfWeek().toLowerCase(Locale.ROOT).equals("tuesday")){
+                            howManyPerDay.set(1, howManyPerDay.get(1) + 1);
+                        }else if(myTimetable.getAssignedLectures().get(z).getsDayOfWeek().toLowerCase(Locale.ROOT).equals("wednesday")){
+                            howManyPerDay.set(2, howManyPerDay.get(2) + 1);
+                        }else if(myTimetable.getAssignedLectures().get(z).getsDayOfWeek().toLowerCase(Locale.ROOT).equals("thursday")){
+                            howManyPerDay.set(3, howManyPerDay.get(3) + 1);
+                        }else if(myTimetable.getAssignedLectures().get(z).getsDayOfWeek().toLowerCase(Locale.ROOT).equals("friday")){
+                            howManyPerDay.set(4, howManyPerDay.get(4) + 1);
+                        }
+                        else{}
+                    }if(abbrev.startsWith("5CCS") && myTimetable.getAssignedLectures().get(z).getsLect().startsWith("5CCS")){
+                        if(myTimetable.getAssignedLectures().get(z).getsDayOfWeek().toLowerCase(Locale.ROOT).equals("monday")){
+                            howManyPerDay.set(0, howManyPerDay.get(0) + 1);
+                        }else if(myTimetable.getAssignedLectures().get(z).getsDayOfWeek().toLowerCase(Locale.ROOT).equals("tuesday")){
+                            howManyPerDay.set(1, howManyPerDay.get(1) + 1);
+                        }else if(myTimetable.getAssignedLectures().get(z).getsDayOfWeek().toLowerCase(Locale.ROOT).equals("wednesday")){
+                            howManyPerDay.set(2, howManyPerDay.get(2) + 1);
+                        }else if(myTimetable.getAssignedLectures().get(z).getsDayOfWeek().toLowerCase(Locale.ROOT).equals("thursday")){
+                            howManyPerDay.set(3, howManyPerDay.get(3) + 1);
+                        }else if(myTimetable.getAssignedLectures().get(z).getsDayOfWeek().toLowerCase(Locale.ROOT).equals("friday")){
+                            howManyPerDay.set(4, howManyPerDay.get(4) + 1);
+                        }
+                        else{}
+                    }if(abbrev.startsWith("6CCS") && myTimetable.getAssignedLectures().get(z).getsLect().startsWith("6CCS")){
+                        if(myTimetable.getAssignedLectures().get(z).getsDayOfWeek().toLowerCase(Locale.ROOT).equals("monday")){
+                            howManyPerDay.set(0, howManyPerDay.get(0) + 1);
+                        }else if(myTimetable.getAssignedLectures().get(z).getsDayOfWeek().toLowerCase(Locale.ROOT).equals("tuesday")){
+                            howManyPerDay.set(1, howManyPerDay.get(1) + 1);
+                        }else if(myTimetable.getAssignedLectures().get(z).getsDayOfWeek().toLowerCase(Locale.ROOT).equals("wednesday")){
+                            howManyPerDay.set(2, howManyPerDay.get(2) + 1);
+                        }else if(myTimetable.getAssignedLectures().get(z).getsDayOfWeek().toLowerCase(Locale.ROOT).equals("thursday")){
+                            howManyPerDay.set(3, howManyPerDay.get(3) + 1);
+                        }else if(myTimetable.getAssignedLectures().get(z).getsDayOfWeek().toLowerCase(Locale.ROOT).equals("friday")){
+                            howManyPerDay.set(4, howManyPerDay.get(4) + 1);
+                        }
+                        else{}
+                    }
+
+                }
+
+                if(abbrev.startsWith("4CCS")) {
+                    for(int i = 0; i < howManyPerDay.size(); i++){
+                        if(howManyPerDay.get(i) < 2){
+                            if(i == 0){daysToBeUsed.add("Monday");}
+                            if(i == 1){daysToBeUsed.add("Tuesday");}
+                            if(i == 2){daysToBeUsed.add("Wednesday");}
+                            if(i == 3){daysToBeUsed.add("Thursday");}
+                            if(i == 4){daysToBeUsed.add("Friday");}
+                        }
+                    }
+                }
+                if(abbrev.startsWith("5CCS")) {
+                    for(int i = 0; i < howManyPerDay.size(); i++){
+                        if(howManyPerDay.get(i) < 4){
+                            if(i == 0){daysToBeUsed.add("Monday");}
+                            if(i == 1){daysToBeUsed.add("Tuesday");}
+                            if(i == 2){daysToBeUsed.add("Wednesday");}
+                            if(i == 3){daysToBeUsed.add("Thursday");}
+                            if(i == 4){daysToBeUsed.add("Friday");}
+                        }
+                    }
+                }
+                if(abbrev.startsWith("6CCS")) {
+                    for(int i = 0; i < howManyPerDay.size(); i++){
+                        if(howManyPerDay.get(i) < 4){
+                            if(i == 0){daysToBeUsed.add("Monday");}
+                            if(i == 1){daysToBeUsed.add("Tuesday");}
+                            if(i == 2){daysToBeUsed.add("Wednesday");}
+                            if(i == 3){daysToBeUsed.add("Thursday");}
+                            if(i == 4){daysToBeUsed.add("Friday");}
+                        }
+                    }
+                }
+
+
+
+
+                //checking for the preferred time and days first, array of days is passed to a PreferredDays object which passes its values
+                //to each event/lecture to be assigned, initial. To make this even more precise times could also be added for preferences,
+                //for example, an array of times preferred for the lectures to be assigned in, this would/could score for a better algorithm
+
+
+                for (int j = 0; j < newhalls.size(); j++) {
+
+                    CoupledData data = newhalls.get(j).findAvailableSlotLectures_withPreferences(0,duration, daysToBeUsed, temp);
+
+                    if (!data.getsDay().isEmpty() && data.getiHour() != 0) {
+                        //first available position found. Should it be used in this fashion? Probably suitable for GreedyAlg
+                        int iAddCode = newhalls.get(j).getiAdditionalCode();
+
+                        for(int t =0; t < myTimetable.getHalls().size(); t++){
+                            if(myTimetable.getHalls().get(t).getiAdditionalCode() == iAddCode){
+                                timetable.getHalls().get(t).setAvToZero(data.getiHour(), (int)(data.getiHour() + duration*100), data.getsDay());   //CHECK AVTOZERO
+
+                                for(int f = 0; f < myTimetable.getWeekTimet().size(); f++){                 //add to the Day log, for printing purposes + check
+                                    if(myTimetable.getWeekTimet().get(f).getSname().toLowerCase(Locale.ROOT).equals(data.getsDay().toLowerCase(Locale.ROOT))) {
+                                        myTimetable.getWeekTimet().get(f).v_assignEvent(data.getiHour(), duration, newhalls.get(j).getsAbbrev(),  temp.getsLect(), "event");
+                                        iDate = myTimetable.getWeekTimet().get(f).getiDate();
+                                        iMonth = myTimetable.getWeekTimet().get(f).getiMonth();
+                                        iYear = myTimetable.getWeekTimet().get(f).getiYear();
+
+                                        temp.setDayAssigned(data.getsDay());
+                                        temp.setiHourScheduled(data.getiHour());
+                                        temp.setiDayScheduled(iDate);
+                                        temp.setiMonthScheduled(iMonth);
+                                        temp.setiYearScheduled(iYear);
+                                        temp.setsDayOfWeek(data.getsDay());
+                                        temp.setsLectureHall(myTimetable.getHalls().get(t).getsAbbrev());
+
+                                        lectureAssigned = 1;
+                                    }
+
+                                }
+
+                                String sSub = temp.getsLect().substring(0,3);
+                                for(int c =0 ;c < myTimetable.getLectures().size(); c++){
+                                    if(myTimetable.getLectures().get(c).getsLect().startsWith(sSub)){
+                                        for(int s = 0; s< myTimetable.getLectures().get(c).getDependentOn().size(); s++){
+                                            if(myTimetable.getLectures().get(c).getDependentOn().get(s).getsLect().equals(temp.getsLect()) ) {
+                                                myTimetable.getLectures().get(c).getDependentOn().get(s).setsDayOfWeek(temp.getsDayOfWeek());
+                                                myTimetable.getLectures().get(c).getDependentOn().get(s).setiHourScheduled(temp.getiHourScheduled());
+                                                myTimetable.getLectures().get(c).getDependentOn().get(s).setiHours(temp.getiHours());
+                                            }
+                                        }
+                                    }
+                                }
+
+                                for(int c =0 ;c < myTimetable.getAssignedLectures().size(); c++) {
+                                    if (myTimetable.getAssignedLectures().get(c).getsLect().startsWith(sSub)) {
+                                        for (int s = 0; s < myTimetable.getAssignedLectures().get(c).getDependentOn().size(); s++) {
+                                            if (myTimetable.getAssignedLectures().get(c).getDependentOn().get(s).getsLect().equals(temp.getsLect())) {
+                                                myTimetable.getAssignedLectures().get(c).getDependentOn().get(s).setsDayOfWeek(temp.getsDayOfWeek());
+                                                myTimetable.getAssignedLectures().get(c).getDependentOn().get(s).setiHourScheduled(temp.getiHourScheduled());
+                                                myTimetable.getAssignedLectures().get(c).getDependentOn().get(s).setiHours(temp.getiHours());
+                                            }
+                                        }
+                                    }
+                                }
+
+
+                                myTimetable.getLectures().remove(0);
+                                myTimetable.getAssignedLectures().add(temp);//assigned.add, quick fix
+
+                                return myTimetable;
+                            }
+                        }
+                    }
+
+                }
+
+
+                for (int j = 0; j < newhalls.size(); j++) {
+
+
+
+                    //first count how many occurrences of lectures from a specific year in a day
+                    //because with this algorithm I would allow for allocations of more than 2 for examples 4CCS modules per day
+                    //and they would be assigned all in Monday
+                    //soft constraint
+
+                    //the following lines are here to make sure that no 2 4CCS lectures appear in the same day
+                    //no
+                    CoupledData data_testing_only = newhalls.get(j).findAvailableSlotLectures_withPreferences(0,duration, daysToBeUsed, temp);
+                    CoupledData data = newhalls.get(j).findAvailableSlotLectures(900, (int) duration, daysToBeUsed,temp);
+
+                    if (!data.getsDay().isEmpty() && data.getiHour() != 0) {
+                        //first available position found. Should it be used in this fashion? Probably suitable for GreedyAlg
+                        int iAddCode = newhalls.get(j).getiAdditionalCode();
+
+                        for(int t =0; t < myTimetable.getHalls().size(); t++){
+                            if(myTimetable.getHalls().get(t).getiAdditionalCode() == iAddCode){
+                                timetable.getHalls().get(t).setAvToZero(data.getiHour(), (int)(data.getiHour() + duration*100), data.getsDay());   //CHECK AVTOZERO
+
+                                for(int f = 0; f < myTimetable.getWeekTimet().size(); f++){                 //add to the Day log, for printing purposes + check
+                                    if(myTimetable.getWeekTimet().get(f).getSname().toLowerCase(Locale.ROOT).equals(data.getsDay().toLowerCase(Locale.ROOT))) {
+                                        myTimetable.getWeekTimet().get(f).v_assignEvent(data.getiHour(), duration, newhalls.get(j).getsAbbrev(),  temp.getsLect(), "event");
+                                        iDate = myTimetable.getWeekTimet().get(f).getiDate();
+                                        iMonth = myTimetable.getWeekTimet().get(f).getiMonth();
+                                        iYear = myTimetable.getWeekTimet().get(f).getiYear();
+
+                                        temp.setDayAssigned(data.getsDay());
+                                        temp.setiHourScheduled(data.getiHour());
+                                        temp.setiDayScheduled(iDate);
+                                        temp.setiMonthScheduled(iMonth);
+                                        temp.setiYearScheduled(iYear);
+                                        temp.setsDayOfWeek(data.getsDay());
+                                        temp.setsLectureHall(myTimetable.getHalls().get(t).getsAbbrev());
+
+                                        lectureAssigned = 1;
+                                    }
+
+                                }
+
+                                String sSub = temp.getsLect().substring(0,3);
+                                for(int c =0 ;c < myTimetable.getLectures().size(); c++){
+                                    if(myTimetable.getLectures().get(c).getsLect().startsWith(sSub)){
+                                        for(int s = 0; s< myTimetable.getLectures().get(c).getDependentOn().size(); s++){
+                                            if(myTimetable.getLectures().get(c).getDependentOn().get(s).getsLect().equals(temp.getsLect()) ) {
+                                                myTimetable.getLectures().get(c).getDependentOn().get(s).setsDayOfWeek(temp.getsDayOfWeek());
+                                                myTimetable.getLectures().get(c).getDependentOn().get(s).setiHourScheduled(temp.getiHourScheduled());
+                                                myTimetable.getLectures().get(c).getDependentOn().get(s).setiHours(temp.getiHours());
+                                            }
+                                        }
+                                    }
+                                }
+
+                                for(int c =0 ;c < myTimetable.getAssignedLectures().size(); c++) {
+                                    if (myTimetable.getAssignedLectures().get(c).getsLect().startsWith(sSub)) {
+                                        for (int s = 0; s < myTimetable.getAssignedLectures().get(c).getDependentOn().size(); s++) {
+                                            if (myTimetable.getAssignedLectures().get(c).getDependentOn().get(s).getsLect().equals(temp.getsLect())) {
+                                                myTimetable.getAssignedLectures().get(c).getDependentOn().get(s).setsDayOfWeek(temp.getsDayOfWeek());
+                                                myTimetable.getAssignedLectures().get(c).getDependentOn().get(s).setiHourScheduled(temp.getiHourScheduled());
+                                                myTimetable.getAssignedLectures().get(c).getDependentOn().get(s).setiHours(temp.getiHours());
+                                            }
+                                        }
+                                    }
+                                }
+
+
+                                myTimetable.getLectures().remove(0);
+                                myTimetable.getAssignedLectures().add(temp);//assigned.add, quick fix
+
+                                return myTimetable;
+                            }
+                        }
+                    }
+
+                }
+
+            }
+
+        }
+
+        else {
+            try {
+                temp = (Duplet) myTimetable.getLectures().get(0).clone();
+            } catch (CloneNotSupportedException e) {
+                e.printStackTrace();
+            }
+            myTimetable.getLectures().remove(0);
+            myTimetable.getLectures().add(temp);
+
+            return myTimetable;
+        }
+
+        if(lectureAssigned == 0){
+            try {
+                temp = (Duplet) myTimetable.getLectures().get(0).clone();
+            } catch (CloneNotSupportedException e) {
+                e.printStackTrace();
+            }
+            myTimetable.getLectures().remove(0);
+            myTimetable.getLectures().add(temp);
+        }
+
+
+        return myTimetable;
+        //changes made involve moving the last two for loops inside the newhalls.size() array
+        // + I commented out the if statement after that same loop is done
+    }
+
+
+
+    public void putInTableAssigned(ArrayList<Duplet> events, int weekOne) throws SQLException {
+        String sql33 = "INSERT INTO assigned_lectures VALUES (?,?,?,?,?,?,?,?,?)";
+        String sql44 = "SELECT lecture_code from assigned_lectures where abbreviation is not null";
+        String sql22 = "TRUNCATE TABLE assigned_lectures";
+        Statement state = connection.createStatement();
+        state.executeUpdate(sql22);
+        state.close();
+
+        PreparedStatement statement = connection.prepareStatement(sql33);
+        for(Duplet dups : events){
+            //insert into assigned_lectures
+            //abbreviation ,
+            // lecture_code,
+            // attending,
+            // hall,
+            // building ,
+            // duration,
+            // lgt_placed ,
+            // day_of_week ,
+            // hourStart
+            statement.setString(1, dups.getsLect());
+            statement.setInt(2, dups.getiCode());
+            statement.setInt(3, dups.getiNumberOfStudentsAttending());
+            statement.setString(4, dups.getsLectureHall());
+            statement.setString(5, " "); // not putting the building yet
+            statement.setDouble(6, dups.getiHours());
+            statement.setInt(7, (weekOne == 1)?1:0); //figure out lgs placed as well
+            statement.setString(8, dups.getsDayOfWeek());
+            statement.setInt(9, dups.getiHourScheduled());
+            statement.executeUpdate();
+        }
+        statement.close();
+    }
+
+    public ArrayList<Duplet> setConstraints(ArrayList<Duplet> duplets) throws SQLException {
+        ArrayList<Integer> kings_ids = new ArrayList<>();
+        ArrayList<Duplet> result = new ArrayList<>();
+        ArrayList<Duplet> objectUsed = duplets;
+        Set<Integer> lecture_codes_depending = new HashSet<>();
+        String sql00 = "SELECT kings_id from students_lectures where lecture_code = ?";
+        String sql01 = "SELECT lecture_code from students_lectures where kings_id = ?";
+        PreparedStatement preparedStatement = connection.prepareStatement(sql00);
+        PreparedStatement preparedStatement2 = connection.prepareStatement(sql01);
+        for(int i =0; i < duplets.size(); i++){
+            preparedStatement.setInt(1, duplets.get(i).getiCode());
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if(duplets.get(i).getsLect().startsWith("4CCS")){
+                for(int k = 0; k<duplets.size(); k++){
+                    String out = duplets.get(k).getsLect();
+                    String outin = duplets.get(i).getsLect();
+                    if(duplets.get(k).getsLect().startsWith("4CCS") && !duplets.get(i).getsLect().equals(duplets.get(k).getsLect())){
+                        result.add(duplets.get(k));
+                            //doesenter here ,after assigning those I need to exit
+                    }
+
+                }//exit after this line
+                duplets.get(i).setDependentOn(result);
+                result = new ArrayList<>();
+                continue;
+            }
+            while (resultSet.next()){
+                kings_ids.add(resultSet.getInt(1));
+            }
+            //now for each kings_id extract dependencies
+            for(int j = 0; j < kings_ids.size(); j++){
+                int id = kings_ids.get(j);
+                preparedStatement2.setInt(1, kings_ids.get(j));
+                ResultSet resultSet2 = preparedStatement2.executeQuery();
+                while (resultSet2.next()){
+                    //adding all the lectures which cannot occur in the same time == dependencies
+                    lecture_codes_depending.add(resultSet2.getInt(1));
+                }
+
+            }
+
+
+            Iterator itr = lecture_codes_depending.iterator();
+
+            for(int z = 0; z < lecture_codes_depending.size(); z++){//switch this to lecture_codes_depending+ EXCLUDE DEPENDING ON ITS SELF
+                //find the abbrev by the code and add to the array of dependencies
+                int iCode=(int)itr.next();
+                String sql11 = "SELECT abreviation FROM courses WHERE inside_code = " + Integer.toString(iCode);
+
+                Statement statement = connection.createStatement();
+                ResultSet resultSet1 = statement.executeQuery(sql11);
+                while (resultSet1.next()){
+                    if(iCode != duplets.get(i).getiCode()){
+                        String whatis = resultSet1.getString(1);
+                        result.add(new Duplet(resultSet1.getString(1), iCode));  //switch this to lecture_codes_depending
+                    }
+                }
+            }
+
+
+            objectUsed.get(i).setDependentOn(result); //
+            result = new ArrayList<>();
+            kings_ids = new ArrayList<>();
+            lecture_codes_depending = new HashSet<>();
+        }
+
+
+        preparedStatement.close();
+        return objectUsed;
+    }
+
+    //please come back to this ,DEFINITELY FLAWED !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    public void generateTimeTables_firstYear(ArrayList<Week_Timetable> schedule, String tableName) throws SQLException, IOException {
+
+        File year1 = new File("year1_students");
+
+        if(year1.exists()){
+            year1.delete();
+        }
+
+        year1.mkdir();
+        String sql99 = "SELECT first_name, last_name, kings_id FROM " + tableName + " WHERE year_od_study = 1";
+        String sql88 = "SELECT abreviation, inside_code, b.kings_id " +
+                        "FROM students a " +
+                        "join (select * " +
+                                "from students_lectures c " +
+                                "join courses e on c.lecture_code = e.inside_code) as b " +
+                        "on a.KINGS_ID = b.KINGS_ID AND b.kings_id = ?";
+
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(sql99);
+        PreparedStatement statement2 = connection.prepareStatement(sql88);
+        ArrayList<String> coursesAttended = new ArrayList<>();
+        ArrayList<Timeslot> timeslotsToPrint = new ArrayList<>();
+
+        while (resultSet.next()){
+            statement2.setInt(1, resultSet.getInt(3));
+            ResultSet resultSet2 = statement2.executeQuery();
+
+            while (resultSet2.next()){
+                coursesAttended.add(resultSet2.getString(1));
+            }
+
+
+            File year1_csv = new File("year1_students" + "/" + Integer.toString(resultSet.getInt(3)) + ".csv");
+            year1_csv.createNewFile();
+
+            FileWriter fileWriter = new FileWriter(year1_csv);
+
+            year1_csv.setWritable(true);
+
+            fileWriter.write(resultSet.getString(1) + " " +  resultSet.getString(2) +  ", " + resultSet.getInt(3) );
+
+            for(int i = 0; i < schedule.size(); i++){
+                for(int j =0 ; j < schedule.get(i).getWeekTimet().size(); j++){
+                    fileWriter.write("\nWeek" + Integer.toString(i + 1) + " ," + schedule.get(i).getsStartDay() + " , " + schedule.get(i).getsEndDay() + "\n");
+                    for(int k = 0; k < schedule.get(i).getWeekTimet().get(j).getoDslot2().size(); k++){
+                        //for each day check
+                        fileWriter.write(schedule.get(i).getWeekTimet().get(j).getSname() + "," + schedule.get(i).getWeekTimet().get(j).getiDate() + ","+ schedule.get(i).getWeekTimet().get(j).getiMonth() + "," + schedule.get(i).getWeekTimet().get(j).getiYear());
+                        for(int z = 0; z < coursesAttended.size(); z++){
+                            String s1 = schedule.get(i).getWeekTimet().get(j).getoDslot2().get(k).getsActivity();
+                            String s2 = coursesAttended.get(z);
+                            if(schedule.get(i).getWeekTimet().get(j).getoDslot2().get(k).getsActivity().equals(coursesAttended.get(z))) {
+                                fileWriter.write(schedule.get(i).getWeekTimet().get(j).getoDslot2().get(k).toString());
+                                timeslotsToPrint.add(schedule.get(i).getWeekTimet().get(j).getoDslot2().get(k));
+                            }
+                        }
+                    }
+
+                }
+            }
+
+            for(int y = 0; y < timeslotsToPrint.size(); y++){
+                fileWriter.write(timeslotsToPrint.get(y).toString());
+            }
+
+            fileWriter.close();
+
+
+        }
+    }
+    //FLAWEDD UPSTAIRS
+
+
     //generate a table for availability and a table for assigning lectures and maybe start updating them
     //greedy algorithm here would mean pick up the optimal choice at each step in an attempt to find the best solution for a schedule
     //however this of course is not the expected top algorithm to find the top solution
 
 
-
-    // Sort out the heuristics
-
-    //for each course we need the heuristics to define a greedy plan
-    //also this plan needs to follow constraints
-    //and possibly I need a validator that the plan is correct // compare with the use of constraints
-
-    public int generateGreedySolution(String sTable, int min, int max) throws SQLException, ParseException {
+    public int generateGreedySolution(String sTable,String sTableStudents, int min, int max, ArrayList<String> preferreddays) throws SQLException, ParseException, CloneNotSupportedException, IOException {
 
         Week_Timetable week_timetableont = myTimetable(7);
         Week_Timetable week_timetabletwo = myTimetable(7);
 
-//        week_timetableont.v_print();
-//        week_timetabletwo.v_print();
-
-        ArrayList <Duplet> assignedLectures = new ArrayList<>();
-        ArrayList <Duplet> updatedLectures = new ArrayList<>();
-
-        //ArrayList <Duplet> myarr2 = lecturesToBeAssigned(1, sTable,2019);  //this ARRAY contains all the info for the lectures
         ArrayList <Duplet> myarr = lecturesToBeAssigned2( getTwoInts() ,1, sTable);  //this ARRAY contains all the info for the lectures
         ArrayList <Duplet> weekOne = new ArrayList<>();
         ArrayList <Duplet> weekTwo = new ArrayList<>();
 
-        for(int i = 0; i < myarr.size(); i++){
-            myarr.get(i).setPreferredDays( o_getPreferencesStudents(    myarr.get(i).getsLect() , 1  ,5));
-            myarr.get(i).setsTeachersPreference( s_getLecturersChoice(    myarr.get(i).getsLect()   ));
-          //  myarr.get(i).print();
-        }
+            for (int i = 0; i < myarr.size(); i++) {
+                myarr.get(i).setPreferredDays(new PreferredDays(preferreddays));
+            }
 
-        Collections.sort(myarr);                        //sort my array to start searching for the lectures with least students (asc order)
+
+
+            {
+//            for (int i = 0; i < myarr.size(); i++) {
+//                myarr.get(i).setPreferredDays(o_getPreferencesStudents(myarr.get(i).getsLect(), 1, 5));
+//                myarr.get(i).setsTeachersPreference(s_getLecturersChoice(myarr.get(i).getsLect()));
+//            }
+
+           // Collections.sort(myarr);                        //sort my array to start searching for the lectures with least students (asc order)
+        }
 
         for(int i = 0; i < myarr.size(); i++){
             if(i % 2 == 0){ weekOne.add(myarr.get(i));}
             else{weekTwo.add(myarr.get(i));}
         }
 
+        weekOne = setConstraints(weekOne);
+        //same for weektwo
 
+         //myarr = setConstraints(myarr); //ONLY FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+         //week_timetableont.setLectures(myarr); //ONLY FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          week_timetableont.setLectures(weekOne);
-//        week_timetabletwo.setLectures(weekTwo);
-//        week_timetableont.setLectures(myarr);
+         week_timetabletwo.setLectures(weekTwo);
 
-        //System.out.println(weekOne.size() + " " + weekTwo.size());
+        ArrayList<Hall> halls = hallsAvailability_forlectures("28-Sep-2020", "04-Oct-2020");//will have to change this to take the parameters of the week, suttle change
+        ArrayList<Hall> halls2 = hallsAvailability_forlectures("28-Sep-2020", "04-Oct-2020");
+        ArrayList<Hall> halls3 = hallsAvailability_Tutorials("28-Sep-2020", "04-Oct-2020");
 
-
-        //only to check on which is available when
-        //ArrayList<Hall> halls = hallsAvailability("28-Sep-2020", "04-Oct-2020");
-        ArrayList<Hall> halls = hallsAvailability_forlectures("28-Sep-2020", "04-Oct-2020");
-        //halls.forEach((n)->System.out.println(n));
         week_timetableont.setHalls(halls);
-
-
+        week_timetabletwo.setHalls(halls2);
 
         Collections.sort(halls);
         //
@@ -1223,31 +1841,60 @@ public class GreedyAlgorithm {
 
         int iCounter = 0;
 
-        week_timetableont.getLectures().forEach((n) -> System.out.print(n));
+//        week_timetableont.getLectures().forEach((n) -> System.out.print(n));
         System.out.println();
         System.out.println();
 
         while (iCounter != 2000){
 
              int iStudents = 0;
-            if(week_timetableont.getLectures().size() != 0) {
+            if(week_timetableont.getLectures().size() != 0 && week_timetableont.getHalls().size() != 0) {
                 iStudents = week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending();
             }
             else{ iCounter++; continue;}
 
 
-//                    week_timetableont = recursion(week_timetableont,week_timetableont.getHalls(), week_timetableont.getLectures(),week_timetableont.getAssignedLectures(),
-//                                                    week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending() ,week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending(),
-//                                        1,0);
+
+//            week_timetableont = recursion2(week_timetableont,week_timetableont.getHalls(), week_timetableont.getLectures(),week_timetableont.getAssignedLectures(),
+//                    week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending() ,week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending(),
+//                    1,0, 1);
+
+            week_timetableont = recursion_for_lectures(week_timetableont,week_timetableont.getHalls(), week_timetableont.getLectures(),week_timetableont.getAssignedLectures(),
+                    week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending() ,week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending(),
+                    1,0, 1);
+            iCounter++;
+
+            }
+
+
+        ///lectures correspond to the tutorials with the exception that tutorials are shorter
+            week_timetableont.setSgt((ArrayList<Duplet>) week_timetableont.getAssignedLectures().clone());
+            week_timetableont.updateDependentOnTutorials();
+        ///
+
+
+
+        while (iCounter != 2000){
+
+            int iStudents = 0;
+            if(week_timetableont.getLectures().size() != 0 && week_timetableont.getHalls().size() != 0) {
+                iStudents = week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending();
+            }
+            else{ iCounter++; continue;}
+
 
 
             week_timetableont = recursion2(week_timetableont,week_timetableont.getHalls(), week_timetableont.getLectures(),week_timetableont.getAssignedLectures(),
                     week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending() ,week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending(),
                     1,0, 1);
 
+
             iCounter++;
 
-            }
+        }
+
+
+
 
         //week_timetableont.getHalls().forEach((n)->System.out.println(n));
         System.out.println("Not Assigned Lectures:");
@@ -1257,18 +1904,61 @@ public class GreedyAlgorithm {
             Collections.sort(week_timetableont.getWeekTimet().get(i).getoDslot2());
         }
         week_timetableont.v_print();
+
+
+//        putInTableAssigned(week_timetableont.getAssignedLectures(), 0);
+
+
+        Week_Timetable week3 = (Week_Timetable) week_timetableont.clone();
+        week3.v_updateDates();
+        Week_Timetable week4 = (Week_Timetable) week_timetabletwo.clone();
+        week4.v_updateDates();
+        Week_Timetable week5 = (Week_Timetable) week3.clone();
+        week5.v_updateDates();
+        //READING WEEK
+        Week_Timetable week6 = (Week_Timetable) week4.clone();
+        week6.v_updateDates();
+        Week_Timetable week7 = (Week_Timetable) week5.clone();
+        week7.v_updateDates();
+        Week_Timetable week8 = (Week_Timetable) week6.clone();
+        week8.v_updateDates();
+        Week_Timetable week9 = (Week_Timetable) week7.clone();
+        week9.v_updateDates();
+        Week_Timetable week10 = (Week_Timetable) week8.clone();
+        week10.v_updateDates();
+
+        ArrayList<Week_Timetable> schedule = new ArrayList<>();
+        schedule.add(week_timetableont);
+        schedule.add(week_timetabletwo);
+        schedule.add(week3);
+        schedule.add(week4);
+        schedule.add(week5);
+        schedule.add(week6);
+        schedule.add(week7);
+        schedule.add(week8);
+        schedule.add(week9);
+        schedule.add(week10);
+
+       // generateTimeTables_firstYear(schedule, sTableStudents);
+
+
             if(week_timetableont.getLectures().size() == 0 ){
                 // solution found
                 return 1;
             }
             else{
                 return 0;
+
+
                 //opt for running the algorithm again, maybe a bit differently or choose to run another algorithm
             }
+
         /**/
 
 
     }
+
+
 
 
     /**/

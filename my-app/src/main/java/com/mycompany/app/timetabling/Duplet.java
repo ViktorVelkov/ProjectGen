@@ -1,5 +1,7 @@
 package com.mycompany.app.timetabling;
 
+import java.util.ArrayList;
+
 public class Duplet implements Comparable<Duplet>, Cloneable{
 
     private double iHours = 0.0;
@@ -10,26 +12,24 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
     private int iNumberOfStudentsAttending = 0;
     private int iScheduledMoreThanOnce = 0;                                         // scheduled 0 == no changes made, 1 == scheduled multiple times
     private int iCode = 0;
+    private String sLectureHall = "";
     private String sDayOfWeek = "";
     private int iHourScheduled = 0;
     private int iDayScheduled = -1;
     private int iMonthScheduled = -1;
     private int iYearScheduled = -1;
-    //private LGT lgt;
-    //private SGT sgt;
-    //private Constraint_Tutorials_Lectures ctl;
-    //private int lgt_assigned = 0;                                                 //if this is true then assign the small group tutorial
-    //private int sgt_assigned = 0;                                                 // possibly only for confirmation
-
-    // one tutorial per week, two for two weeks, where one is SGT, one is LGT
+    private int lgtAssigned = 0;
+    private boolean isALecture;
+    private String dayAssigned = "";
+    private ArrayList<Duplet> dependentOn;
+    private ArrayList<Duplet> dependentOnTutorials;
+    //    private ArrayList<CoupledData> constraintsAllocation;
 
 
     public Duplet(String sLect, double iHours, int iNumberOfStudentsAttending){
         this.iHours = iHours;
         this.sLect = sLect;
         this.iNumberOfStudentsAttending = iNumberOfStudentsAttending;
-        //LGT.setiCode(iCode);
-        //SGT.setiCode(iCode);
     }
 
 
@@ -37,6 +37,11 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
         this.iHours = iHours;
         this.sLect = sLect;
         this.iNumberOfStudentsAttending = iNumberOfStudentsAttending;
+        this.iCode = iCode;
+    }
+
+    public Duplet(String sLect, int iCode) {
+        this.sLect = sLect;
         this.iCode = iCode;
     }
 
@@ -60,6 +65,19 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
         this.sLect = sLect;
     }
 
+    public ArrayList<Duplet> getDependentOnTutorials() {
+        return dependentOnTutorials;
+    }
+
+    public void setDependentOnTutorials(ArrayList<Duplet> dependentOnTutorials) {
+        //this.dependentOnTutorials = dependentOnTutorials;
+        this.dependentOnTutorials = (ArrayList<Duplet>) dependentOn.clone();
+        for(Duplet duplet : dependentOnTutorials){
+            this.dependentOnTutorials.add(duplet);
+        }
+    }
+
+
 
     public int getiSemester() {
         return iSemester;
@@ -76,7 +94,6 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
     public void setsTeachersPreference(String sTeachersPreference) {
         this.sTeachersPreference = sTeachersPreference;
     }
-
 
     public int getiNumberOfStudentsAttending() {
         return iNumberOfStudentsAttending;
@@ -150,6 +167,51 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
     public void setiHourScheduled(int iHourScheduled) {
         this.iHourScheduled = iHourScheduled;
     }
+
+    public String getsLectureHall() {
+        return sLectureHall;
+    }
+
+    public void setsLectureHall(String sLectureHall) {
+        this.sLectureHall = sLectureHall;
+    }
+
+
+    public ArrayList<Duplet> getDependentOn() {
+        return dependentOn;
+    }
+
+    public void setDependentOn(ArrayList<Duplet> dependentOn) {
+        this.dependentOn = dependentOn;
+    }
+
+    public String getDayAssigned() {
+        return dayAssigned;
+    }
+
+    public void setDayAssigned(String dayAssigned) {
+        this.dayAssigned = dayAssigned;
+    }
+
+    public boolean isALecture() {
+        return isALecture;
+    }
+
+    public void setALecture(boolean ALecture) {
+        isALecture = ALecture;
+    }
+
+    public int getLgtAssigned() {
+        return lgtAssigned;
+    }
+
+    public void setLgtAssigned(int lgtAssigned) {
+        this.lgtAssigned = lgtAssigned;
+    }
+    // one tutorial per week, two for two weeks, where one is SGT, one is LGT
+
+
+
 
     public void print(){        //System.out.println("%-10s %-10s %-10s %-10s\n", "Lecture","Duration", "Students", "Teacher");
 

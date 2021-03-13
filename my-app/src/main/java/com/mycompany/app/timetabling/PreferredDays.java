@@ -6,8 +6,16 @@ public class PreferredDays {
     private ArrayList<String> prefDay;
     private ArrayList<Integer> peopleVoted;
     private ArrayList<Double> dayHeuristics;
-    private int iPrefHour;
-    private int iPrefHour_2;
+    private int iPrefHour = 0;
+    private int iPrefHour_2 = 0;
+    //prefHour1&2 are re-considered to be as an array of
+    //suitable times for the lectures
+
+    public PreferredDays(ArrayList<String> prefDay) {
+        this.prefDay = new ArrayList<>();
+        this.prefDay = prefDay;
+    }
+    public PreferredDays(){}
 
     public ArrayList<String> getPrefDay() {
         return prefDay;
@@ -57,8 +65,8 @@ public class PreferredDays {
     public String toString() {
         String text = "Day(s): ";
         for(int i = 0; i < prefDay.size(); i++){
-            text += prefDay.get(i) + "(" + Integer.toString(peopleVoted.get(i)) + ")" ;
-            if(dayHeuristics.size() != 0) text += "(" + Double.toString(dayHeuristics.get(i)) + ")" ;
+            text += prefDay.get(i) + "(" + /*Integer.toString(peopleVoted.get(i)) +*/ ")" ;
+            //if(dayHeuristics.size() != 0) text += "(" + Double.toString(dayHeuristics.get(i)) + ")" ;
         }
         text += "";
         return text;

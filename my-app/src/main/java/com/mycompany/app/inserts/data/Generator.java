@@ -162,6 +162,7 @@ public class Generator {
         this.setEvents(lecturesAssigned.finalTable2(min, max, sTableCourses, sTableStudents));            // this function will probably be called elsewhere or two ints must be added to the Generator constructor, max and min
     }
 
+
     public ArrayList<TwoInts> getLectureEvents() throws SQLException {
         return lecturesAssigned.events();
     }
