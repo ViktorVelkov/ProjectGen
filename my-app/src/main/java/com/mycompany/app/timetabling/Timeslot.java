@@ -122,8 +122,8 @@ public class Timeslot implements Comparable<Timeslot> {
 
     @Override
     public int compareTo(Timeslot o) {
-        if(this.itime - o.itime  == 0) return this.sHall.compareTo(o.sHall);
-        else return this.itime - o.itime;
+        if(this.sHall.compareTo(o.sHall) == 0) return this.itime - o.itime;
+        else return this.sHall.compareTo(o.sHall);
     }
 }
 

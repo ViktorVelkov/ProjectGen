@@ -38,8 +38,10 @@ public class Hall implements Comparable<Hall>{
         else{}
         //
 
-        Date date1 = new SimpleDateFormat("dd-MMM-yyyy").parse(sTimeStart);
-        Date date2 = new SimpleDateFormat("dd-MMM-yyyy").parse(sTimeEnd);
+//        Date date1 = new SimpleDateFormat("dd-MMM-yyyy").parse(sTimeStart);
+//        Date date2 = new SimpleDateFormat("dd-MMM-yyyy").parse(sTimeEnd);
+        Date date1 = new SimpleDateFormat("dd/MM/yyyy").parse(sTimeStart);
+        Date date2 = new SimpleDateFormat("dd/MM/yyyy").parse(sTimeEnd);
         String sql34 = "";
         PreparedStatement prst;
         if(date1.getMonth() != date2.getMonth() && date2.getMonth() - date1.getMonth() == 1){
@@ -269,6 +271,12 @@ public class Hall implements Comparable<Hall>{
         }
 
         for(int i=0; i < event.getDependentOn().size(); i++){       //for each dependent
+
+            Duplet dependent = event.getDependentOn().get(i);
+            if(dependent.getiHourScheduled() < 900 && dependent.getsDayOfWeek().isEmpty()){
+                continue;
+            }
+
                     for(int k = 0; k < slotsToUse.size(); k++){        //this would usually take significant amount of time, maybe consider first sorting the time of the dependents
 
                         if(event.getsDayOfWeek().equals(slotsToUse.get(k).getsDay()) &&
@@ -331,7 +339,14 @@ public class Hall implements Comparable<Hall>{
             }
         }
 
+        //every lecture depends on other lectures, in order to not overlap them this code prevents the algorithm of assigning to times when dependent lectures appear
         for(int i=0; i < event.getDependentOn().size(); i++){
+
+            Duplet dependent = event.getDependentOn().get(i);
+            if(dependent.getiHourScheduled() < 900 && dependent.getsDayOfWeek().isEmpty()){
+                continue;
+            }
+
             for(int k = 0; k < slotsToUse.size(); k++){        //this would usually take significant amount of time, maybe consider first sorting the time of the dependents
 
                 if(event.getsDayOfWeek().equals(slotsToUse.get(k).getsDay()) &&
@@ -350,7 +365,7 @@ public class Hall implements Comparable<Hall>{
 
         for (int e = 0; e < event.getPreferredDays().getPrefDay().size(); e++) {
             for (int i = 0; i < slotsToUse.size(); i++) {
-
+                if(cp.getiHour()!=0 && !cp.getsDay().isEmpty()){break;}
                 if (slotsToUse.get(i).getsDay().equals(event.getPreferredDays().getPrefDay().get(e))) {
 
                     sDay = slotsToUse.get(i).getsDay();
@@ -367,7 +382,7 @@ public class Hall implements Comparable<Hall>{
                             //I need to return the day and the hour corresponding to the hall
                             cp.setiHour(iTime);
                             cp.setsDay(slotsToUse.get(i).getsDay());
-                            break;
+                            break;//return cp;
                         }
                     } else {
                         iCount = 0;
@@ -430,6 +445,7 @@ public class Hall implements Comparable<Hall>{
 
     @Override
     public int compareTo(Hall o) {
-        return this.iCapacity - o.iCapacity;
+        //return this.iCapacity - o.iCapacity;
+        return o.iCapacity-this.iCapacity;
     }
 }

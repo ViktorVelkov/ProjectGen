@@ -19,9 +19,12 @@ import java.util.Date;
     private ArrayList <Duplet> assignedLectures = new ArrayList<>();
     private ArrayList <Duplet> sgt;
     private ArrayList <Duplet> assignedsgt;
+    private ArrayList <Duplet> LGT;
+    private ArrayList <Duplet> assignedLGT;
     private int previousRecursionWorked = 0;
 
-    public Week_Timetable() {
+
+        public Week_Timetable() {
 //        this.iNumDays = 6;
 //        //only six, I include Saturday here, because if there aren't many available
 //        //halls Saturday and Friday could be used for lectures etc.
@@ -130,7 +133,26 @@ import java.util.Date;
         this.previousRecursionWorked = previousRecursionWorked;
     }
 
-    public ArrayList<Duplet> getLectures() {
+
+    public ArrayList<Duplet> getLGT() {
+            return LGT;
+    }
+
+    public void setLGT(ArrayList<Duplet> LGT) {
+            this.LGT = LGT;
+    }
+
+    public ArrayList<Duplet> getAssignedLGT() {
+            return assignedLGT;
+    }
+
+    public void setAssignedLGT(ArrayList<Duplet> assignedLGT) {
+            this.assignedLGT = assignedLGT;
+    }
+
+
+
+        public ArrayList<Duplet> getLectures() {
         return lectures;
     }
 

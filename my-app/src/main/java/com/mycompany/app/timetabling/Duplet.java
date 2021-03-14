@@ -229,10 +229,11 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
     @Override
     public int compareTo(Duplet obj) {
         if(this.iNumberOfStudentsAttending - obj.iNumberOfStudentsAttending == 0){
-            return (int)(this.getPreferredDays().getDayHeuristics().get(0) - obj.getPreferredDays().getDayHeuristics().get(0));
+            //return (int)(this.getPreferredDays().getDayHeuristics().get(0) - obj.getPreferredDays().getDayHeuristics().get(0));
+            return obj.sLect.compareTo(this.sLect);
         }
-        //return obj.iNumberOfStudentsAttending - this.iNumberOfStudentsAttending;
-        return this.iNumberOfStudentsAttending - obj.iNumberOfStudentsAttending;            //tackle the easiest ones first
+        return obj.iNumberOfStudentsAttending - this.iNumberOfStudentsAttending;
+        //return this.iNumberOfStudentsAttending - obj.iNumberOfStudentsAttending;            //tackle the easiest ones first
     }
 
     @Override

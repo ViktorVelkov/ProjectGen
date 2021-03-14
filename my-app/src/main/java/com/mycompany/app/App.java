@@ -2,6 +2,7 @@ package com.mycompany.app;
 
 import com.mycompany.app.algorithms.BetterGreedyAlgorithm;
 import com.mycompany.app.algorithms.GreedyAlgorithm;
+import com.mycompany.app.algorithms.HillClimbing;
 import com.mycompany.app.inserts.data.Generator;
 import com.mycompany.app.inserts.data.Inserter_LecturesAssigned;
 import com.mycompany.app.inserts.data.LGT_Inserter;
@@ -27,28 +28,34 @@ public class App
 
             Generator generator = new Generator(connection, "students", "courses");
 
-              //generator.v_run_populate_availability("28-Sep-2020", "14-Dec-2020");
-              //generator.populateChoicesOfLectures(1);
+//            generator.v_run_populate_availability("28-Sep-2020", "14-Dec-2020");
+//            generator.populateChoicesOfLectures(1);
 //            generator.v_finalevents(40,100);
 //            generator.v_run_preferences(1);
 //            generator.v_finalevents(10,100);
 
-            System.out.println(generator.getLectureEvents());
-            GreedyAlgorithm grdAlg = new GreedyAlgorithm(connection);
-            grdAlg.setTwoInts(generator.getLectureEvents());
+
+            Students_Test students_test = new Students_Test(connection);
+
             ArrayList<String> days = new ArrayList<>();
-//            days.add("Monday");
-//            days.add("Tuesday");
-//            days.add("Thursday");
-            grdAlg.generateGreedySolution("courses", "students", 5, 21,days);
+            days.add("Monday");
+            days.add("Tuesday");
+            days.add("Thursday");
 
 
-        System.out.println();
         BetterGreedyAlgorithm bgt = new BetterGreedyAlgorithm(connection);
         //bgt.generateGreedySolution("s_courses");
 
-        Students_Test students_test = new Students_Test(connection);
-        students_test.test();
+        HillClimbing hillClimbing = new HillClimbing(connection);
+        hillClimbing.getGrdAlg().setTwoInts(generator.getLectureEvents());
+        hillClimbing.getGrdAlg().generateGreedySolution("courses", "students", 5, 21,days);
+        hillClimbing.setTimetableont(hillClimbing.getGrdAlg().getWeek_timetable_ont());
+        hillClimbing.generateHCSolution();
+
+        String jj = "4CCS";
+        String kk = "5CCS";
+
+        System.out.println(jj.compareTo(kk));
 
         connection.close();
 
