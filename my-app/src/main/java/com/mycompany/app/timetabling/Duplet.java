@@ -1,6 +1,10 @@
 package com.mycompany.app.timetabling;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 
 public class Duplet implements Comparable<Duplet>, Cloneable{
 
@@ -210,6 +214,17 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
     }
     // one tutorial per week, two for two weeks, where one is SGT, one is LGT
 
+
+    public void updateDate(int iNumber) throws ParseException {
+        String currDate = Integer.toString(iDayScheduled) + "/"+Integer.toString(iMonthScheduled) + "/" + Integer.toString(iYearScheduled);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new SimpleDateFormat("dd/MM/yyyy").parse(currDate));
+        calendar.add(Calendar.DATE, iNumber);
+        Date newDate = calendar.getTime();
+        this.iDayScheduled = newDate.getDate();
+        this.iMonthScheduled =newDate.getMonth() + 1;
+        this.iYearScheduled = newDate.getYear() + 1900;
+    }
 
 
 

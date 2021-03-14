@@ -1,5 +1,10 @@
 package com.mycompany.app.timetabling;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+
 public class Timeperiod {
     private int iTime;
     private int iAvailable;
@@ -25,6 +30,18 @@ public class Timeperiod {
         this.iYear = iYear;
 
     }
+
+    public void updateTimeslot(int iNumber) throws ParseException {
+        String currDate = Integer.toString(iDate) + "/"+Integer.toString(iMonth) + "/" + Integer.toString(iYear);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new SimpleDateFormat("dd/MM/yyyy").parse(currDate));
+        calendar.add(Calendar.DATE, iNumber);
+        Date newDate = calendar.getTime();
+        this.iDate = newDate.getDate();
+        this.iMonth =newDate.getMonth() + 1;
+        this.iYear = newDate.getYear() + 1900;
+    }
+
 
 
 

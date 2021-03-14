@@ -1,9 +1,6 @@
 package com.mycompany.app.algorithms;
 
-import com.mycompany.app.timetabling.DataSetStudents;
-import com.mycompany.app.timetabling.Duplet;
-import com.mycompany.app.timetabling.PreferredDays;
-import com.mycompany.app.timetabling.Week_Timetable;
+import com.mycompany.app.timetabling.*;
 
 import javax.swing.plaf.nimbus.State;
 import java.io.IOException;
@@ -390,7 +387,7 @@ FROM ( (select * FROM students_lectures a JOIN courses b ON a.lecture_code = b.i
                             + " AND MONTH = " + Integer.toString(temp.getiMonthScheduled() - 1)
                             + " AND YEAR = " + Integer.toString(temp.getiYearScheduled())
                             + " AND HOUR >= " + Integer.toString(temp.getiHourScheduled())
-                            + " AND HOUR <= " + Integer.toString((int) (temp.getiHourScheduled() + 100*temp.getiHours()));
+                            + " AND HOUR < " + Integer.toString((int) (temp.getiHourScheduled() + 100*temp.getiHours()));
             Statement statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sql77);
             int iCount = 0;
@@ -428,11 +425,25 @@ FROM ( (select * FROM students_lectures a JOIN courses b ON a.lecture_code = b.i
 
         ArrayList<Duplet> forWeekTwo = checkDuplication(timetable, toClone);
         if(forWeekTwo.isEmpty()){
+            //just update the dates
+            for(Duplet lecture : timetable.getAssignedLectures()){
+                lecture.updateDate(7);
+            }
+            for(Hall hall : timetable.getHalls()){
+                hall.updateHalls(7);
+            }
         }
         else{
-            copyWeekOneExcept(forWeekTwo);
+
+            //update the ones outside the forWeekTwo array
+            //copyWeekOneExcept(forWeekTwo);
+
+            //ArrayList<Hall> halls=grdAlg.hallsAvailability_forlectures(timetable.getsStartDay(), timetable.getsEndDay());
+            //timetable.setHalls(halls);
+
+
             grdAlg.generateGreedySolution2(grdAlg.sCoursesTable, grdAlg.sStudentsTable,grdAlg.iLocalMin, grdAlg.iLocalMax ,grdAlg.prefdDays, timetabletwo); //make these universal and sharable for the class
-            timetabletwo = grdAlg.getWeek_timetable_spare();
+            timetable = grdAlg.getWeek_timetable_spare();
         }
 
         return timetable;
@@ -447,7 +458,7 @@ FROM ( (select * FROM students_lectures a JOIN courses b ON a.lecture_code = b.i
 
 
         ArrayList<DataSetStudents> toPrint = getHCData1();
-        sortOutWeek_nextWeek(timetableont);
+        Week_Timetable nextWeek = sortOutWeek_nextWeek(timetableont);
         System.out.println("==========================================================================================");
         System.out.println(timetableont);
         //System.out.println(toPrint);

@@ -419,7 +419,7 @@ public class GreedyAlgorithm {
         return hallsList;
     }
 
-    private ArrayList<Hall> hallsAvailability_forlectures(String sTimeStart, String sTimeEnd) throws SQLException, ParseException {
+    public ArrayList<Hall> hallsAvailability_forlectures(String sTimeStart, String sTimeEnd) throws SQLException, ParseException {
         int iCode =0;
         ArrayList<Hall> hallsList = new ArrayList<>();
         String sql77 = "SELECT inside_code, capacity, intended_for_lectures FROM FACILITIES WHERE intended_for_lectures = 1";
@@ -1660,8 +1660,8 @@ public class GreedyAlgorithm {
 
 
         ArrayList<Hall> halls = hallsAvailability_forlectures(week_timetableont.getsStartDay(), week_timetableont.getsEndDay());
-        Collections.sort(halls);
-        week_timetableont.setHalls(halls);
+        //Collections.sort(halls);
+        //week_timetableont.setHalls(halls);
         for (int i = 0; i < week_timetableont.getLectures().size(); i++) {
             ArrayList<String> prefs =  new ArrayList<>();
             if(!week_timetableont.getLectures().get(i).getsDayOfWeek().isEmpty()) {

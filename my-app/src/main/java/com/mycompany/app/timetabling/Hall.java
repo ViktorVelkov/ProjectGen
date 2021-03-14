@@ -4,6 +4,7 @@ import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
@@ -47,7 +48,7 @@ public class Hall implements Comparable<Hall>{
         if(date1.getMonth() != date2.getMonth() && date2.getMonth() - date1.getMonth() == 1){
             sql34 = " SELECT AVAILABLE, HOUR, DAY, DATE, MONTH, YEAR FROM " + sTableName + " WHERE AVAILABLE = 1 AND MONTH = ? AND DATE >= ? AND HALL = ?" +
                     " UNION " +
-                    " SELECT AVAILABLE, HOUR, DAY, DATE, MONTH, YEAR FROM " + sTableName + " WHERE AVAILABLE = 1 AND MONTH = ? AND DATE <= ? AND HALL = ?";
+                    " SELECT AVAILABLE, HOUR, DAY, DATE, MONTH, YEAR FROM " + sTableName + " WHERE AVAILABLE = 1 AND MONTH = ? AND DATE < ? AND HALL = ?";
             prst = connection.prepareStatement(sql34);
             prst.setInt(1, date1.getMonth());
             prst.setInt(2, date1.getDate());
@@ -65,7 +66,7 @@ public class Hall implements Comparable<Hall>{
                 sql34 += " SELECT AVAILABLE, HOUR, DAY, DATE, MONTH, YEAR  FROM " + sTableName + " WHERE AVAILABLE = 1 AND MONTH = ? AND HALL = ? UNION ";
                 iSecondCounter++;
             }
-            sql34 += " SELECT AVAILABLE, HOUR, DAY, DATE, MONTH, YEAR  FROM " + sTableName + " WHERE AVAILABLE = 1 AND MONTH = ? AND DATE <= ? AND HALL = ? ";
+            sql34 += " SELECT AVAILABLE, HOUR, DAY, DATE, MONTH, YEAR  FROM " + sTableName + " WHERE AVAILABLE = 1 AND MONTH = ? AND DATE < ? AND HALL = ? ";
 
 
             prst = connection.prepareStatement(sql34);
@@ -366,6 +367,7 @@ public class Hall implements Comparable<Hall>{
         for (int e = 0; e < event.getPreferredDays().getPrefDay().size(); e++) {
             for (int i = 0; i < slotsToUse.size(); i++) {
                 if(cp.getiHour()!=0 && !cp.getsDay().isEmpty()){break;}
+
                 if (slotsToUse.get(i).getsDay().equals(event.getPreferredDays().getPrefDay().get(e))) {
 
                     sDay = slotsToUse.get(i).getsDay();
@@ -426,6 +428,28 @@ public class Hall implements Comparable<Hall>{
         }
         return iTime;
     }
+
+
+    public void updateHalls(int iNumber) throws ParseException {
+        //
+        Date date1 = new SimpleDateFormat("dd/MM/yyyy").parse(sTimeEnd);
+        String setTime = sTimeEnd;
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date1);
+        calendar.add(Calendar.DAY_OF_MONTH, iNumber);
+        Date newDate = calendar.getTime();
+        sTimeStart = sTimeEnd;
+        sTimeEnd =  Integer.toString(newDate.getDate()) + "/"
+         +Integer.toString(newDate.getMonth() + 1)  + "/"
+         + Integer.toString(newDate.getYear() + 1900);
+
+        for(Timeperiod time : availability){
+            time.updateTimeslot(7);
+        }
+
+    }
+
+
 
     @Override
     public String toString() {
