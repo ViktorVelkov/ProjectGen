@@ -14,13 +14,13 @@ import java.util.Date;
     private ArrayList<Day> weekTimet = new ArrayList<>();
     private String sStartDay = "";
     private String sEndDay = "";
-    private ArrayList<Hall> halls;
-    private ArrayList <Duplet> lectures;
+    private ArrayList<Hall> halls = new ArrayList<>();
+    private ArrayList <Duplet> lectures = new ArrayList<>();
     private ArrayList <Duplet> assignedLectures = new ArrayList<>();
-    private ArrayList <Duplet> sgt;
-    private ArrayList <Duplet> assignedsgt;
-    private ArrayList <Duplet> LGT;
-    private ArrayList <Duplet> assignedLGT;
+    private ArrayList <Duplet> sgt = new ArrayList<>();
+    private ArrayList <Duplet> assignedsgt = new ArrayList<>();
+    private ArrayList <Duplet> LGT = new ArrayList<>();
+    private ArrayList <Duplet> assignedLGT = new ArrayList<>();
     private int previousRecursionWorked = 0;
 
 
@@ -183,21 +183,20 @@ import java.util.Date;
     public void v_updateDates() throws ParseException {
         String stringDate = "";
         String endDate = "";
-        for(int i = 0; i < weekTimet.size(); i++){
-            stringDate = Integer.toString(weekTimet.get(i).getiDate()) + "/" + Integer.toString(weekTimet.get(i).getiMonth() + 1) + "/" + Integer.toString(weekTimet.get(i).getiYear()+1900);
-            Date dates = new SimpleDateFormat("dd/MM/yyyy").parse(stringDate);
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(dates);
-            calendar.add(Calendar.DAY_OF_MONTH, 7);
-            Date date2 = calendar.getTime();
-
-            weekTimet.get(i).setiDate(date2.getDate());
-            weekTimet.get(i).setiMonth(date2.getMonth());
-            weekTimet.get(i).setiYear(date2.getYear());
-            endDate = Integer.toString(weekTimet.get(i).getiDate()) + "/" + Integer.toString(weekTimet.get(i).getiMonth() + 1) + "/" + Integer.toString(weekTimet.get(i).getiYear()+1900);
-        }
+        String currDate = sEndDay;
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new SimpleDateFormat("dd/MM/yyyy").parse(currDate));
+        calendar.add(Calendar.DATE, 7);
+        Date newDate = calendar.getTime();
         this.setsStartDay(this.getsEndDay());
+        endDate =  Integer.toString(newDate.getDate()) + "/"
+                +Integer.toString(newDate.getMonth() + 1)  + "/"
+                + Integer.toString(newDate.getYear() + 1900);
         this.setsEndDay(endDate);
+
+        for(Day day : weekTimet){
+            day.updateDate();
+        }
     }
 
     public String toString(){

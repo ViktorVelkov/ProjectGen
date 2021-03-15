@@ -48,8 +48,9 @@ public class App
 
         HillClimbing hillClimbing = new HillClimbing(connection);
         hillClimbing.getGrdAlg().setTwoInts(generator.getLectureEvents());
-        hillClimbing.getGrdAlg().generateGreedySolution("courses", "students", 5, 21,days);
+        hillClimbing.getGrdAlg().generateGreedySolution_TwoWeeks("courses", "students", 5, 21,days, "", 0);
         hillClimbing.setTimetableont(hillClimbing.getGrdAlg().getWeek_timetable_ont());
+        hillClimbing.setTimetabletwo(hillClimbing.getGrdAlg().getWeek_timetable_spare());
         hillClimbing.generateHCSolution();
 
         String jj = "4CCS";

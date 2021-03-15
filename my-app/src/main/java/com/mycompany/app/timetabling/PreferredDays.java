@@ -6,8 +6,11 @@ public class PreferredDays {
     private ArrayList<String> prefDay;
     private ArrayList<Integer> peopleVoted;
     private ArrayList<Double> dayHeuristics;
+    private ArrayList<String> mandatory;
     private int iPrefHour = 0;
     private int iPrefHour_2 = 0;
+    private String forsgt_usage;
+    private int notAvailableBefore;
     //prefHour1&2 are re-considered to be as an array of
     //suitable times for the lectures
 
@@ -16,6 +19,31 @@ public class PreferredDays {
         this.prefDay = prefDay;
     }
     public PreferredDays(){}
+
+
+    public int getNotAvailableBefore() {
+        return notAvailableBefore;
+    }
+
+    public void setNotAvailableBefore(int notAvailableBefore) {
+        this.notAvailableBefore = notAvailableBefore;
+    }
+
+    public String getForsgt_usage() {
+        return forsgt_usage;
+    }
+
+    public void setForsgt_usage(String forsgt_usage) {
+        this.forsgt_usage = forsgt_usage;
+    }
+
+    public ArrayList<String> getMandatory() {
+        return mandatory;
+    }
+
+    public void setMandatory(ArrayList<String> mandatory) {
+        this.mandatory = mandatory;
+    }
 
     public ArrayList<String> getPrefDay() {
         return prefDay;

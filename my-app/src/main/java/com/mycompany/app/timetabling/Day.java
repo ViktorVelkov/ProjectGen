@@ -1,7 +1,11 @@
 package com.mycompany.app.timetabling;
 
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 
 public class Day {
 
@@ -146,6 +150,20 @@ public class Day {
     public int i_count_activities(){
         return 0;
     }
+
+    public void updateDate() throws ParseException {
+        String stringDate = "";
+        String endDate = "";
+        String currDate = Integer.toString(iDate) + "/"+Integer.toString(iMonth + 1) + "/" + Integer.toString(iYear + 1900);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new SimpleDateFormat("dd/MM/yyyy").parse(currDate));
+        calendar.add(Calendar.DATE, 7);
+        Date newDate = calendar.getTime();
+        this.iDate = newDate.getDate();
+        this.iMonth =newDate.getMonth() + 1;
+        this.iYear = newDate.getYear() + 1900;
+    }
+
 
     public void print(){
         if(sDate.isEmpty()){ System.out.println("Date:empty"); }

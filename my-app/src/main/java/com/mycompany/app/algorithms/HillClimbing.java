@@ -421,32 +421,60 @@ FROM ( (select * FROM students_lectures a JOIN courses b ON a.lecture_code = b.i
 
     public Week_Timetable sortOutWeek_nextWeek(Week_Timetable toClone) throws SQLException, CloneNotSupportedException, ParseException, IOException {
         Week_Timetable timetable = (Week_Timetable) toClone.clone();
-        timetable.v_updateDates();
+        timetable.v_updateDates();              //need to update dates twice
 
         ArrayList<Duplet> forWeekTwo = checkDuplication(timetable, toClone);
         if(forWeekTwo.isEmpty()){
             //just update the dates
-            for(Duplet lecture : timetable.getAssignedLectures()){
-                lecture.updateDate(7);
-            }
-            for(Hall hall : timetable.getHalls()){
-                hall.updateHalls(7);
-            }
+
+//            for(Duplet lecture : timetable.getAssignedLectures()){
+//                lecture.updateDate(7);
+//            }
+//            for(Hall hall : timetable.getHalls()){
+//                hall.updateHalls(7);
+//            }
         }
         else{
 
-            //update the ones outside the forWeekTwo array
-            //copyWeekOneExcept(forWeekTwo);
-
-            //ArrayList<Hall> halls=grdAlg.hallsAvailability_forlectures(timetable.getsStartDay(), timetable.getsEndDay());
-            //timetable.setHalls(halls);
-
-
-            grdAlg.generateGreedySolution2(grdAlg.sCoursesTable, grdAlg.sStudentsTable,grdAlg.iLocalMin, grdAlg.iLocalMax ,grdAlg.prefdDays, timetabletwo); //make these universal and sharable for the class
-            timetable = grdAlg.getWeek_timetable_spare();
+            grdAlg.generateGreedySolution2(grdAlg.sCoursesTable, grdAlg.sStudentsTable,grdAlg.iLocalMin, grdAlg.iLocalMax ,grdAlg.prefdDays, timetabletwo);
+            timetable = grdAlg.getWeek_timetable_ont();
         }
 
         return timetable;
+    }
+
+
+    private void extractSGTsFromLGTs(Week_Timetable timetableont){
+
+        for(int z = 0; z < timetableont.getAssignedLectures().size(); z++) {
+            int iCounter = 0;
+            Duplet temp = timetableont.getAssignedLectures().get(z);
+            for (int i = 0; i < timetableont.getAssignedLGT().size(); i++) {
+                //if it's inside then we can't assign it a SGT for this week
+                if (timetableont.getAssignedLGT().get(i).getsLect().equals(timetableont.getAssignedLectures().get(z).getsLect())) {
+                    //do not add it to the sgt list
+                    break;
+                }
+                iCounter++;
+            }
+            if(iCounter == timetableont.getAssignedLGT().size()){
+                //temp.setiHours(1.0);
+                timetableont.getSgt().add(temp);
+            }
+        }
+    }
+
+    private void updateTimeline_SGT(Week_Timetable timetableont){
+
+        ArrayList<String> empty = new ArrayList<>();
+        for(int i =0; i< timetableont.getSgt().size(); i++){
+            timetableont.getSgt().get(i).getPreferredDays().setPrefDay(empty);
+            timetableont.getSgt().get(i).getPreferredDays().setForsgt_usage(timetableont.getSgt().get(i).getsDayOfWeek());             //turning
+            timetableont.getSgt().get(i).getPreferredDays().setNotAvailableBefore((int)(timetableont.getSgt().get(i).getiHourScheduled() + 100*timetableont.getSgt().get(i).getiHours()));
+//            timetableont.getSgt().get(i).getPreferredDays().setMandatory();
+//            timetableont.getSgt().get(i).getPreferredDays().setiPrefHour();
+        }
+
     }
 
 
@@ -458,7 +486,13 @@ FROM ( (select * FROM students_lectures a JOIN courses b ON a.lecture_code = b.i
 
 
         ArrayList<DataSetStudents> toPrint = getHCData1();
-        Week_Timetable nextWeek = sortOutWeek_nextWeek(timetableont);
+        Week_Timetable nextWeek = sortOutWeek_nextWeek(grdAlg.getWeek_timetable_ont());
+        Week_Timetable nextnextWeek = sortOutWeek_nextWeek(grdAlg.getWeek_timetable_spare());
+        extractSGTsFromLGTs(nextWeek);
+        extractSGTsFromLGTs(nextnextWeek);
+        updateTimeline_SGT(nextWeek);
+        updateTimeline_SGT(nextnextWeek);
+
         System.out.println("==========================================================================================");
         System.out.println(timetableont);
         //System.out.println(toPrint);

@@ -23,7 +23,6 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
     private int iMonthScheduled = -1;
     private int iYearScheduled = -1;
     private int lgtAssigned = 0;
-    private boolean isALecture;
     private String dayAssigned = "";
     private ArrayList<Duplet> dependentOn;
     private ArrayList<Duplet> dependentOnTutorials;
@@ -195,14 +194,6 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
 
     public void setDayAssigned(String dayAssigned) {
         this.dayAssigned = dayAssigned;
-    }
-
-    public boolean isALecture() {
-        return isALecture;
-    }
-
-    public void setALecture(boolean ALecture) {
-        isALecture = ALecture;
     }
 
     public int getLgtAssigned() {
