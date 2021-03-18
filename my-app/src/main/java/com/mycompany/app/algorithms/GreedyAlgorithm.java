@@ -404,7 +404,7 @@ public class GreedyAlgorithm {
 
         return timetable1;
     }
-    private ArrayList<Hall> hallsAvailability_Tutorials(String sTimeStart, String sTimeEnd) throws SQLException, ParseException {
+    public ArrayList<Hall> hallsAvailability_Tutorials(String sTimeStart, String sTimeEnd) throws SQLException, ParseException {
         int iCode =0;
         ArrayList<Hall> hallsList = new ArrayList<>();
         String sql77 = "SELECT inside_code, capacity, intended_for_lectures FROM FACILITIES WHERE intended_for_lectures = 0";
@@ -1157,7 +1157,7 @@ public class GreedyAlgorithm {
 
                         for(int t =0; t < myTimetable.getHalls().size(); t++){
                             if(myTimetable.getHalls().get(t).getiAdditionalCode() == iAddCode){
-                                timetable.getHalls().get(t).setAvToZero(data.getiHour(), (int)(data.getiHour() + duration*100), data.getsDay());   //CHECK AVTOZERO
+                                timetable.getHalls().get(t).setAvToZero(data.getiHour(), (int)(data.getiHour() + duration*100), data.getsDay());   //SET AVTOZERO
 
                                 for(int f = 0; f < myTimetable.getWeekTimet().size(); f++){                 //add to the Day log, for printing purposes + check
                                     if(myTimetable.getWeekTimet().get(f).getSname().toLowerCase(Locale.ROOT).equals(data.getsDay().toLowerCase(Locale.ROOT))) {

@@ -1,6 +1,7 @@
 package com.mycompany.app.timetabling;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class PreferredDays {
     private ArrayList<String> prefDay;
@@ -11,6 +12,10 @@ public class PreferredDays {
     private int iPrefHour_2 = 0;
     private String forsgt_usage;
     private int notAvailableBefore;
+    private ArrayList<CoupledData> heuristics;
+    ArrayList<CoupledData> preferredHour = new ArrayList<>();                                // preferred hour of day
+
+
     //prefHour1&2 are re-considered to be as an array of
     //suitable times for the lectures
 
@@ -21,6 +26,14 @@ public class PreferredDays {
     public PreferredDays(){}
 
 
+    public ArrayList<CoupledData> getPreferredHour() {
+        return preferredHour;
+    }
+
+    public void setPreferredHour(ArrayList<CoupledData> preferredHour) {
+        this.preferredHour = preferredHour;
+    }
+
     public int getNotAvailableBefore() {
         return notAvailableBefore;
     }
@@ -28,6 +41,16 @@ public class PreferredDays {
     public void setNotAvailableBefore(int notAvailableBefore) {
         this.notAvailableBefore = notAvailableBefore;
     }
+
+
+    public ArrayList<CoupledData> getHeuristics() {
+        return heuristics;
+    }
+
+    public void setHeuristics(ArrayList<CoupledData> heuristics) {
+        this.heuristics = heuristics;
+    }
+
 
     public String getForsgt_usage() {
         return forsgt_usage;

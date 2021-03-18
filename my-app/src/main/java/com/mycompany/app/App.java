@@ -51,12 +51,8 @@ public class App
         hillClimbing.getGrdAlg().generateGreedySolution_TwoWeeks("courses", "students", 5, 21,days, "", 0);
         hillClimbing.setTimetableont(hillClimbing.getGrdAlg().getWeek_timetable_ont());
         hillClimbing.setTimetabletwo(hillClimbing.getGrdAlg().getWeek_timetable_spare());
-        hillClimbing.generateHCSolution();
+        hillClimbing.generateHCSolution(0.9);
 
-        String jj = "4CCS";
-        String kk = "5CCS";
-
-        System.out.println(jj.compareTo(kk));
 
         connection.close();
 

@@ -52,6 +52,8 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
         this.iCode =iCode;
     }
 
+
+
     public double getiHours() {
         return iHours;
     }

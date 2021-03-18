@@ -401,33 +401,96 @@ public class Hall implements Comparable<Hall>{
     }
 
 
-
+    //THIS IS INSIDE BETTERGREEDY ALGORITHM, NOT PROPERLY USED
     public int findAvailableSlot_PreferredDay(int iHourStart, int iDuration, String sPrefDay){
+//        int iCount = 0;
+        int iTime = 0;
+//        int iResult = 0;
+//        String sDay = "";
+//        String sPrevDay = "";                               //here actually lies the 930 problem !!!!
+//
+//        for(int i = 0; i < availability.size(); i++) {
+//            sDay = availability.get(i).getsDay();
+//            if(sDay.equals(sPrefDay)) {
+//                if (availability.get(i).getsDay().equals(sPrefDay)) {
+//
+//                    if (availability.get(i).getiAvailable() == 1 && availability.get(i).getiTime() >= iHourStart && availability.get(i).getsDay().equals(sPrefDay)) {
+//                        iCount++;
+//                        if (iCount == 1) {
+//                            iTime = availability.get(i).getiTime();
+//                        }
+//
+//                    } else {
+//                        iCount = 0;
+//                        iTime = 0;
+//                    }
+//
+//                    if (iCount == (iDuration * 2)) {
+//                        //spot found
+//                        //first one available
+//                        //I need to return the day and the hour corresponding to the hall
+//                        return iTime;
+//                    }
+//                }
+//            }
+//            sPrevDay = availability.get(i).getsDay();
+//        }
+        return iTime;
+    }
+
+    public int findAvailableSlot_PreferredDay_sgt(int iHourStart, int iDuration, String sPrefDay, int dayAssigned, int iMonth, int iYear, int iHour, Duplet event){
+
         int iCount = 0;
         int iTime = 0;
         int iResult = 0;
-
+        String sDay = "";
+        String sPrevDay = "";                               //here actually lies the 930 problem !!!!
+        //FORGOT TO CHECK FOR THE LECTURES
+        ArrayList<Timeperiod> slotsToUse = new ArrayList<>();
         for(int i = 0; i < availability.size(); i++){
+            int iCounter =0;
+            while(!availability.get(i).getsDay().equals( event.getDayAssigned() ) && availability.get(i).getiTime() >= event.getiHourScheduled() + 100*event.getiHours() ){
+                continue;
+            }
+            slotsToUse.add(availability.get(i));
+        }
 
-            if(availability.get(i).getiAvailable() == 1 && availability.get(i).getiTime() >= iHourStart && availability.get(i).getsDay().equals(sPrefDay)){
-                iCount++;
-                if(iCount == 1){
-                    iTime = availability.get(i).getiTime();
+
+
+        for(int i = 0; i < slotsToUse.size(); i++) {
+            sDay = slotsToUse.get(i).getsDay();
+            if(sDay.equals(sPrefDay)) {
+
+                if (slotsToUse.get(i).getsDay().equals(sPrefDay)) {
+                    if (slotsToUse.get(i).getiAvailable() == 1 && slotsToUse.get(i).getiTime() >= iHourStart &&
+                            (
+                                    (slotsToUse.get(i).getiDate() >= dayAssigned && slotsToUse.get(i).getiMonth() >= iMonth - 1 && slotsToUse.get(i).getiYear() >= iYear && slotsToUse.get(i).getiTime() >= iHour + 100))
+                            || (slotsToUse.get(i).getiDate() > dayAssigned && slotsToUse.get(i).getiMonth() >= iMonth - 1 && slotsToUse.get(i).getiYear() >= iYear)
+                    ) {
+                        iCount++;
+                        if (iCount == 1) {
+                            iTime = slotsToUse.get(i).getiTime();
+                        }
+
+                    } else {
+                        iCount = 0;
+                        iTime = 0;
+                    }
+
+                    if (iCount == (iDuration * 2)) {
+                        //spot found
+                        //first one available
+                        //I need to return the day and the hour corresponding to the hall
+                        return iTime;
+                    }
+
                 }
-
             }
-            else{ iCount = 0; iTime = 0;}
-
-            if(iCount == (iDuration*2) ){
-                //spot found
-                //first one available
-                //I need to return the day and the hour corresponding to the hall
-                return  iTime;
-            }
-
+            sPrevDay = slotsToUse.get(i).getsDay();
         }
         return iTime;
     }
+
 
 
     public void updateHalls(int iNumber) throws ParseException {
