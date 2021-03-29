@@ -1,6 +1,7 @@
 package com.mycompany.app.timetabling;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class Student implements Comparable<Student>{
 
@@ -10,7 +11,7 @@ public class Student implements Comparable<Student>{
     private int iYearOfStudy = 0;
     private int iAssignedSGTs = 0;
 
-    ArrayList<Integer> coursesCodes = new ArrayList<>();
+    HashSet<Integer> coursesCodes = new HashSet<>();
     ArrayList<SGT> courses = new ArrayList<>();
     ArrayList<Duplet> assignedSGT = new ArrayList<>();
     ArrayList<DataSetStudents> preferences = new ArrayList<>();
@@ -53,7 +54,7 @@ public class Student implements Comparable<Student>{
 
     public void addToCoursesCodes(int event_code){ this.coursesCodes.add(event_code); }
 
-    public ArrayList<Integer> getCoursesCodes() { return coursesCodes; }
+    public HashSet<Integer> getCoursesCodes() { return coursesCodes; }
 
     public ArrayList<Duplet> getAssignedSGT() { return assignedSGT; }
 

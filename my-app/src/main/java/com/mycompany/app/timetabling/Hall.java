@@ -601,8 +601,6 @@ public class Hall implements Comparable<Hall>{
             }
 
             slotsToUse.add((Timeperiod) availability.get(i).clone());
-
-
         }
 
 

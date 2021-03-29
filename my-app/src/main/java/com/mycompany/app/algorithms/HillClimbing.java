@@ -949,8 +949,17 @@ public class HillClimbing {
         ArrayList<DataSetStudents> toAssign = getHCData(iYearOfStudy);
         ArrayList<DataSetStudents> tempAssign =  new ArrayList<>();         // I need the list of duplets plus all their details for week2s
         ArrayList<Duplet> sgts = new ArrayList<>();
+
+        String courseAbrev = "";
+
+        if(iYearOfStudy == 1){courseAbrev = "4CCS";}
+        if(iYearOfStudy == 2){courseAbrev = "5CCS";}
+        if(iYearOfStudy == 3){courseAbrev = "6CCS";}
+
+
+
         for(Duplet event : timetable.getSgt()){
-            if(event.getsLect().startsWith("5CCS")){
+            if(event.getsLect().startsWith(courseAbrev)){
                 sgts.add(event);
             }
         }
@@ -1126,7 +1135,7 @@ public class HillClimbing {
                                                 updateAvailabilitySlotsSGT(temp_sgt, sDayIteration, halls.getsAbbrev(),iHourFound);
 
                                                     for (int f = 0; f < timetable.getWeekTimet().size(); f++) {                 //add to the Day log, for printing purposes + check
-                                                    if (timetable.getWeekTimet().get(f).getSname().toLowerCase(Locale.ROOT).equals(event.getPreferredDays().getHeuristics().get(0).getsDay().toLowerCase(Locale.ROOT))) {
+                                                    if (timetable.getWeekTimet().get(f).getSname().toLowerCase(Locale.ROOT).equals(sDayIteration.toLowerCase(Locale.ROOT))) {
                                                         timetable.getWeekTimet().get(f).v_assignEvent(iHourFound, 1, halls.getsAbbrev(), temp.getsLect(), "event");
                                                         int iDate = timetable.getWeekTimet().get(f).getiDate();
                                                         int iMonth = timetable.getWeekTimet().get(f).getiMonth();//+1
@@ -1240,7 +1249,7 @@ public class HillClimbing {
                                                             updateAvailabilitySlotsSGT(temp_sgt, sDayIteration, halls.getsAbbrev(),iHourFound);
 
                                                             for (int f = 0; f < timetable.getWeekTimet().size(); f++) {                 //add to the Day log, for printing purposes + check
-                                                                if (timetable.getWeekTimet().get(f).getSname().toLowerCase(Locale.ROOT).equals(event.getPreferredDays().getHeuristics().get(0).getsDay().toLowerCase(Locale.ROOT))) {
+                                                                if (timetable.getWeekTimet().get(f).getSname().toLowerCase(Locale.ROOT).equals(sDayIteration.toLowerCase(Locale.ROOT))) {
                                                                     timetable.getWeekTimet().get(f).v_assignEvent(iHourFound, 1, halls.getsAbbrev(), temp.getsLect(), "event");
                                                                     int iDate = timetable.getWeekTimet().get(f).getiDate();
                                                                     int iMonth = timetable.getWeekTimet().get(f).getiMonth();//+1

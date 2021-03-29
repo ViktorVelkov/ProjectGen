@@ -44,5 +44,6 @@ public class App
     public static void main( String[] args ) throws SQLException, ParseException, CloneNotSupportedException, IOException {
         //simplistic
         runApplication();
+
     }
 }
