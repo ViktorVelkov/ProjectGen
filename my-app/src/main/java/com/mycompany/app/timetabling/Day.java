@@ -110,8 +110,9 @@ public class Day {
 //                oDSlot[i].setsHall(sHall);
 //                oDSlot[i].setsName(sLecture);
 //            }
-//        }
-        oDslot2.add(new Timeslot(duration, iHourStart, sHall,sActivity));
+////        }
+//        oDslot2.add(new Timeslot(duration, iHourStart, sHall,sActivity));
+        oDslot2.add(new Timeslot(duration,this.sname, iHourStart, sHall, sActivity, this.getiDate(), this.getiMonth(), this.getiYear()));
     }
 
 

@@ -1,25 +1,38 @@
 package com.mycompany.app.timetabling;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Timeslot implements Comparable<Timeslot> {
-    private int itime;
-    private double duration;
+
+    private int itime = 0;
+    private double duration=0.0;
     private String sHall = "";
     private String sActivity = "";
     private String sName = "";
     private int iEmpty = 0;
     private ArrayList<Timeperiod> timePeriod = new ArrayList<>();
-
+    private int iAttending = 0;
     public Timeslot(){
     }
 
-    public Timeslot(int itime, double duration, String sHall, String sActivity,  int iEmpty) {
+    public Timeslot(int itime, double duration) {
         this.itime = itime;
-        this.sHall = sHall;
-        this.sActivity = sActivity;
         this.duration = duration;
-        this.iEmpty = iEmpty;
+        if((itime - 30) %100 == 0){
+            for(int i = 0; i < duration ; i++){
+//                timePeriod.add(new Timeperiod(itime + (i*100), duration, sLectureHall,1));
+//                timePeriod.add(new Timeperiod((itime + (i*100)) + 70, duration, sLectureHall, 1));
+            }
+        }
+        else{
+            for(int i = 0; i < duration ; i++){
+//                timePeriod.add(new Timeperiod(itime + (i*100), duration, sLectureHall,1));
+//                timePeriod.add(new Timeperiod((itime + (i*100)) + 30, duration, sLectureHall, 1));
+            }
+        }
+
+
     }
 
     public Timeslot(double duration, int iHour, String sLectureHall, String sActivity){
@@ -30,20 +43,59 @@ public class Timeslot implements Comparable<Timeslot> {
 
         if((iHour - 30) %100 == 0){
             for(int i = 0; i < duration ; i++){
-                timePeriod.add(new Timeperiod(iHour + (i*100), duration, sLectureHall,0));
-                timePeriod.add(new Timeperiod((iHour + (i*100)) + 70, duration, sLectureHall, 0));
+                timePeriod.add(new Timeperiod(iHour + (i*100), duration, sLectureHall,1));
+                timePeriod.add(new Timeperiod((iHour + (i*100)) + 70, duration, sLectureHall, 1));
             }
         }
         else{
             for(int i = 0; i < duration ; i++){
-                timePeriod.add(new Timeperiod(iHour + (i*100), duration, sLectureHall,0));
-                timePeriod.add(new Timeperiod((iHour + (i*100)) + 30, duration, sLectureHall, 0));
+                timePeriod.add(new Timeperiod(iHour + (i*100), duration, sLectureHall,1));
+                timePeriod.add(new Timeperiod((iHour + (i*100)) + 30, duration, sLectureHall, 1));
             }
         }
 
     }
 
+    public Timeslot(double duration, String sDay, int iHour, String sLectureHall, String sActivity, int iDayOfWeek, int iMonth, int iYear){
+        this.itime = iHour;
+        this.sHall = sLectureHall;
+        this.duration = duration;
+        this.sActivity = sActivity;
 
+        if((iHour - 30) %100 == 0){
+            for(int i = 0; i < duration ; i++){
+
+                timePeriod.add( new Timeperiod(sDay,1, iHour + (i*100), iDayOfWeek, iMonth, iYear));
+                timePeriod.add( new Timeperiod(sDay,1, iHour + (i*100) + 70, iDayOfWeek, iMonth, iYear));
+
+            }
+        }
+        else{
+            for(int i = 0; i < duration ; i++){
+
+               timePeriod.add( new Timeperiod(sDay,1, iHour + (i*100), iDayOfWeek, iMonth, iYear));
+               timePeriod.add( new Timeperiod(sDay,1, iHour + (i*100) + 30, iDayOfWeek, iMonth, iYear));
+
+            }
+        }
+
+    }
+
+    public int getiAttending() {
+        return iAttending;
+    }
+
+    public void setiAttending(int iAttending) {
+        this.iAttending = iAttending;
+    }
+
+    public double getDuration() {
+        return duration;
+    }
+
+    public void setDuration(double duration) {
+        this.duration = duration;
+    }
 
     public void setItime(int itime) {
         this.itime = itime;
@@ -108,10 +160,9 @@ public class Timeslot implements Comparable<Timeslot> {
         String sReturn =  "{" +
                 ", Hall='" + sHall + '\'' +
                 ", Activity='" + sActivity + '\'' +
-                ", Avail=" + iEmpty +
                 ", Name=" + sName
-                + "}\n";
-        for(Timeperiod tp : timePeriod){
+                + "}";
+        for(Timeperiod tp : this.timePeriod){
             sReturn += tp.s_forTimeSlotClass();
         }
         sReturn += "\n"; //test for this one
@@ -125,6 +176,50 @@ public class Timeslot implements Comparable<Timeslot> {
         if(this.sHall.compareTo(o.sHall) == 0) return this.itime - o.itime;
         else return this.sHall.compareTo(o.sHall);
     }
+
+    @Override
+    public int hashCode() {
+//        private int itime = 0;
+//        private double duration=0.0;
+//        private String sHall = "";
+//        private String sActivity = "";
+//        private String sName = "";
+//        private int iEmpty = 0;
+//        private ArrayList<Timeperiod> timePeriod = new ArrayList<>();
+
+
+        final int prime = 7;
+        int result = 1;
+        result = prime * itime + ((sHall == null) ? 0 : sHall.hashCode());
+        result += (int)duration  + sActivity.hashCode();
+        result += ((sName == null) ? 0 : sName.hashCode());
+        if(!timePeriod.isEmpty()){
+            //result +=  Arrays.hashCode(new ArrayList[]{timePeriod});
+        }
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        int a = this.hashCode();
+        int b = obj.hashCode();
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Timeslot other = (Timeslot) obj;
+        if (this.hashCode() != 0) {
+            if (other.hashCode() == 0)
+                return false;
+        }
+        if (this.hashCode() != (other.hashCode()))
+            return false;
+        return true;
+    }
+
+
 }
 
 

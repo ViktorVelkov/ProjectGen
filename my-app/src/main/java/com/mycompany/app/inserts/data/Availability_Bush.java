@@ -24,7 +24,19 @@ public class Availability_Bush {
             preparedStmt.close();
         }
 
-        public void v_populate(String sBushHall) throws SQLException {
+    void v_insert_BushHall_tutorials(int itime, String sHall, int iavail) throws SQLException {
+        String sql2 = "INSERT INTO CURICULUM.availability_halls_bush_house_tutorials VALUES(?, ?, ?)";
+        PreparedStatement preparedStmt = this.connection.prepareStatement(sql2);
+        preparedStmt.setInt(1, itime);
+        preparedStmt.setString(2, sHall);
+        preparedStmt.setInt(3, iavail);
+
+        preparedStmt.execute();
+        preparedStmt.close();
+    }
+
+
+    public void v_populate(String sBushHall) throws SQLException {
                 Statement stmt = connection.createStatement();
                 String sql3 = "SELECT hour FROM curiculum.timeslots";
                 ResultSet rs3 = stmt.executeQuery(sql3);
@@ -33,7 +45,19 @@ public class Availability_Bush {
                 }
                 rs3.close();
                 stmt.close();
-        }
+
+    }
+
+    public void v_populate_tutorial(String sBushHall) throws SQLException {
+                    Statement stmt = connection.createStatement();
+                String sql3 = "SELECT hour FROM curiculum.timeslots";
+                ResultSet rs3 = stmt.executeQuery(sql3);
+                while(rs3.next()) {
+                    v_insert_BushHall_tutorials(rs3.getInt("hour"), sBushHall , 1);
+                }
+                rs3.close();
+                stmt.close();
+    }
 
 
 
@@ -54,6 +78,24 @@ public class Availability_Bush {
             statement.executeUpdate(sql87);
             statement.close();
         }
+
+
+    public void v_create_availability_halls_tutorials() throws SQLException {
+        String sql99 = "DROP TABLE IF EXISTS availability_halls_bush_house_tutorials";
+        String sql87 =
+                "CREATE TABLE `availability_halls_bush_house_tutorials` (\n" +
+                        "  `hour` int NOT NULL,\n" +
+                        "  `hall` varchar(10) NOT NULL,\n" +
+                        "  `available` int DEFAULT NULL,\n" +
+                        "  PRIMARY KEY (`hour`,`hall`),\n" +
+                        "  CONSTRAINT `availability_halls_bush_house_tutorials_ibfk_1` FOREIGN KEY (`hour`) REFERENCES `timeslots` (`Hour`)\n" +
+                        ") ";
+        Statement statement = connection.createStatement();
+        statement.executeUpdate(sql99);
+        statement.executeUpdate(sql87);
+        statement.close();
+    }
+
 
     /**/
 

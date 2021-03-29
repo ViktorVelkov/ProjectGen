@@ -356,7 +356,7 @@ public class BetterGreedyAlgorithm {
         ResultSet resultSet = statement.executeQuery(sql77);
         while(resultSet.next()){
             iCode++;
-            hallsList.add(new Hall(connection,resultSet.getInt("capacity"),resultSet.getString("inside_code"), sTimeStart, sTimeEnd, iCode));
+            hallsList.add(new Hall(connection,resultSet.getInt("capacity"),resultSet.getString("inside_code"), sTimeStart, sTimeEnd, iCode,resultSet.getInt("intended_for_lectures")));
         }
         return hallsList;
     }

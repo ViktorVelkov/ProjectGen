@@ -413,9 +413,10 @@ public class GreedyAlgorithm {
         while(resultSet.next()){
             if(resultSet.getInt(3) == 0) {
                 iCode++;
-                hallsList.add(new Hall(connection, resultSet.getInt("capacity"), resultSet.getString("inside_code"), sTimeStart, sTimeEnd, iCode));
+                hallsList.add(new Hall(connection, resultSet.getInt("capacity"), resultSet.getString("inside_code"), sTimeStart, sTimeEnd, iCode,resultSet.getInt("intended_for_lectures")));
             }
         }
+        Collections.sort(hallsList);
         return hallsList;
     }
 
@@ -428,9 +429,10 @@ public class GreedyAlgorithm {
         while(resultSet.next()){
             if(resultSet.getInt(3) == 1) {
                 iCode++;
-                hallsList.add(new Hall(connection, resultSet.getInt("capacity"), resultSet.getString("inside_code"), sTimeStart, sTimeEnd, iCode));
+                hallsList.add(new Hall(connection, resultSet.getInt("capacity"), resultSet.getString("inside_code"), sTimeStart, sTimeEnd, iCode,resultSet.getInt("intended_for_lectures")));
             }
         }
+        Collections.sort(hallsList);
         return hallsList;
     }
     /**/
@@ -440,12 +442,15 @@ public class GreedyAlgorithm {
     public String getS_mostRecentDate() {
         return s_mostRecentDate;
     }
+
     public void setS_mostRecentDate(String s_mostRecentDate) {
         this.s_mostRecentDate = s_mostRecentDate;
     }
+
     public static String getS_lastmostRecentDate() {
         return s_lastmostRecentDate;
     }
+
     public void addDaysToLastMostRecentDay(int iNum) throws ParseException {
         String sMost = getS_mostRecentDate();
         this.s_lastmostRecentDate = getS_mostRecentDate();
@@ -456,9 +461,8 @@ public class GreedyAlgorithm {
         Date newDate = calendar.getTime();
         this.s_mostRecentDate = Integer.toString(newDate.getDate() )+ "/" + Integer.toString(newDate.getMonth() + 1) + "/" + Integer.toString(newDate.getYear() + 1900);
     }
-    public static void setS_lastmostRecentDate(String s_lastmostRecentDate) {
-        GreedyAlgorithm.s_lastmostRecentDate = s_lastmostRecentDate;
-    }
+
+    public static void setS_lastmostRecentDate(String s_lastmostRecentDate) { GreedyAlgorithm.s_lastmostRecentDate = s_lastmostRecentDate; }
 
     public ArrayList<TwoInts> getTwoInts() {
         return twoInts;
@@ -468,22 +472,17 @@ public class GreedyAlgorithm {
         this.twoInts = twoInts;
     }
 
-
     public Week_Timetable getWeek_timetable_ont() {
         return week_timetable_ont;
     }
 
-    public void setWeek_timetable_ont(Week_Timetable week_timetable_ont) {
-        this.week_timetable_ont = week_timetable_ont;
-    }
+    public void setWeek_timetable_ont(Week_Timetable week_timetable_ont) { this.week_timetable_ont = week_timetable_ont; }
 
     public Week_Timetable getWeek_timetable_spare() {
         return week_timetable_spare;
     }
 
-    public void setWeek_timetable_spare(Week_Timetable week_timetable_spare) {
-        this.week_timetable_spare = week_timetable_spare;
-    }
+    public void setWeek_timetable_spare(Week_Timetable week_timetable_spare) {  this.week_timetable_spare = week_timetable_spare;    }
 
     /**/
     private Double d_TotalHoursOfHallsAvailable_Bush_House(String sStardDate, String sEndDate) throws ParseException, SQLException {
@@ -534,6 +533,7 @@ public class GreedyAlgorithm {
 
         return dSum/2;
     }
+
     private Double d_TotalHoursOfHallsAvailable_Waterloo(String sStardDate, String sEndDate) throws ParseException, SQLException {
         double dHours = 0.0;
         Date date1 = new SimpleDateFormat("dd-MMM-yyyy").parse(sStardDate);
@@ -581,6 +581,7 @@ public class GreedyAlgorithm {
 
         return dSum/2;
     }
+
     private Double d_TotalHoursOfHallsAvailable_Waterloo_SpecificHall(String sName, String sStardDate, String sEndDate) throws ParseException, SQLException {
         double dHours = 0.0;
         Date date1 = new SimpleDateFormat("dd-MMM-yyyy").parse(sStardDate);
@@ -636,6 +637,7 @@ public class GreedyAlgorithm {
     private Double d_TotalHoursOfHallsAvailable(String sStardDate, String sEndDate) throws ParseException, SQLException {
         return d_TotalHoursOfHallsAvailable_Bush_House(sStardDate,sEndDate) + d_TotalHoursOfHallsAvailable_Waterloo(sStardDate, sEndDate);
     }
+
     private int d_AllHallsCapacity() throws  SQLException{
         int iResult = 0;
         String sql99 = "SELECT SUM(CAPACITY) FROM FACILITIES";
@@ -646,6 +648,7 @@ public class GreedyAlgorithm {
         }
         return iResult;
     }
+
     private int d_SpicificHallCapacity(String sName) throws  SQLException{
         int iResult = 0;
         String sql99 = "SELECT CAPACITY FROM FACILITIES WHERE inside_code = ?";
@@ -664,6 +667,7 @@ public class GreedyAlgorithm {
 
         return sHours*iResult / 55;
     }
+
     private int countStudents(int iYear) throws SQLException {
         int iResult = 0;
         String sql77 = "";
@@ -692,7 +696,6 @@ public class GreedyAlgorithm {
         rst.close();
         return iResult;
     }
-
 
     private ArrayList<Hall> searchForAHall(ArrayList<Hall> halls,int iCapacity) {
         ArrayList<Hall> suitable = new ArrayList<>();
@@ -1554,112 +1557,6 @@ public class GreedyAlgorithm {
     //however this of course is not the expected top algorithm to find the top solution
 
 
-    public int generateGreedySolution(String sTable,String sTableStudents, int min, int max, ArrayList<String> preferreddays) throws SQLException, ParseException, CloneNotSupportedException, IOException {
-
-
-        this.sCoursesTable = sTable;
-        this.sStudentsTable = sTableStudents;
-        this.iLocalMin = min;
-        this.iLocalMax = max;
-        this.prefdDays= preferreddays;
-
-        Week_Timetable week_timetableont = myTimetable(7);
-
-        ArrayList <Duplet> myarr = lecturesToBeAssigned2( getTwoInts() ,1, sTable);  //this ARRAY contains all the info for the lectures
-        ArrayList <Duplet> weekOne = new ArrayList<>();
-        ArrayList <Duplet> weekTwo = new ArrayList<>();
-
-        for (int i = 0; i < myarr.size(); i++) {
-                myarr.get(i).setPreferredDays(new PreferredDays(preferreddays));
-        }
-
-/*            for (int i = 0; i < myarr.size(); i++) {
-//                myarr.get(i).setPreferredDays(o_getPreferencesStudents(myarr.get(i).getsLect(), 1, 5));
-//                myarr.get(i).setsTeachersPreference(s_getLecturersChoice(myarr.get(i).getsLect()));
-//            }
-*/
-        Collections.sort(myarr);                        //sort my array to start searching for the lectures with least students (asc order)
-
-        for(int i = 0; i < myarr.size(); i++){
-            if(i % 2 == 0){ weekOne.add(myarr.get(i));}
-            else{weekTwo.add(myarr.get(i));}
-        }
-
-
-         //week_timetableont.setLectures(myarr); //ONLY FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         week_timetableont.setLectures(weekOne);
-
-        weekOne = setConstraints(weekOne);
-        weekTwo = setConstraints(weekTwo);              //I could clone the weekOne here instead
-        //myarr = setConstraints(myarr); //ONLY FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        //addDaysToLastMostRecentDay(7);
-        ArrayList<Hall> halls = hallsAvailability_forlectures(week_timetableont.getsStartDay(), week_timetableont.getsEndDay());//will have to change this to take the parameters of the week, suttle change
-        week_timetableont.setHalls(halls);
-
-        //Collections.sort(halls);
-
-
-        //assign lectures to Halls here :
-        // i need to find a way to make the algorithm tell if there is no solution
-        // checkAtEachStepTheConstraints
-        //
-        //week_timetableont.getLectures().forEach((n) -> System.out.print(n));
-
-        int iCounter = 0;
-        while (iCounter != 2000){
-
-             int iStudents = 0;
-            if(week_timetableont.getLectures().size() != 0 && week_timetableont.getHalls().size() != 0) {
-                iStudents = week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending();
-            }
-            else{ iCounter++; continue;}
-
-            week_timetableont = recursion_for_lectures(week_timetableont,week_timetableont.getHalls(), week_timetableont.getLectures(),week_timetableont.getAssignedLectures(),
-                    week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending() ,week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending(),
-                    1,0, 1);
-            iCounter++;
-
-            }
-
-
-        ///lectures correspond to the tutorials with the exception that tutorials are shorter
-            //week_timetableont.updateDependentOnTutorials();
-        ///
-
-        //week_timetableont.getHalls().forEach((n)->System.out.println(n));
-        System.out.println("Not Assigned Lectures:");
-        System.out.println(week_timetableont.getLectures());
-
-        for(int i = 0; i < week_timetableont.getWeekTimet().size();i++){
-            Collections.sort(week_timetableont.getWeekTimet().get(i).getoDslot2());
-        }
-        week_timetableont.v_print();
-
-        this.week_timetable_ont = week_timetableont;
-
-
-//        putInTableAssigned(week_timetableont.getAssignedLectures(), 0);
-       // generateTimeTables_firstYear(schedule, sTableStudents);
-
-
-            if(week_timetableont.getLectures().size() == 0 ){
-                // solution found
-                return 1;
-            }
-            else{
-                return 0;
-
-
-                //opt for running the algorithm again, maybe a bit differently or choose to run another algorithm
-            }
-
-        /**/
-
-
-    }
-
-
     public int generateGreedySolution_TwoWeeks(String sTable,String sTableStudents, int min, int max, ArrayList<String> preferreddays, String sDate, int readingWeek) throws SQLException, ParseException, CloneNotSupportedException, IOException {
 
 
@@ -1667,34 +1564,35 @@ public class GreedyAlgorithm {
         this.sStudentsTable = sTableStudents;
         this.iLocalMin = min;
         this.iLocalMax = max;
-        this.prefdDays= preferreddays;
+        this.prefdDays = preferreddays;
 
 
-        if(!sDate.isEmpty()){
+        if (!sDate.isEmpty()) {
             this.s_mostRecentDate = sDate;
         }
-        Week_Timetable week_timetableont = myTimetable(7);              if(readingWeek == 1){ addDaysToLastMostRecentDay(7);}
+        Week_Timetable week_timetableont = myTimetable(7);
+        if (readingWeek == 1) {
+            addDaysToLastMostRecentDay(7);
+        }
         Week_Timetable week_timetabletwo = myTimetable(7);
 
 
-        ArrayList <Duplet> myarr = lecturesToBeAssigned2( getTwoInts() ,1, sTable);  //this ARRAY contains all the info for the lectures, TwoInts is derived from the students_lectures table
-        ArrayList <Duplet> weekOne = new ArrayList<>();
-        ArrayList <Duplet> weekTwo = new ArrayList<>();
+        ArrayList<Duplet> myarr = lecturesToBeAssigned2(getTwoInts(), 1, sTable);  //this ARRAY contains all the info for the lectures, TwoInts is derived from the students_lectures table
+        ArrayList<Duplet> weekOne = new ArrayList<>();
+        ArrayList<Duplet> weekTwo = new ArrayList<>();
 
         for (int i = 0; i < myarr.size(); i++) {
-                myarr.get(i).setPreferredDays(new PreferredDays(preferreddays));
+            myarr.get(i).setPreferredDays(new PreferredDays(preferreddays));
         }
 
-/*            for (int i = 0; i < myarr.size(); i++) {
-//                myarr.get(i).setPreferredDays(o_getPreferencesStudents(myarr.get(i).getsLect(), 1, 5));
-//                myarr.get(i).setsTeachersPreference(s_getLecturersChoice(myarr.get(i).getsLect()));
-//            }
-*/
         Collections.sort(myarr);                        //sort my array to start searching for the lectures with least students (asc order)
 
-        for(int i = 0; i < myarr.size(); i++){
-            if(i % 2 == 0){ weekOne.add(myarr.get(i));}
-            else{weekTwo.add(myarr.get(i));} // weekTwo would be == to weekOne containing the same events
+        for (int i = 0; i < myarr.size(); i++) {
+            if (i % 2 == 0) {
+                weekOne.add(myarr.get(i));
+            } else {
+                weekTwo.add(myarr.get(i));
+            } // weekTwo would be == to weekOne containing the same events
         }
 
 
@@ -1704,65 +1602,73 @@ public class GreedyAlgorithm {
         week_timetableont.setLectures(weekOne);
         week_timetabletwo.setLectures(weekTwo);
 
-        fltr.assign(week_timetableont,week_timetabletwo, 1);
+        fltr.assign(week_timetableont, week_timetabletwo, 1);//what does this do????
 
         ArrayList<Hall> halls = hallsAvailability_forlectures(week_timetableont.getsStartDay(), week_timetableont.getsEndDay());//will have to change this to take the parameters of the week, suttle change
-        ArrayList<Hall> halls2 = hallsAvailability_forlectures(week_timetabletwo.getsStartDay(), week_timetableont.getsEndDay());//will have to change this to take the parameters of the week, suttle change
+        ArrayList<Hall> halls2 = hallsAvailability_forlectures(week_timetabletwo.getsStartDay(), week_timetabletwo.getsEndDay());//will have to change this to take the parameters of the week, suttle change
 
         //Collections.sort(halls);
         //Collections.sort(halls2);
 
-        week_timetableont.setHalls(halls);
-        week_timetabletwo.setHalls(halls2);
+        week_timetableont.setHalls((ArrayList<Hall>) halls.clone());
+        week_timetabletwo.setHalls((ArrayList<Hall>) halls2.clone());         //will have to set them to null after assigning them
 
+        halls.clear();
+        halls2.clear();
 
         int iCounter = 0;
-        while (iCounter != 2000){
+        while (iCounter != 2000) {
 
-             int iStudents = 0;
-            if(week_timetableont.getLectures().size() != 0 && week_timetableont.getHalls().size() != 0) {
+            int iStudents = 0;
+            if (week_timetableont.getLectures().size() != 0 && week_timetableont.getHalls().size() != 0) {
                 iStudents = week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending();
+            } else {
+                iCounter++;
+                continue;
             }
-            else{ iCounter++; continue;}
 
-            week_timetableont = recursion_for_lectures(week_timetableont,week_timetableont.getHalls(), week_timetableont.getLectures(),week_timetableont.getAssignedLectures(),
-                    week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending() ,week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending(),
-                    1,0, 1);
-
+            week_timetableont = recursion_for_lectures(week_timetableont, week_timetableont.getHalls(), week_timetableont.getLectures(), week_timetableont.getAssignedLectures(),
+                    week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending(), week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending(),
+                    1, 0, 1);
 
 
-            }
+        }
 
 
         iCounter = 0;
-        while (iCounter != 2000)
-        {
+        while (iCounter != 2000) {
             int iStudents = 0;
-            if(week_timetabletwo.getLectures().size() != 0 && week_timetabletwo.getHalls().size() != 0) {
+            if (week_timetabletwo.getLectures().size() != 0 && week_timetabletwo.getHalls().size() != 0) {
                 iStudents = week_timetabletwo.getLectures().get(0).getiNumberOfStudentsAttending();
+            } else {
+                iCounter++;
+                continue;
             }
-            else{ iCounter++; continue;}
 
-            week_timetabletwo = recursion_for_lectures(week_timetabletwo,week_timetabletwo.getHalls(), week_timetabletwo.getLectures(),week_timetabletwo.getAssignedLectures(),
-                    week_timetabletwo.getLectures().get(0).getiNumberOfStudentsAttending() ,week_timetabletwo.getLectures().get(0).getiNumberOfStudentsAttending(),
-                    1,0, 1);
+            week_timetabletwo = recursion_for_lectures(week_timetabletwo, week_timetabletwo.getHalls(), week_timetabletwo.getLectures(), week_timetabletwo.getAssignedLectures(),
+                    week_timetabletwo.getLectures().get(0).getiNumberOfStudentsAttending(), week_timetabletwo.getLectures().get(0).getiNumberOfStudentsAttending(),
+                    1, 0, 1);
             iCounter++;
 
         }
 
 
-        System.out.println("Not Assigned Lectures:");
-        System.out.println(week_timetableont.getLectures());
-
-        for(int i = 0; i < week_timetableont.getWeekTimet().size();i++){
+        for (int i = 0; i < week_timetableont.getWeekTimet().size(); i++) {
             Collections.sort(week_timetableont.getWeekTimet().get(i).getoDslot2());
         }
-        week_timetableont.v_print();
-        System.out.println("===================================================================================");
-        week_timetabletwo.v_print();
 
+        {   //PRINT SECTION
+            System.out.println("Not Assigned Lectures:");
+            System.out.println(week_timetableont.getLectures());
+            week_timetableont.v_print();
+            System.out.println("Not Assigned Lectures:");
+            System.out.println(week_timetabletwo.getLectures());
+            System.out.println("===================================================================================");
+            week_timetabletwo.v_print();
+            //end of print section
+        }
 
-        this.week_timetable_ont = week_timetableont;
+        this.week_timetable_ont = week_timetableont;            //make things global, to be passed on
         this.week_timetable_spare = week_timetabletwo;
 
             if(week_timetableont.getLectures().size() == 0 ){
@@ -1771,78 +1677,13 @@ public class GreedyAlgorithm {
             }
             else{
                 return 0;
-                //opt for running the algorithm again, maybe a bit differently or choose to run another algorithm
+                //there have been unassigned lectures, probably due to lack of lecture halls/smaller capacities
             }
 
         /**/
 
 
     }
-
-
-    public int generateGreedySolution2(String sTable, String sTableStudents, int min, int max, ArrayList<String> preferreddays, Week_Timetable week_timetableont) throws SQLException, ParseException, CloneNotSupportedException, IOException {
-
-
-        ArrayList<Hall> halls = hallsAvailability_forlectures(week_timetableont.getsStartDay(), week_timetableont.getsEndDay());
-        //Collections.sort(halls);
-        //week_timetableont.setHalls(halls);
-        for (int i = 0; i < week_timetableont.getLectures().size(); i++) {
-            ArrayList<String> prefs =  new ArrayList<>();
-            if(!week_timetableont.getLectures().get(i).getsDayOfWeek().isEmpty()) {
-                prefs.add(week_timetableont.getLectures().get(i).getsDayOfWeek());
-                week_timetableont.getLectures().get(i).setPreferredDays(new PreferredDays(prefs));
-            }
-            else{
-                week_timetableont.getLectures().get(i).setPreferredDays(new PreferredDays(preferreddays));
-            }
-        }
-
-        int iCounter = 0;
-        while (iCounter != 2000){
-
-            int iStudents = 0;
-            if(week_timetableont.getLectures().size() != 0 && week_timetableont.getHalls().size() != 0) {
-                iStudents = week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending();
-            }
-            else{ iCounter++; continue;}
-
-            week_timetableont = recursion_for_lectures(week_timetableont,week_timetableont.getHalls(), week_timetableont.getLectures(),week_timetableont.getAssignedLectures(),
-                    week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending() ,week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending(),
-                    1,0, 1);
-            iCounter++;
-
-        }
-
-        System.out.println("Not Assigned Lectures:");
-        System.out.println(week_timetableont.getLectures());
-
-        for(int i = 0; i < week_timetableont.getWeekTimet().size();i++){
-            Collections.sort(week_timetableont.getWeekTimet().get(i).getoDslot2());
-        }
-        week_timetableont.v_print();
-
-        this.week_timetable_spare = week_timetableont;
-
-        if(week_timetableont.getLectures().size() == 0 ){
-            return 1;
-        }
-        else{
-            return 0;
-        }
-
-        /**/
-
-
-    }
-
-
-
-
-
-
-
-
-
 
     /**/
 

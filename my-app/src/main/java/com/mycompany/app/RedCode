@@ -360,5 +360,248 @@ while(iCounter != 80){
 ////
 
 
+///GREEDY ALGORITHM:
 
 
+    public int generateGreedySolution(String sTable,String sTableStudents, int min, int max, ArrayList<String> preferreddays) throws SQLException, ParseException, CloneNotSupportedException, IOException {
+
+
+        this.sCoursesTable = sTable;
+        this.sStudentsTable = sTableStudents;
+        this.iLocalMin = min;
+        this.iLocalMax = max;
+        this.prefdDays= preferreddays;
+
+        Week_Timetable week_timetableont = myTimetable(7);
+
+        ArrayList <Duplet> myarr = lecturesToBeAssigned2( getTwoInts() ,1, sTable);  //this ARRAY contains all the info for the lectures
+        ArrayList <Duplet> weekOne = new ArrayList<>();
+        ArrayList <Duplet> weekTwo = new ArrayList<>();
+
+        for (int i = 0; i < myarr.size(); i++) {
+                myarr.get(i).setPreferredDays(new PreferredDays(preferreddays));
+        }
+
+/*            for (int i = 0; i < myarr.size(); i++) {
+//                myarr.get(i).setPreferredDays(o_getPreferencesStudents(myarr.get(i).getsLect(), 1, 5));
+//                myarr.get(i).setsTeachersPreference(s_getLecturersChoice(myarr.get(i).getsLect()));
+//            }
+*/
+        Collections.sort(myarr);                        //sort my array to start searching for the lectures with least students (asc order)
+
+        for(int i = 0; i < myarr.size(); i++){
+            if(i % 2 == 0){ weekOne.add(myarr.get(i));}
+            else{weekTwo.add(myarr.get(i));}
+        }
+
+
+         //week_timetableont.setLectures(myarr); //ONLY FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+         week_timetableont.setLectures(weekOne);
+
+        weekOne = setConstraints(weekOne);
+        weekTwo = setConstraints(weekTwo);              //I could clone the weekOne here instead
+        //myarr = setConstraints(myarr); //ONLY FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        //addDaysToLastMostRecentDay(7);
+        ArrayList<Hall> halls = hallsAvailability_forlectures(week_timetableont.getsStartDay(), week_timetableont.getsEndDay());//will have to change this to take the parameters of the week, suttle change
+        week_timetableont.setHalls(halls);
+
+        //Collections.sort(halls);
+
+
+        //assign lectures to Halls here :
+        // i need to find a way to make the algorithm tell if there is no solution
+        // checkAtEachStepTheConstraints
+        //
+        //week_timetableont.getLectures().forEach((n) -> System.out.print(n));
+
+        int iCounter = 0;
+        while (iCounter != 2000){
+
+             int iStudents = 0;
+            if(week_timetableont.getLectures().size() != 0 && week_timetableont.getHalls().size() != 0) {
+                iStudents = week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending();
+            }
+            else{ iCounter++; continue;}
+
+            week_timetableont = recursion_for_lectures(week_timetableont,week_timetableont.getHalls(), week_timetableont.getLectures(),week_timetableont.getAssignedLectures(),
+                    week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending() ,week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending(),
+                    1,0, 1);
+            iCounter++;
+
+            }
+
+
+        ///lectures correspond to the tutorials with the exception that tutorials are shorter
+            //week_timetableont.updateDependentOnTutorials();
+        ///
+
+        //week_timetableont.getHalls().forEach((n)->System.out.println(n));
+        System.out.println("Not Assigned Lectures:");
+        System.out.println(week_timetableont.getLectures());
+
+        for(int i = 0; i < week_timetableont.getWeekTimet().size();i++){
+            Collections.sort(week_timetableont.getWeekTimet().get(i).getoDslot2());
+        }
+        week_timetableont.v_print();
+
+        this.week_timetable_ont = week_timetableont;
+
+
+//        putInTableAssigned(week_timetableont.getAssignedLectures(), 0);
+       // generateTimeTables_firstYear(schedule, sTableStudents);
+
+
+            if(week_timetableont.getLectures().size() == 0 ){
+                // solution found
+                return 1;
+            }
+            else{
+                return 0;
+
+
+                //opt for running the algorithm again, maybe a bit differently or choose to run another algorithm
+            }
+
+        /**/
+
+
+    }
+
+
+
+    public int generateGreedySolution2(String sTable, String sTableStudents, int min, int max, ArrayList<String> preferreddays, Week_Timetable week_timetableont) throws SQLException, ParseException, CloneNotSupportedException, IOException {
+
+
+        ArrayList<Hall> halls = hallsAvailability_forlectures(week_timetableont.getsStartDay(), week_timetableont.getsEndDay());
+        //Collections.sort(halls);
+        //week_timetableont.setHalls(halls);
+        for (int i = 0; i < week_timetableont.getLectures().size(); i++) {
+            ArrayList<String> prefs =  new ArrayList<>();
+            if(!week_timetableont.getLectures().get(i).getsDayOfWeek().isEmpty()) {
+                prefs.add(week_timetableont.getLectures().get(i).getsDayOfWeek());
+                week_timetableont.getLectures().get(i).setPreferredDays(new PreferredDays(prefs));
+            }
+            else{
+                week_timetableont.getLectures().get(i).setPreferredDays(new PreferredDays(preferreddays));
+            }
+        }
+
+        int iCounter = 0;
+        while (iCounter != 2000){
+
+            int iStudents = 0;
+            if(week_timetableont.getLectures().size() != 0 && week_timetableont.getHalls().size() != 0) {
+                iStudents = week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending();
+            }
+            else{ iCounter++; continue;}
+
+            week_timetableont = recursion_for_lectures(week_timetableont,week_timetableont.getHalls(), week_timetableont.getLectures(),week_timetableont.getAssignedLectures(),
+                    week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending() ,week_timetableont.getLectures().get(0).getiNumberOfStudentsAttending(),
+                    1,0, 1);
+            iCounter++;
+
+        }
+
+        System.out.println("Not Assigned Lectures:");
+        System.out.println(week_timetableont.getLectures());
+
+        for(int i = 0; i < week_timetableont.getWeekTimet().size();i++){
+            Collections.sort(week_timetableont.getWeekTimet().get(i).getoDslot2());
+        }
+        week_timetableont.v_print();
+
+        this.week_timetable_spare = week_timetableont;
+
+        if(week_timetableont.getLectures().size() == 0 ){
+            return 1;
+        }
+        else{
+            return 0;
+        }
+
+        /**/
+
+
+    }
+
+
+
+///////////
+
+
+//HC algorithm:
+
+
+                            for(int iHourIterator = 0; iHourIterator < hours.size(); iHourIterator++) {
+                                if (!tempAssign.isEmpty() && hours.get(iHourIterator).getiHour() == coupledData.getiHour()) { students.addAll( findInDataByHour(tempAssign, hours.get(iHourIterator).getiHour() )); }
+                            }
+                            if(students.size() >= halls.getiCapacity()/2){
+                                if(tempAssign.size() - students.size() <= halls.getiCapacity()/2){
+                                    students = (ArrayList<DataSetStudents>) tempAssign.clone();
+                                }
+                                else{
+                                    if(students.size() > halls.getiCapacity()){
+                                        students = randomlyRemoveFromArray(students,halls.getiCapacity());
+                                    }
+                                }
+                            }else{
+                                if(students.isEmpty()){
+                                    for(int iHourIterator = 0; iHourIterator < hours.size(); iHourIterator++) {
+                                        if (!tempAssign.isEmpty()) {
+                                            if(students.size() < halls.getiCapacity()/2) students.addAll(findInDataByHour(tempAssign, hours.get(iHourIterator).getiHour()));
+                                        }
+                                        if (students.size() >= halls.getiCapacity() / 2) {
+                                            if (tempAssign.size() - students.size() <= halls.getiCapacity()) {
+                                                students = (ArrayList<DataSetStudents>) tempAssign.clone();
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if(tempAssign.size() - students.size() <= halls.getiCapacity()/2){
+                                        students = (ArrayList<DataSetStudents>) tempAssign.clone();
+                                    }
+                                }
+                                else{
+                                    for(int iHourIterator = 0; iHourIterator < hours.size(); iHourIterator++) {
+                                        // if (!tempAssign.isEmpty()) { students.addAll( findInDataByHour(tempAssign, hours.get(iHourIterator).getiHour() )); }
+                                    }
+                                }
+
+                            }
+/// END HC
+
+
+///APP main:
+
+HillClimbing hillClimbing = new HillClimbing(connection);
+        hillClimbing.getGrdAlg().setTwoInts(generator.getLectureEvents());
+        hillClimbing.getGrdAlg().generateGreedySolution_TwoWeeks("courses", "students", 5, 21,days, "", 0);
+        hillClimbing.setTIMETABLEONT_GLOBAL(hillClimbing.getGrdAlg().getWeek_timetable_ont());
+        hillClimbing.setTIMETABLETWO_GLOBAL(hillClimbing.getGrdAlg().getWeek_timetable_spare());
+        hillClimbing.generateHCSolution(0.9, 3, 5);
+
+
+//        List<int[]> combinations = generate(29, 20);
+//        for (int[] combination : combinations) {
+//            //System.out.println(Arrays.toString(combination));
+//        }
+//        System.out.printf("generated %d combinations of %d items from %d ", combinations.size(), 2, 5);
+
+    private static void helper(List<int[]> combinations, int data[], int start, int end, int index) {
+        if (index == data.length) {
+            int[] combination = data.clone();
+            combinations.add(combination);
+        } else if (start <= end) {
+            data[index] = start;
+            helper(combinations, data, start + 1, end, index + 1);
+            helper(combinations, data, start + 1, end, index);
+        }
+    }
+
+
+    public static List<int[]> generate(int n, int r) {
+        List<int[]> combinations = new ArrayList<>();
+        helper(combinations, new int[r], 0, n-1, 0);
+        return combinations;
+    }

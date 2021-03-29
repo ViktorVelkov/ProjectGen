@@ -121,6 +121,9 @@ public class Generator {
             twoWeeks.v_generateTable_and_populate("availability_halls_bush_house",sStartSemester,sEndSemeseter);
             twoWeeks.v_generateTable_and_populate("availability_halls_waterloo",sStartSemester,sEndSemeseter);
 
+            twoWeeks.v_generateTable_and_populate("availability_halls_bush_house_tutorials",sStartSemester,sEndSemeseter);
+            twoWeeks.v_generateTable_and_populate("availability_halls_waterloo_tutorials",sStartSemester,sEndSemeseter);
+
         }
         return 0;
     }

@@ -29,7 +29,8 @@ public class ParserHalls {
         //create the two tables to insert data in
         av_bush.v_create_availability_halls();
         av_waterloo.v_create_availability_halls();
-
+        av_bush.v_create_availability_halls_tutorials();
+        av_waterloo.v_create_availability_halls_tutorials();
         //String sql22 = "TRUNCATE TABLE availability_halls_bush_house";
         //String sql33 = "TRUNCATE TABLE availability_halls_waterloo";
         //statement2.executeUpdate(sql22);
@@ -48,9 +49,11 @@ public class ParserHalls {
 
             else{
                 if (sHall.startsWith("B")) { //add to the tutorials table hall
-                     }
+                    av_bush.v_populate_tutorial(sHall);
+                }
                 if (sHall.startsWith("W")) { //add to the tutorials table hall
-                     }
+                    av_waterloo.v_populate_tutorials(sHall);
+                }
             }
 
         }

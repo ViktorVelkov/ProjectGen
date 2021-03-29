@@ -100,6 +100,74 @@ public class Availability_TwoWeeks {
         prst.close();
     }
 
+    public void v_generateTable_and_populate_tutorialsRooms(String sTable, String sStartDate, String sEndDate) throws SQLException, ParseException {
+        //1.start by assigning the lectures in the timeslots available from the week days
+        //2.assign the students to the lectures following the simple rules of the hard constraints
+        //3.
+        // find a suitable layout of tutorials and lectures . Only Lectures first. since tutorials are not yet inserted
+        int iCounter = 0;
+        Statement statement = connection.createStatement();
+
+        SimpleDateFormat formatter6=new SimpleDateFormat("dd-MMM-yyyy");
+        Date date00 = (Date)formatter6.parse(sStartDate);
+        Date date88 = (Date)formatter6.parse(sEndDate);
+
+        List<Date> allDates = getDaysBetweenDates(date00,date88);
+
+        String sql33 = "DROP TABLE IF EXISTS two_weeks_" + sTable;
+        String sql88 =
+                "CREATE TABLE two_weeks_" + sTable + "(" +
+                        "AVAILABLE INT(1)," +
+                        "HALL VARCHAR(10)," +
+                        "HOUR INT(2), " +
+                        "DAY VARCHAR(10)," +
+                        "DATE INT(2)," +
+                        "MONTH INT(2)," +
+                        "YEAR INT(4))";
+//
+//        String sql44 = "SELECT AVAILABLE, HALL, HOUR FROM availability_halls_bush_house";
+//        String sql55 = "SELECT AVAILABLE, HALL, HOUR FROM availability_halls_waterloo";
+        String sql44 = "SELECT AVAILABLE, HALL, HOUR FROM " + sTable;
+        String sql66 = "INSERT INTO two_weeks_"+ sTable + " (AVAILABLE, HALL, HOUR, DAY, DATE, MONTH, YEAR) VALUES( ?,?,?,?,?,?,? )";
+        //String sql66 = "INSERT INTO halls_availability_tweeks(AVAILABLE, HALL, HOUR, DAY, DATE, MONTH, YEAR) VALUES( ?,?,?,? )";
+
+        statement.executeUpdate(sql33);
+        statement.executeUpdate(sql88);
+
+        ResultSet rst1 = statement.executeQuery(sql44);
+        PreparedStatement prst = connection.prepareStatement(sql66);
+        while(!allDates.isEmpty()){
+
+            while(rst1.next()){
+
+                prst.setInt(1, rst1.getInt(1));
+                prst.setString(2, rst1.getString("HALL"));
+                prst.setInt(3, rst1.getInt(3));
+
+                switch( allDates.get(iCounter).getDay() ) {
+                    case 1: prst.setString(4, "Monday"); break;    // switch case needed here
+                    case 2: prst.setString(4, "Tuesday"); break;
+                    case 3: prst.setString(4, "Wednesday"); break;
+                    case 4: prst.setString(4, "Thursday"); break;
+                    case 5: prst.setString(4, "Friday"); break;
+                }
+
+
+                prst.setInt(5, (int)allDates.get(iCounter).getDate());
+                prst.setInt(6, (int)allDates.get(iCounter).getMonth());
+                prst.setInt(7, (int)allDates.get(iCounter).getYear() + 1900);
+                prst.executeUpdate();
+            }
+            allDates.remove(iCounter);
+            rst1.beforeFirst();
+        }
+        statement.close();
+        rst1.close();
+        prst.close();
+    }
+
+
+
     private void generateAssignedLecturesTable()throws SQLException{
         //1.start by assigning the lectures in the timeslots available from the week days
         //2.assign the students to the lectures following the simple rules of the hard constraints

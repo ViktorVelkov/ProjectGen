@@ -152,7 +152,7 @@ import java.util.Date;
 
 
 
-        public ArrayList<Duplet> getLectures() {
+    public ArrayList<Duplet> getLectures() {
         return lectures;
     }
 

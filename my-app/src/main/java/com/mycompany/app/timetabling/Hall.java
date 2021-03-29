@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.Locale;
 
 public class Hall implements Comparable<Hall>{
+
     private int iCapacity;
 
     private String sAbbrev;
@@ -16,12 +17,11 @@ public class Hall implements Comparable<Hall>{
     private String sTimeEnd;
     private Connection connection;
     private int iAdditionalCode;
-
+    private int iOccupants=0;
 
     private ArrayList<Timeperiod> availability;
 
-
-    public Hall(Connection connection, int iCapacity, String sAbbrev, String sTimeStart, String sTimeEnd, int iAdditionalCode) throws SQLException, ParseException {
+    public Hall(Connection connection, int iCapacity, String sAbbrev, String sTimeStart, String sTimeEnd, int iAdditionalCode, int intendedForLecture) throws SQLException, ParseException {
         this.sAbbrev = sAbbrev;
         this.sTimeStart = sTimeStart;
         this.sTimeEnd = sTimeEnd;
@@ -30,11 +30,17 @@ public class Hall implements Comparable<Hall>{
         this.iAdditionalCode = iAdditionalCode;
         String sTableName = "";
 
-        if(sAbbrev.startsWith("W")){
+        if(sAbbrev.startsWith("W") && intendedForLecture == 1){
             sTableName = "two_weeks_availability_halls_waterloo";
         }
-        else if(sAbbrev.startsWith("B")){
+        else if(sAbbrev.startsWith("B") && intendedForLecture == 1){
             sTableName = "two_weeks_availability_halls_bush_house";
+        }
+        if(sAbbrev.startsWith("W") && intendedForLecture == 0){
+            sTableName = "two_weeks_availability_halls_waterloo_tutorials";
+        }
+        else if(sAbbrev.startsWith("B") && intendedForLecture == 0){
+            sTableName = "two_weeks_availability_halls_bush_house_tutorials";
         }
         else{}
         //
@@ -58,15 +64,14 @@ public class Hall implements Comparable<Hall>{
             prst.setString(6, sAbbrev);
         }
         else {
-            sql34 = " SELECT AVAILABLE, HOUR, DAY, DATE, MONTH, YEAR  FROM " + sTableName + " WHERE AVAILABLE = 1 AND MONTH = ? AND DATE >= ? AND HALL = ? UNION";
+            sql34 = " SELECT AVAILABLE, HOUR, DAY, DATE, MONTH, YEAR  FROM " + sTableName + " WHERE AVAILABLE = 1 AND MONTH = ? AND DATE >= ? AND HALL = ? AND MONTH = ? AND DATE < ? ";
             int iCounter = 1;
             int iSecondCounter = 0;
 
             for (int i = date1.getMonth() + 1; i < date2.getMonth(); i++) {
-                sql34 += " SELECT AVAILABLE, HOUR, DAY, DATE, MONTH, YEAR  FROM " + sTableName + " WHERE AVAILABLE = 1 AND MONTH = ? AND HALL = ? UNION ";
+                sql34 += "UNION SELECT AVAILABLE, HOUR, DAY, DATE, MONTH, YEAR  FROM " + sTableName + " WHERE AVAILABLE = 1 AND MONTH = ? AND HALL = ? ";
                 iSecondCounter++;
             }
-            sql34 += " SELECT AVAILABLE, HOUR, DAY, DATE, MONTH, YEAR  FROM " + sTableName + " WHERE AVAILABLE = 1 AND MONTH = ? AND DATE < ? AND HALL = ? ";
 
 
             prst = connection.prepareStatement(sql34);
@@ -79,7 +84,6 @@ public class Hall implements Comparable<Hall>{
             }
             prst.setInt(++iCounter, date2.getMonth());
             prst.setInt(++iCounter, date2.getDate());
-            prst.setString(++iCounter, sAbbrev);
         }
         ResultSet rst = prst.executeQuery();
         availability = new ArrayList<>();
@@ -98,12 +102,23 @@ public class Hall implements Comparable<Hall>{
         
     }
 
-
     public Hall(int iCapacity, String sAbbrev, String sTimeStart, String sTimeEnd){
         this.iCapacity = iCapacity;
         this.sAbbrev = sAbbrev;
         this.sTimeStart = sTimeStart;
         this.sTimeEnd = sTimeEnd;
+    }
+
+    public int getiOccupants() {
+        return iOccupants;
+    }
+
+    public void setiOccupants(int iOccupants) {
+        this.iOccupants = iOccupants;
+    }
+
+    public void increaseOccupantsByOne(){
+        iOccupants++;
     }
 
     public int getiCapacity() {
@@ -135,10 +150,11 @@ public class Hall implements Comparable<Hall>{
 
         for (int i = 0; i < availability.size(); i++){
             String temp = availability.get(i).getsDay().toLowerCase(Locale.ROOT);
-            if(temp.equals(sDay.toLowerCase(Locale.ROOT)) && availability.get(i).getiTime() >= iHourStart && availability.get(i).getiTime() < iHourEnd){
-
-                        availability.get(i).setiAvailable(0);
-
+            int iTime = availability.get(i).getiTime();
+            if(temp.equals(sDay.toLowerCase(Locale.ROOT)) ) {
+                if (availability.get(i).getiTime() >= iHourStart && availability.get(i).getiTime() < iHourEnd) {
+                    availability.get(i).setiAvailable(0);
+                }
             }
         }
 
@@ -169,9 +185,6 @@ public class Hall implements Comparable<Hall>{
         if(iCount/2 == iDuration/100){return 1;}
         return 0;
     }
-
-
-
 
     public ArrayList<Timeperiod> getArrayTimeperiods() {
         return availability;
@@ -253,8 +266,7 @@ public class Hall implements Comparable<Hall>{
         return cp;
     }
 
-
-   public CoupledData findAvailableSlotLectures(int iHourStart, int iDuration, ArrayList<String> daysToBeUsed, Duplet event){
+    public CoupledData findAvailableSlotLectures(int iHourStart, int iDuration, ArrayList<String> daysToBeUsed, Duplet event){
         int iCount = 0;
         int iTime = 0;
         CoupledData cp = new CoupledData();
@@ -318,8 +330,7 @@ public class Hall implements Comparable<Hall>{
         return cp;
     }
 
-
-   public CoupledData findAvailableSlotLectures_withPreferences(int iHourStart, double iDuration, ArrayList<String> daysToBeUsed,Duplet event){
+    public CoupledData findAvailableSlotLectures_withPreferences(int iHourStart, double iDuration, ArrayList<String> daysToBeUsed,Duplet event){
         int iCount = 0;
         int iTime = 0;
         CoupledData cp = new CoupledData();
@@ -400,6 +411,54 @@ public class Hall implements Comparable<Hall>{
         return cp;          //end of _withPreferredDays
     }
 
+    public int checkAvailability(String sDay, int iHour, double duration){
+        int iCounter =0;
+        while(!availability.get(iCounter).getsDay().equals(sDay)){
+            if(iCounter > availability.size() - 1){
+                break;
+            }
+            iCounter++;
+        }
+
+        while (iHour != availability.get(iCounter).getiTime()){
+            iCounter++;
+        }
+        String temp = "";
+        for(int i =iCounter; i < iCounter + duration*2; i++){
+            int iTime = availability.get(i).getiTime();     //for testing
+            String checkDay = availability.get(i).getsDay();    //for testing
+            int iAvailable = availability.get(i).getiAvailable();   //for testing
+            if(!temp.isEmpty() && !temp.equals(checkDay)){
+                return 0;
+            }
+            if(availability.get(i).getiAvailable() == 0){
+                return 0;
+            }
+            checkDay = availability.get(i).getsDay();
+            temp = checkDay;
+        }
+        return 1;
+    }
+
+
+    public int checkAvailability(Timeslot timeslot){
+        int iCounter =0;
+        while(availability.get(iCounter).getsDay().equals(timeslot.getTimePeriod().get(0).getsDay()) && availability.get(iCounter).getiTime() == timeslot.getTimePeriod().get(0).getiTime()){
+            if(iCounter > availability.size() - 1){
+                break;
+            }
+            iCounter++;
+        }
+
+        for(int i =iCounter; i < iCounter + timeslot.getDuration()*2; i++){
+            if(availability.get(i).getiAvailable() == 0){
+                return 0;
+            }
+        }
+        return 1;
+    }
+
+
 
     //THIS IS INSIDE BETTERGREEDY ALGORITHM, NOT PROPERLY USED
     public int findAvailableSlot_PreferredDay(int iHourStart, int iDuration, String sPrefDay){
@@ -438,22 +497,50 @@ public class Hall implements Comparable<Hall>{
         return iTime;
     }
 
-    public int findAvailableSlot_PreferredDay_sgt(int iHourStart, int iDuration, String sPrefDay, int dayAssigned, int iMonth, int iYear, int iHour, Duplet event){
+    public int findAvailableSlot_PreferredDay_sgt(int iHourStart, double iDuration, String sPrefDay, Duplet event, ArrayList<Timeslot> unavailable){
 
         int iCount = 0;
+        int iCount2 = 0;
         int iTime = 0;
         int iResult = 0;
         String sDay = "";
         String sPrevDay = "";                               //here actually lies the 930 problem !!!!
-        //FORGOT TO CHECK FOR THE LECTURES
+        ArrayList<Timeslot> timeslotsAvailable;
         ArrayList<Timeperiod> slotsToUse = new ArrayList<>();
-        for(int i = 0; i < availability.size(); i++){
-            int iCounter =0;
-            while(!availability.get(i).getsDay().equals( event.getDayAssigned() ) && availability.get(i).getiTime() >= event.getiHourScheduled() + 100*event.getiHours() ){
-                continue;
-            }
-            slotsToUse.add(availability.get(i));
+
+        while(!availability.get(iCount2).getsDay().equals( event.getDayAssigned() )){
+            iCount2++;
         }
+        for(int i =iCount2; i< availability.size(); i++){
+            if(availability.get(i).getsDay().equals( event.getDayAssigned() )){
+                if(availability.get(i).getiTime() >= event.getiHourScheduled() && availability.get(i).getiTime() < event.getiHourScheduled() + event.getiHours()*100  /* + 100*n /*hours to put as unavailable after the lecture, for example a break*/){
+                    continue;
+                }
+            }
+
+            slotsToUse.add(availability.get(i));
+
+        }
+
+
+            for (Timeslot timeslot : unavailable) { // remove all the depending times from the slotsToUse
+                for (Timeperiod slotts : slotsToUse) {
+                    if (timeslot.getTimePeriod().get(0).getsDay().equals(slotts.getsDay())) {
+                        for (int i = 0; i < timeslot.getTimePeriod().size(); i++) {
+                            if(timeslot.getTimePeriod().get(i).getiTime() <= slotts.getiTime()) {
+                                if (timeslot.getTimePeriod().get(i).getiTime() == slotts.getiTime()) {
+                                    slotts.setiAvailable(0);
+                                    break;
+                                }
+                            }
+                            else{
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
 
 
 
@@ -464,9 +551,10 @@ public class Hall implements Comparable<Hall>{
                 if (slotsToUse.get(i).getsDay().equals(sPrefDay)) {
                     if (slotsToUse.get(i).getiAvailable() == 1 && slotsToUse.get(i).getiTime() >= iHourStart &&
                             (
-                                    (slotsToUse.get(i).getiDate() >= dayAssigned && slotsToUse.get(i).getiMonth() >= iMonth - 1 && slotsToUse.get(i).getiYear() >= iYear && slotsToUse.get(i).getiTime() >= iHour + 100))
-                            || (slotsToUse.get(i).getiDate() > dayAssigned && slotsToUse.get(i).getiMonth() >= iMonth - 1 && slotsToUse.get(i).getiYear() >= iYear)
-                    ) {
+                                    (slotsToUse.get(i).getiDate() >= event.getiDayScheduled() && slotsToUse.get(i).getiMonth() >= event.getiMonthScheduled() - 1 && slotsToUse.get(i).getiYear() >= event.getiYearScheduled() && slotsToUse.get(i).getiTime() >= event.getiHourScheduled() + 100))
+                            || (slotsToUse.get(i).getiDate() > event.getiDayScheduled() && slotsToUse.get(i).getiMonth() >= event.getiMonthScheduled() - 1 && slotsToUse.get(i).getiYear() >= event.getiYearScheduled())
+                    )
+                    {
                         iCount++;
                         if (iCount == 1) {
                             iTime = slotsToUse.get(i).getiTime();
@@ -477,7 +565,7 @@ public class Hall implements Comparable<Hall>{
                         iTime = 0;
                     }
 
-                    if (iCount == (iDuration * 2)) {
+                    if (iCount == (int)(iDuration * 2)) {
                         //spot found
                         //first one available
                         //I need to return the day and the hour corresponding to the hall
@@ -491,6 +579,110 @@ public class Hall implements Comparable<Hall>{
         return iTime;
     }
 
+    public ArrayList<Timeslot> findAvailableSlot_PreferredDay_sgt_remastered(int iHourStart, double iDuration, String sPrefDay, Duplet event, ArrayList<Timeslot> unavailable) throws CloneNotSupportedException {
+
+        int iCount = 0;
+        int iCount2 = 0;
+        int iTime = 0;
+        int iResult = 0;
+        String sDay = "";
+        String sPrevDay = "";                               //here actually lies the 930 problem !!!!
+        ArrayList<Timeslot> timeslotsAvailable = new ArrayList<>();
+        ArrayList<Timeperiod> slotsToUse = new ArrayList<>();
+
+        while(!availability.get(iCount2).getsDay().equals( event.getDayAssigned() )){
+            iCount2++;
+        }
+        for(int i =iCount2; i< availability.size(); i++){
+            if(availability.get(i).getsDay().equals( event.getDayAssigned() )){
+                if(availability.get(i).getiTime() >= event.getiHourScheduled() && availability.get(i).getiTime() < event.getiHourScheduled() + event.getiHours()*100  /* + 100*n /*hours to put as unavailable after the lecture, for example a break*/){
+                    continue;
+                }
+            }
+
+            slotsToUse.add((Timeperiod) availability.get(i).clone());
+
+
+        }
+
+
+//        for (Timeslot timeslot : unavailable) { // remove all the depending times from the slotsToUse
+//            for (Timeperiod slotts : slotsToUse) {
+//                if (timeslot.getTimePeriod().get(0).getsDay().equals(slotts.getsDay())) {
+//                    for (int i = 0; i < timeslot.getTimePeriod().size(); i++) {
+//                        if(timeslot.getTimePeriod().get(i).getiTime() <= slotts.getiTime()) {
+//                            if (timeslot.getTimePeriod().get(i).getiTime() == slotts.getiTime()) {
+//                                slotts.setiAvailable(0);
+//                                break;
+//                            }
+//                        }
+//                        else{
+//                            break;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+
+
+
+
+        for (Timeslot timeslot : unavailable) { // remove all the depending times from the slotsToUse
+            for (int i = 0; i < timeslot.getTimePeriod().size(); i++) {
+                for(Timeperiod slotts: slotsToUse){
+                    if(slotts.getsDay().equals(timeslot.getTimePeriod().get(0).getsDay()) && slotts.getiTime() == timeslot.getTimePeriod().get(i).getiTime()  ){
+                        slotts.setiAvailable(0);
+                        break;
+                    }
+                }
+            }
+        }
+
+
+
+
+        for(int i = 0; i < slotsToUse.size(); i++) {
+            sDay = slotsToUse.get(i).getsDay();
+            if(sDay.equals(sPrevDay)) {
+
+                for (int k = 0; k < iDuration * 2; k++) {
+
+                    if (i < slotsToUse.size() - iDuration * 2) {
+
+                        String sCurrentItereationCheckDay = slotsToUse.get(i+k).getsDay();
+
+                        if(!sDay.equals(sCurrentItereationCheckDay)){
+                            iCount =0;
+                            break;
+                        }
+
+                        if (slotsToUse.get(i + k).getiAvailable() == 1) {
+                                iCount++;
+                                if (iCount == 1) {
+                                    iTime = slotsToUse.get(i + k).getiTime();
+                                }
+
+                        } else {
+                                iCount = 0;
+                                iTime = 0;
+                        }
+
+                            if (iCount == (int) (iDuration * 2)) {
+                                //spot found
+                                //I need to return the day and the hour corresponding to the hall
+                                iCount =0;
+                                Timeslot toAdd = new Timeslot(1.0, sDay, iTime,  this.sAbbrev, event.getsLect(), slotsToUse.get(i+k).getiDate(),slotsToUse.get(i+k).getiMonth(), slotsToUse.get(i+k).getiYear() );
+                                timeslotsAvailable.add(toAdd);
+                            }
+
+                        }
+
+                }
+            }
+            sPrevDay = slotsToUse.get(i).getsDay();
+        }
+        return timeslotsAvailable;
+    }
 
 
     public void updateHalls(int iNumber) throws ParseException {
@@ -532,7 +724,7 @@ public class Hall implements Comparable<Hall>{
 
     @Override
     public int compareTo(Hall o) {
-        //return this.iCapacity - o.iCapacity;
-        return o.iCapacity-this.iCapacity;
+        return this.iCapacity - o.iCapacity;
+        //return o.iCapacity-this.iCapacity;
     }
 }
