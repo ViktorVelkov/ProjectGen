@@ -15,6 +15,7 @@ public class SGT implements Comparable<SGT>, Cloneable{
     private int iSemester = 0;
     private int iNumberOfStudentsAttending = 0;
     private int iCode = 0;
+    private int iAdditionalCode;
     private int iSizeOfHall = 0;
     private String sLectureHall = "";
     private String sDayOfWeek = "";
@@ -39,7 +40,26 @@ public class SGT implements Comparable<SGT>, Cloneable{
         this.iHourScheduled = iHourScheduled;
         this.iHours = dDuration;
     }
+ public SGT(String sAbrev, String sDayOfWeek, String sLectureHall,int iHourScheduled, double dDuration){
+        this.sLect = sAbrev;
+        this.sDayOfWeek = sDayOfWeek;
+        this.iHourScheduled = iHourScheduled;
+        this.iHours = dDuration;
+        this.sLectureHall = sLectureHall;
+    }
 
+
+    public void setDependentOn(HashSet<SGT> dependentOn) {
+        this.dependentOn = dependentOn;
+    }
+
+    public int getiAdditionalCode() {
+        return iAdditionalCode;
+    }
+
+    public void setiAdditionalCode(int iAdditionalCode) {
+        this.iAdditionalCode = iAdditionalCode;
+    }
 
     public ArrayList<Timeslot> getAvailableSlots_noDependencies() {
         return availableSlots_noDependencies;
@@ -229,12 +249,16 @@ public class SGT implements Comparable<SGT>, Cloneable{
 
     @Override
     public int compareTo(SGT obj) {
-        if(obj.sLect.equals(this.sLect)){
-            //return (int)(this.getPreferredDays().getDayHeuristics().get(0) - obj.getPreferredDays().getDayHeuristics().get(0));
-            return this.sLectureHall.compareTo(obj.sLectureHall);
-        }
-        return this.sLect.compareTo(obj.sLect);
-        //return this.iNumberOfStudentsAttending - obj.iNumberOfStudentsAttending;            //tackle the easiest ones first
+
+
+//        if(obj.sLect.equals(this.sLect)){
+//            //return (int)(this.getPreferredDays().getDayHeuristics().get(0) - obj.getPreferredDays().getDayHeuristics().get(0));
+//            return this.sLectureHall.compareTo(obj.sLectureHall);
+//        }
+//        return this.sLect.compareTo(obj.sLect);
+//        //return this.iNumberOfStudentsAttending - obj.iNumberOfStudentsAttending;            //tackle the easiest ones first
+        if(this.sDayOfWeek.equals(obj.sDayOfWeek)) return this.iHourScheduled - obj.iHourScheduled;
+        return this.sDayOfWeek.compareTo(obj.sDayOfWeek);
     }
 
     @Override
@@ -243,11 +267,13 @@ public class SGT implements Comparable<SGT>, Cloneable{
     }
 
     public int hashCode() {
-        int iPrime = 37;
-        int result = ((sLect.isEmpty())?1:sLect.hashCode());
-        result+= ((sLectureHall.isEmpty())?1:sLectureHall.hashCode());
-        result += iHourScheduled;
+        int iPrime = 17;
+        int result = ((sLect.isEmpty())?0:sLect.hashCode());
+        result+= ((sLectureHall.isEmpty())?0:sLectureHall.hashCode());
+        result+= ((sDayOfWeek.isEmpty())?0:sDayOfWeek.hashCode());
+        result += iHourScheduled*iPrime;
         result += iHours*iPrime;
+        result += iNumberOfStudentsAttending;
         return result;
     }
 

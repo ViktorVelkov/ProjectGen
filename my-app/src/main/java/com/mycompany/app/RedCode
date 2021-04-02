@@ -605,3 +605,393 @@ HillClimbing hillClimbing = new HillClimbing(connection);
         helper(combinations, new int[r], 0, n-1, 0);
         return combinations;
     }
+
+
+
+///////// FROM HillClimbing
+
+
+    public void algorithmAssigning_year2(Week_Timetable timetable, int iPredefinedIterations, int minNumForTutorials,int maxNumForTutorials, int iYearOfStudy) throws SQLException, CloneNotSupportedException, ParseException {
+
+
+        int iLectureAssignedSuccessfully  = 0;
+        ArrayList<DataSetStudents> toAssign = getHCData(iYearOfStudy);
+        ArrayList<DataSetStudents> tempAssign =  new ArrayList<>();         // I need the list of duplets plus all their details for week2s
+        ArrayList<Duplet> sgts = new ArrayList<>();
+
+        String courseAbrev = "";
+
+        if(iYearOfStudy == 1){courseAbrev = "4CCS";}
+        if(iYearOfStudy == 2){courseAbrev = "5CCS";}
+        if(iYearOfStudy == 3){courseAbrev = "6CCS";}
+
+
+
+        for(Duplet event : timetable.getSgt()){
+            if(event.getsLect().startsWith(courseAbrev)){
+                sgts.add(event);
+            }
+        }
+
+        HashMap<String, ArrayList<Duplet>> sorterOfSGTs = new HashMap<>();
+
+        for(Duplet event : sgts){
+            if(event.getsDayOfWeek().equals("Monday")){
+                if(sorterOfSGTs.get("Monday") == null){
+                    sorterOfSGTs.put("Monday", new ArrayList<>());
+                    sorterOfSGTs.get("Monday").add(event);
+                    continue;
+                }else{
+                    sorterOfSGTs.get("Monday").add(event);
+                    continue;
+                }
+            }
+            if(event.getsDayOfWeek().equals("Tuesday")){
+                if(sorterOfSGTs.get("Tuesday") == null){
+                    sorterOfSGTs.put("Tuesday", new ArrayList<>());
+                    sorterOfSGTs.get("Tuesday").add(event);
+                    continue;
+                }else{
+                    sorterOfSGTs.get("Tuesday").add(event);
+                    continue;
+                }
+            }
+            if(event.getsDayOfWeek().equals("Wednesday")){
+                if(sorterOfSGTs.get("Wednesday") == null){
+                    sorterOfSGTs.put("Wednesday", new ArrayList<>());
+                    sorterOfSGTs.get("Wednesday").add(event);
+                    continue;
+                }else{
+                    sorterOfSGTs.get("Wednesday").add(event);
+                    continue;
+                }
+            }
+            if(event.getsDayOfWeek().equals("Thursday")){
+                if(sorterOfSGTs.get("Thursday") == null){
+                    sorterOfSGTs.put("Thursday", new ArrayList<>());
+                    sorterOfSGTs.get("Thursday").add(event);
+                    continue;
+                }else{
+                    sorterOfSGTs.get("Thursday").add(event);
+                    continue;
+                }
+            }
+            if(event.getsDayOfWeek().equals("Friday")){
+                if(sorterOfSGTs.get("Friday") == null){
+                    sorterOfSGTs.put("Friday", new ArrayList<>());
+                    sorterOfSGTs.get("Friday").add(event);
+                    continue;
+                }else{
+                    sorterOfSGTs.get("Friday").add(event);
+                    continue;
+                }
+            }
+        }
+
+        ArrayList<Duplet> dupletArrayListSorted = new ArrayList<>();
+        if(sorterOfSGTs.get("Friday") != null){dupletArrayListSorted.addAll(sorterOfSGTs.get("Friday"));}
+        if(sorterOfSGTs.get("Thursday") != null){dupletArrayListSorted.addAll(sorterOfSGTs.get("Thursday"));}
+        if(sorterOfSGTs.get("Wednesday") != null){dupletArrayListSorted.addAll(sorterOfSGTs.get("Wednesday"));}
+        if(sorterOfSGTs.get("Tuesday") != null){dupletArrayListSorted.addAll(sorterOfSGTs.get("Tuesday"));}
+        if(sorterOfSGTs.get("Monday") != null){dupletArrayListSorted.addAll(sorterOfSGTs.get("Monday"));}
+
+
+        sgts = (ArrayList<Duplet>) dupletArrayListSorted.clone();
+        dupletArrayListSorted = null;
+        sorterOfSGTs = null;
+
+        for(Duplet event : sgts){ //start assigning each event
+            ArrayList<Integer> codesOfLectures = new ArrayList<>();             //I NEED TO FILL THIS ARRAY AS THOSE ARE THE DEPENDENCIES, each event holds the dependencies of the lecture,
+            // currently due to the large number of students and variations, each event holds as dependencies all the other lectures in the same year, so I could use this to check for
+            Duplet temp = (Duplet) event.clone();
+            SGT temp_sgt = new SGT();
+            tempAssign = findInData(toAssign, event.getsLect());                    //those are the students to be assigned
+
+            for(int numIterations = 0; numIterations < iPredefinedIterations; numIterations++) {
+
+                int iHallFound = 0;
+                temp_sgt = new SGT();
+                temp_sgt.setiCode(temp.getiCode());
+                temp_sgt.setiHours(1);
+                temp_sgt.setsLect(temp.getsLect());
+
+                for (CoupledData heuristicsData : event.getPreferredDays().getHeuristics()) {
+
+                    if (tempAssign.size() == 0) break;
+                    if (iHallFound == 1) break;                                                 //will beginfrom the start every time a suitable hall is found for the current iteration
+                    String sDayIteration = heuristicsData.getsDay();
+                    ArrayList<DataSetStudents> students = findInDataByDay(tempAssign, event.getsLect(), sDayIteration);
+
+
+                    for (Hall halls : timetable.getHalls()) {                     //test for each day the availability if not available proceed to assigning toa free slot,if there are available
+
+                        if(students.isEmpty()) break;
+                        if(students.size() < minNumForTutorials) break;
+                        if(iHallFound == 1) break;
+                        if(students.isEmpty()) break;       //add if hall is the last hall and not found then break;
+
+                        if (students.size() > halls.getiCapacity()) {
+
+                            if (students.size() == halls.getiCapacity() && availableForFiltering(students.size(), halls.getiCapacity()) < 20030010L) { //NEEDS TO BE REVIEWED// SO THAT NO MEMORY OVERFLOW WOULD OCCUR//FILTER ADDED HERE TO CHOSE WHO OF THE STUDENTS WILL GET ASSIGNED, ONLY WORKS ON SPECIFIC SIZES BEFORE EXPONENTIAL GROWTH
+
+                                int st2 = 0;
+                                for (int st = 0; st < students.size(); st++) {
+                                    st2 = st;
+                                    students.get(st).setNumberforCombinations(st);              //gives each datasetstudent object a unique number
+                                }
+
+                                ArrayList<DataSetStudents> filtered = new ArrayList<>();
+                                // ArrayList<DataSetStudents[]> filtered2 = generate_myGenerate(st2 + 1, 20, students);        //find the combination of students suitable for my needs(lowest/highest number of lecture code dependencies)
+                                ArrayList<Integer> lowestFound = new ArrayList<>();
+                                ArrayList<Integer> iteration = new ArrayList<>();
+
+//                            for (int k = 0; k < filtered2.size(); k++) {           //traverse the combinations
+//                                ArrayList<DataSetStudents> combination = new ArrayList<>(Arrays.asList(filtered2.get(k)));
+//
+//                                iteration = lectureCodesOfStudents(combination, toAssign);
+//                                if (iteration.size() < lowestFound.size()) {
+//                                    lowestFound = iteration;
+//                                    filtered = combination;
+//                                }//after finding the combination with the lowest or highest number of courses could be tested for both, then assign the students and move them from the global data array to the assigned
+//                            }
+
+                                //assign them now to this course:
+                                //1. find suitable day
+                                //2. find most popular choices of hour among this group
+                                //3.
+
+
+                            } else {//randomly pick among the students to reach the hall's capacity
+                                students = randomlyRemoveFromArray(students, halls.getiCapacity());
+                            }
+                        }
+                        else {
+                            if(students.size() < minNumForTutorials){
+                                students.addAll(randomStudents(tempAssign, minNumForTutorials - students.size()));
+                            }//do something else here instead, this check is already at the start of halls iteration
+                        }
+
+
+                        ArrayList<Timeslot> notAvailable = notavailableTime_specificDay(students, timetable, temp_sgt);
+                        //ArrayList<Timeslot> notAvailable_onlyLectures = notavailableTime_specificDay_onlyLectures(students, timetable);               //ONLY FOR TESTING
+
+                        temp_sgt.setNotAvailableSlots(notAvailable);
+
+                        ArrayList<Timeslot> iTimes = halls.findAvailableSlot_PreferredDay_sgt_remastered(900, 1.0, heuristicsData.getsDay(), event, temp_sgt.getNotAvailableSlots());
+
+                        //ArrayList<Timeslot> iTimes_Lectures = halls.findAvailableSlot_PreferredDay_sgt_remastered(900, 1.0, heuristicsData.getsDay(), event, notAvailable_onlyLectures);      //ONLY FOR TESTING
+                        //temp_sgt.getAvailableSlots().addAll(iTimes);
+
+                        temp_sgt.setAvailableSlots(iTimes);
+
+                        //temp_sgt.setAvailableSlots_noDependencies(iTimes_Lectures);         //only for testing, changes every time the hall is changed, so not very useful
+
+                        ArrayList<CoupledData> times_coupledData = heuristics_sgt_preferredHours(event, DSCALE_GLOBAL, sDayIteration);
+                        for (CoupledData coupledData : times_coupledData) {
+                            int iHourFound = i_prefferedTime_byDay_check(temp_sgt, sDayIteration, coupledData.getiHour(), halls.getsAbbrev());
+//                                int iHourFound = halls.checkAvailability(sDayIteration, coupledData.getiHour(), 1.0);
+                            if(iHallFound == 1) break;
+
+                            if (iHourFound != 0) {
+                                int iFinalCheck = halls.checkAvailability(sDayIteration, iHourFound, 1.0);
+
+                                if (iFinalCheck != 0) {
+
+                                    int iAddCode = halls.getiAdditionalCode();
+                                    for (int t = 0; t < timetable.getHalls().size(); t++) {
+                                        if (timetable.getHalls().get(t).getiAdditionalCode() == iAddCode) {
+                                            timetable.getHalls().get(t).setAvToZero(iHourFound, (int) (iHourFound + 1 * 100), sDayIteration);   // ONLY TRIES THE FIRST CHOICE OF HEURISTICS
+                                            updateAvailabilitySlotsSGT(temp_sgt, sDayIteration, halls.getsAbbrev(),iHourFound);
+
+                                            for (int f = 0; f < timetable.getWeekTimet().size(); f++) {                 //add to the Day log, for printing purposes + check
+                                                if (timetable.getWeekTimet().get(f).getSname().toLowerCase(Locale.ROOT).equals(sDayIteration.toLowerCase(Locale.ROOT))) {
+                                                    timetable.getWeekTimet().get(f).v_assignEvent(iHourFound, 1, halls.getsAbbrev(), temp.getsLect(), "event");
+                                                    int iDate = timetable.getWeekTimet().get(f).getiDate();
+                                                    int iMonth = timetable.getWeekTimet().get(f).getiMonth();//+1
+                                                    int iYear = timetable.getWeekTimet().get(f).getiYear();//+1900
+                                                    iHallFound = 1;
+                                                    temp_sgt.setDayAssigned(sDayIteration);//this line is wrong
+                                                    temp_sgt.setiHourScheduled(iHourFound);
+                                                    temp_sgt.setiDayScheduled(iDate);
+                                                    temp_sgt.setiMonthScheduled(iMonth + 1);
+                                                    temp_sgt.setiYearScheduled(iYear); // + 1900
+                                                    temp_sgt.setsDayOfWeek(sDayIteration);
+                                                    temp_sgt.setsLectureHall(timetable.getHalls().get(t).getsAbbrev());
+                                                    temp_sgt.setiSizeOfHall(halls.getiCapacity());
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+
+
+                                    // change this to the size of the array assigning which is of course == capacity of the hall
+                                    for (int stdItr = 0; stdItr < students.size(); stdItr++) {
+                                        //increase the number of attending students for this sgt
+                                        tempAssign.remove(students.get(stdItr));
+                                        temp_sgt.setiNumberOfStudentsAttending(stdItr + 1);
+                                        temp_sgt.addToCodesOfStudentsAssigned(students.get(stdItr).getKings_id());
+                                        this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(stdItr).getKings_id()).addToCourses(temp_sgt);
+                                        this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(stdItr).getKings_id()).increaseAssignedCoursesNumber();
+                                        this.ASSIGNED_STUDENTS_GLOBAL.put((students.get(stdItr).getKings_id()), this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(stdItr).getKings_id()));
+
+                                    }
+
+                                    //carry on assigning people until all people are assigned, if there is
+                                    //no available spot for the rest of the people/ all of them then
+                                    //try at random, and if again, then add to the unsuccessfully assigned lectures
+
+                                    //now remove them from the data so that they are not retrieved again
+                                    updateAvailailitySlotsSGT_AllEvents(temp_sgt);
+                                    this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.add(temp_sgt);//or a clone, this is inside the first for(!)
+
+                                }
+
+                            }
+                        }
+
+
+                    }//END OF HALLS
+                }//END OF COUPLED DATA
+            } // END OF FOR LOOP
+
+            if(!tempAssign.isEmpty()){
+                //students whose preferences for day were not satisfiable would fall into this if statement
+                //since there are only a number of days are alowed for a sgt, depending on the lecture, algoithm
+                //will still assign to those days
+
+                int iPredefinedIterations2 = 2*iPredefinedIterations;                   //CHANGE THIS LINE OF CODE
+                ArrayList<DataSetStudents> students = new ArrayList<>();
+
+                for(int numIterations = 0; numIterations < iPredefinedIterations2; numIterations++) {
+
+                    temp_sgt = new SGT();
+                    temp_sgt.setiCode(temp.getiCode());
+                    temp_sgt.setiHours(1);
+                    temp_sgt.setsLect(temp.getsLect());
+
+                    if(tempAssign.isEmpty()) break;
+
+                    int iHallFound = 0;
+
+                    for (CoupledData heuristicsData : event.getPreferredDays().getHeuristics()){
+                        if(tempAssign.isEmpty()) break;
+                        if(iHallFound == 1) break;
+                        String sDayIteration = heuristicsData.getsDay();
+
+                        for (Hall halls : timetable.getHalls()) {                     //test for each day the availability if not available proceed to assigning toa free slot,if there are available
+                            //could add the combinations filter here // add if (hallsFound == 1 ) break;
+
+                            if(tempAssign.isEmpty()) break;
+                            if(iHallFound == 1) break;
+
+                            students = randomStudents(tempAssign, halls.getiCapacity());
+                            if(tempAssign.size() < halls.getiCapacity()){//change this to tempAssign
+                                students = new ArrayList<>(tempAssign);
+                            }
+                            ArrayList<CoupledData> hours = v_hoursHeuristics_RemainingStudents(students, DSCALE_GLOBAL);
+
+                            ArrayList<Timeslot> notAvailable = notavailableTime_specificDay(students, timetable, temp_sgt);               //ONLY FOR TESTING
+
+                            temp_sgt.setNotAvailableSlots(notAvailable);
+
+                            ArrayList<Timeslot> iTimes = halls.findAvailableSlot_PreferredDay_sgt_remastered(900, 1.0, heuristicsData.getsDay(), event, temp_sgt.getNotAvailableSlots());
+                            temp_sgt.setAvailableSlots(iTimes);
+
+                            for( CoupledData coupledData : hours) {
+
+                                if (iHallFound == 1) break;
+                                if (tempAssign.isEmpty()) break;
+
+                                int iHourFound = i_prefferedTime_byDay_check(temp_sgt, sDayIteration, coupledData.getiHour(),halls.getsAbbrev());
+
+                                if (iHourFound != 0){
+
+                                    int iFinalCheck = halls.checkAvailability(sDayIteration, iHourFound, 1.0);
+                                    if(iFinalCheck == 0 && coupledData.getiHour() == hours.get(hours.size()-1).getiHour()){ break; }
+                                    if (iFinalCheck != 0) {
+
+                                        int iAddCode = halls.getiAdditionalCode();
+                                        for (int t = 0; t < timetable.getHalls().size(); t++) {
+                                            if (timetable.getHalls().get(t).getiAdditionalCode() == iAddCode) {
+                                                timetable.getHalls().get(t).setAvToZero(iHourFound, (int) (iHourFound + 1 * 100), sDayIteration);   // ONLY TRIES THE FIRST CHOICE OF HEURISTICS
+                                                updateAvailabilitySlotsSGT(temp_sgt, sDayIteration, halls.getsAbbrev(),iHourFound);
+
+                                                for (int f = 0; f < timetable.getWeekTimet().size(); f++) {                 //add to the Day log, for printing purposes + check
+                                                    if (timetable.getWeekTimet().get(f).getSname().toLowerCase(Locale.ROOT).equals(sDayIteration.toLowerCase(Locale.ROOT))) {
+                                                        timetable.getWeekTimet().get(f).v_assignEvent(iHourFound, 1, halls.getsAbbrev(), temp.getsLect(), "event");
+                                                        int iDate = timetable.getWeekTimet().get(f).getiDate();
+                                                        int iMonth = timetable.getWeekTimet().get(f).getiMonth();//+1
+                                                        int iYear = timetable.getWeekTimet().get(f).getiYear();//+1900
+                                                        iHallFound = 1;
+                                                        temp_sgt.setDayAssigned(sDayIteration);
+                                                        temp_sgt.setsDayOfWeek(sDayIteration);
+                                                        temp_sgt.setiHourScheduled(iHourFound);
+                                                        temp_sgt.setiDayScheduled(iDate);
+                                                        temp_sgt.setiMonthScheduled(iMonth + 1);
+                                                        temp_sgt.setiYearScheduled(iYear); // + 1900
+                                                        temp_sgt.setsLectureHall(timetable.getHalls().get(t).getsAbbrev());
+                                                        temp_sgt.setiSizeOfHall(halls.getiCapacity());
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+
+
+                                        // change this to the size of the array assigning which is of course == capacity of the hall
+                                        for (int my_itr = 0; my_itr < students.size(); my_itr++) {
+                                            //increase the number of attending students for this sgt
+                                            tempAssign.remove(students.get(my_itr));
+                                            temp_sgt.setiNumberOfStudentsAttending(my_itr + 1);
+                                            temp_sgt.addToCodesOfStudentsAssigned(students.get(my_itr).getKings_id());
+                                            this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(my_itr).getKings_id()).addToCourses(temp_sgt);
+                                            this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(my_itr).getKings_id()).increaseAssignedCoursesNumber();
+                                            this.ASSIGNED_STUDENTS_GLOBAL.put((students.get(my_itr).getKings_id()), this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(my_itr).getKings_id()));
+                                        }
+
+                                        //carry on assigning people until all people are assigned, if there is
+                                        //no available spot for the rest of the people/ all of them then
+                                        //try at random, and if again, then add to the unsuccessfully assigned lectures
+
+                                        //now remove them from the data so that they are not retrieved again
+
+                                        updateAvailailitySlotsSGT_AllEvents(temp_sgt);
+                                        this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.add(temp_sgt); //set students to 0 //inside the if
+
+                                    }
+
+
+
+                                }
+                            }
+
+
+                        }
+
+
+
+                    }
+
+
+
+                }
+
+
+            }//END OF DUPLET
+            if(!tempAssign.isEmpty()){
+                //add to sgts with no available spot + students who cannot be assigned, might be partially assigned
+                for (int my_itr = 0; my_itr < tempAssign.size(); my_itr++) {
+                    //increase the number of attending students for this sgt
+                    temp_sgt.setiNumberOfStudentsAttending(my_itr + 1);
+                    if(this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(tempAssign.get(my_itr).getKings_id()) != null) this.NOT_ASSIGNED_STUDENTS_GLOBAL.put((tempAssign.get(my_itr).getKings_id()), this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(tempAssign.get(my_itr).getKings_id()));
+                    else  this.NOT_ASSIGNED_STUDENTS_GLOBAL.put((tempAssign.get(my_itr).getKings_id()), new Student(tempAssign.get(my_itr).getKings_id(), iYearOfStudy));
+                }
+                this.NOT_ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.add(temp_sgt);
+            }
+
+        }
+
+
+
+    }

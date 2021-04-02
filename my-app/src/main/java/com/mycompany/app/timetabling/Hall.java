@@ -410,6 +410,72 @@ public class Hall implements Comparable<Hall>{
     }
         return cp;          //end of _withPreferredDays
     }
+    public ArrayList<CoupledData> findAvailableSlotLectures_withPreferences_remastered(double iDuration, ArrayList<String> daysToBeUsed,Duplet event){
+        int iCount = 0;
+        int iTime = 0;
+        CoupledData cp = new CoupledData();
+        cp.setsDay("");
+        cp.setiHour(0);
+        String sDay = "";
+        String sPrevDay = "";                               //here actually lies the 930 problem !!!!
+        ArrayList<Timeperiod> slotsToUse = new ArrayList<>();
+        ArrayList<CoupledData> data = new ArrayList<>();
+        if(event.getPreferredDays() == null){ return data; }
+
+        for(int i = 0; i < availability.size(); i++){
+            int iCounter =0;
+            for(int j = 0 ; j < daysToBeUsed.size(); j++){
+                if(availability.get(i).getsDay().equals(daysToBeUsed.get(j))){
+                    slotsToUse.add(availability.get(i));
+                }
+            }
+        }
+
+        //every lecture depends on other lectures, in order to not overlap them this code prevents the algorithm of assigning to times when dependent lectures appear
+
+
+
+
+                for (int i = 0; i < slotsToUse.size(); i++) {
+
+                        if(i == 0){sPrevDay = slotsToUse.get(i).getsDay();}
+                        sDay = slotsToUse.get(i).getsDay();
+
+                for(int j = 0; j < iDuration*2; j++){
+                    if(j < slotsToUse.size() - i - 1){
+                        sDay = slotsToUse.get(i + j).getsDay();
+                        if (sDay.equals(sPrevDay) && slotsToUse.get(i + j).getiAvailable() == 1 ) {
+                            iCount++;
+                            if (iCount == 1) {
+                                iTime = slotsToUse.get(i + j).getiTime();
+                            }
+
+                            if (iCount == (int) (iDuration * 2)) {
+                                //spot found
+                                //I need to return the day and the hour corresponding to the hall
+                                cp = new CoupledData();
+                                cp.setiHour(iTime);
+                                cp.setsDay(slotsToUse.get(i + j).getsDay());
+                                data.add(cp);
+                            }
+                        } else {
+                            iCount = 0;
+                            iTime = 0;
+                        }
+                        ;
+                        sPrevDay = slotsToUse.get(i + j).getsDay();
+                    }
+                }
+
+                    sPrevDay = slotsToUse.get(i).getsDay();
+                    iCount =0;
+
+                }
+
+
+
+        return data;          //end of _withPreferredDays
+    }
 
     public int checkAvailability(String sDay, int iHour, double duration){
         int iCounter =0;
@@ -420,13 +486,20 @@ public class Hall implements Comparable<Hall>{
             iCounter++;
         }
 
-        while (iHour != availability.get(iCounter).getiTime()){
+        while (iHour != availability.get(iCounter).getiTime() && iCounter< availability.size() - 1){
             iCounter++;
         }
         String temp = "";
+        temp = availability.get(iCounter).getsDay();
+        String checkDay = "";
         for(int i =iCounter; i < iCounter + duration*2; i++){
+            if(i + duration*2 > availability.size()){break;}
+
+            if(i == iCounter){ checkDay = availability.get(i).getsDay();}
+            if(!temp.equals(checkDay)){
+                return 0;
+            }
             int iTime = availability.get(i).getiTime();     //for testing
-            String checkDay = availability.get(i).getsDay();    //for testing
             int iAvailable = availability.get(i).getiAvailable();   //for testing
             if(!temp.isEmpty() && !temp.equals(checkDay)){
                 return 0;
@@ -437,6 +510,7 @@ public class Hall implements Comparable<Hall>{
             checkDay = availability.get(i).getsDay();
             temp = checkDay;
         }
+        if(iCounter >= availability.size() - 2){return  0;}
         return 1;
     }
 
@@ -589,40 +663,21 @@ public class Hall implements Comparable<Hall>{
         String sPrevDay = "";                               //here actually lies the 930 problem !!!!
         ArrayList<Timeslot> timeslotsAvailable = new ArrayList<>();
         ArrayList<Timeperiod> slotsToUse = new ArrayList<>();
-
-        while(!availability.get(iCount2).getsDay().equals( event.getDayAssigned() )){
-            iCount2++;
+        if(event != null) {
+            while (!availability.get(iCount2).getsDay().equals(event.getDayAssigned())) {
+                iCount2++;
+            }
         }
-        for(int i =iCount2; i< availability.size(); i++){
-            if(availability.get(i).getsDay().equals( event.getDayAssigned() )){
-                if(availability.get(i).getiTime() >= event.getiHourScheduled() && availability.get(i).getiTime() < event.getiHourScheduled() + event.getiHours()*100  /* + 100*n /*hours to put as unavailable after the lecture, for example a break*/){
+
+        for (int i = iCount2; i < availability.size(); i++) {
+            if (availability.get(i).getsDay().equals(event.getDayAssigned())) {
+                if (availability.get(i).getiTime() >= event.getiHourScheduled() && availability.get(i).getiTime() < event.getiHourScheduled() + event.getiHours() * 100  /* + 100*n /*hours to put as unavailable after the lecture, for example a break*/) {
                     continue;
                 }
             }
 
             slotsToUse.add((Timeperiod) availability.get(i).clone());
         }
-
-
-//        for (Timeslot timeslot : unavailable) { // remove all the depending times from the slotsToUse
-//            for (Timeperiod slotts : slotsToUse) {
-//                if (timeslot.getTimePeriod().get(0).getsDay().equals(slotts.getsDay())) {
-//                    for (int i = 0; i < timeslot.getTimePeriod().size(); i++) {
-//                        if(timeslot.getTimePeriod().get(i).getiTime() <= slotts.getiTime()) {
-//                            if (timeslot.getTimePeriod().get(i).getiTime() == slotts.getiTime()) {
-//                                slotts.setiAvailable(0);
-//                                break;
-//                            }
-//                        }
-//                        else{
-//                            break;
-//                        }
-//                    }
-//                }
-//            }
-//        }
-
-
 
 
         for (Timeslot timeslot : unavailable) { // remove all the depending times from the slotsToUse

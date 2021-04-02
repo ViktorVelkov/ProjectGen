@@ -23,6 +23,7 @@ public class PreferredDays {
         this.prefDay = new ArrayList<>();
         this.prefDay = prefDay;
     }
+
     public PreferredDays(){}
 
 

@@ -28,6 +28,7 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
     private ArrayList<Duplet> dependentOnTutorials;
     //    private ArrayList<CoupledData> constraintsAllocation;
 
+    public Duplet(){}
 
     public Duplet(String sLect, double iHours, int iNumberOfStudentsAttending){
         this.iHours = iHours;

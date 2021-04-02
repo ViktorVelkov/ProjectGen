@@ -14,8 +14,7 @@ public class Filter {
     public void assign(Week_Timetable first, Week_Timetable following, int AssigningCondition){
 
         if(AssigningCondition == 1){
-            //I am not sure if there are lectur LLGTts in the first week//
-                //assign all lgts to the first week
+               //assign all lgts to the first week
                 for(int k = 0; k < first.getLectures().size(); k++){
                     // update the lecture's Duration by 1 hour and switch variable
                         double iHours = first.getLectures().get(k).getiHours();

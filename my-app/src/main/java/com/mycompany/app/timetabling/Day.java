@@ -114,7 +114,23 @@ public class Day {
 //        oDslot2.add(new Timeslot(duration, iHourStart, sHall,sActivity));
         oDslot2.add(new Timeslot(duration,this.sname, iHourStart, sHall, sActivity, this.getiDate(), this.getiMonth(), this.getiYear()));
     }
+    public void v_removeEvent(SGT old){
+        //old functionality of the code
+        //        for(int i = 0; i < oDSlot.length; i++){
+//            if(oDSlot[i].getItime() >= sTimeStart && oDSlot[i].getItime() < sTimeEnd) {
+//                oDSlot[i].setiEmpty(0);
+//                oDSlot[i].setsActivity(sActivity);
+//                oDSlot[i].setsHall(sHall);
+//                oDSlot[i].setsName(sLecture);
+//            }
+////        }
+//        oDslot2.add(new Timeslot(duration, iHourStart, sHall,sActivity));
 
+
+        Timeslot timeslot = new Timeslot(old.getiHours(),this.sname, old.getiHourScheduled(), old.getsLectureHall(), "", old.getiDayScheduled(), old.getiMonthScheduled(), old.getiYearScheduled());
+        oDslot2.remove(timeslot);
+
+    }
 
     //don't use this one works with the previous functionality of the class
     public void v_reassign_event(int sTimeStart, int sTimeEnd, String sHall, String sActivity, String sLecture){

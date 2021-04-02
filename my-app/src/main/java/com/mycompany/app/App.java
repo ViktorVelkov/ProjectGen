@@ -8,7 +8,9 @@ import com.mycompany.app.inserts.data.Inserter_LecturesAssigned;
 import com.mycompany.app.inserts.data.LGT_Inserter;
 import com.mycompany.app.timetabling.*;
 
+import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -18,7 +20,7 @@ import java.util.Date;
 public class App
 {
 
-    public static void runApplication() throws SQLException, ParseException, CloneNotSupportedException, IOException {
+    public static void runApplication() throws SQLException, ParseException, CloneNotSupportedException, IOException, InterruptedException {
         Connection connection = JDBCHelper.getConnection();
 
         Generator generator = new Generator(connection, "students", "courses");
@@ -41,9 +43,11 @@ public class App
     }
 
 
-    public static void main( String[] args ) throws SQLException, ParseException, CloneNotSupportedException, IOException {
+    public static void main( String[] args ) throws SQLException, ParseException, CloneNotSupportedException, IOException, InterruptedException {
         //simplistic
+        File students2 = new File("Students2");
+        students2.mkdir();
         runApplication();
-
     }
+
 }

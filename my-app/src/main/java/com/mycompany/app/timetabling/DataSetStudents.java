@@ -190,7 +190,7 @@ public class DataSetStudents implements Comparable<DataSetStudents>{
     public int hashCode() {
         int result = 1;
         result = 17 * result + kings_id + abbrev.hashCode();
-        result = kings_id * result + lecture_code + iHour*result + iHour2;
+        result = kings_id * result + lecture_code + iHour*31 + iHour2;
         return result;
     }
 

@@ -1,7 +1,5 @@
 package com.mycompany.app.timetabling;
 
-import com.mycompany.app.timetabling.Day;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -17,8 +15,10 @@ import java.util.Date;
     private ArrayList<Hall> halls = new ArrayList<>();
     private ArrayList <Duplet> lectures = new ArrayList<>();
     private ArrayList <Duplet> assignedLectures = new ArrayList<>();
+    private ArrayList <Duplet> unassignedLectures = new ArrayList<>();
     private ArrayList <Duplet> sgt = new ArrayList<>();
     private ArrayList <Duplet> assignedsgt = new ArrayList<>();
+    private ArrayList<SGT> unassignedsgt = new ArrayList<SGT>();
     private ArrayList <Duplet> LGT = new ArrayList<>();
     private ArrayList <Duplet> assignedLGT = new ArrayList<>();
     private int previousRecursionWorked = 0;
@@ -71,6 +71,22 @@ import java.util.Date;
 
         }
 
+
+        public ArrayList<SGT> getUnassignedsgt() {
+            return unassignedsgt;
+        }
+
+        public void setUnassignedsgt(ArrayList<SGT> unassignedsgt) {
+            this.unassignedsgt = unassignedsgt;
+        }
+
+        public void addToUnassignedSGT(SGT event) throws CloneNotSupportedException {
+            this.unassignedsgt.add((SGT) event.clone());
+        }
+        public void addToUnassignedLectures(Duplet event) throws CloneNotSupportedException {
+            this.unassignedLectures.add((Duplet) event.clone());
+        }
+
         public ArrayList<Duplet> getAssignedsgt() {
             return assignedsgt;
         }
@@ -89,7 +105,16 @@ import java.util.Date;
         return weekTimet;
     }
 
-    public ArrayList<Duplet> getAssignedLectures() {
+
+        public ArrayList<Duplet> getUnassignedLectures() {
+            return unassignedLectures;
+        }
+
+        public void setUnassignedLectures(ArrayList<Duplet> unassignedLectures) {
+            this.unassignedLectures = unassignedLectures;
+        }
+
+        public ArrayList<Duplet> getAssignedLectures() {
         return assignedLectures;
     }
 

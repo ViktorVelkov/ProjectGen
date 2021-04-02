@@ -81,6 +81,21 @@ public class Timeslot implements Comparable<Timeslot> {
 
     }
 
+    public void setAvailable(){
+        for(Timeperiod timeperiod : this.timePeriod){
+            timeperiod.setiAvailable(1);
+        }
+    }
+
+
+
+    public void setUnavailable(){
+        for(Timeperiod timeperiod : this.timePeriod){
+            timeperiod.setiAvailable(0);
+        }
+    }
+
+
     public int getiAttending() {
         return iAttending;
     }
@@ -145,6 +160,10 @@ public class Timeslot implements Comparable<Timeslot> {
         this.timePeriod = timePeriod;
     }
 
+    public double getDurationTiperiods(){
+        return (double) timePeriod.size();
+    }
+
     public void print() {
 
         if (sHall.isEmpty() || sActivity.isEmpty()) {
@@ -163,7 +182,7 @@ public class Timeslot implements Comparable<Timeslot> {
                 ", Name=" + sName
                 + "}";
         for(Timeperiod tp : this.timePeriod){
-            sReturn += tp.s_forTimeSlotClass();
+            sReturn += tp.toString() + " ";
         }
         sReturn += "\n"; //test for this one
         return sReturn;
@@ -181,21 +200,22 @@ public class Timeslot implements Comparable<Timeslot> {
     public int hashCode() {
 //        private int itime = 0;
 //        private double duration=0.0;
-//        private String sHall = "";
+//        private String sHall = "";        --
 //        private String sActivity = "";
-//        private String sName = "";
+//        private String sName = "";        --
 //        private int iEmpty = 0;
 //        private ArrayList<Timeperiod> timePeriod = new ArrayList<>();
 
 
         final int prime = 7;
         int result = 1;
-        result = prime * itime + ((sHall == null) ? 0 : sHall.hashCode());
-        result += (int)duration  + sActivity.hashCode();
+        result =  itime + ((sHall == null) ? 0 : sHall.hashCode());
+        //result += (int)duration  + sActivity.hashCode();
         result += ((sName == null) ? 0 : sName.hashCode());
         if(!timePeriod.isEmpty()){
-            //result +=  Arrays.hashCode(new ArrayList[]{timePeriod});
+            result +=  this.getTimePeriod().get(0).getiTime()*prime;
         }
+        result += prime*iAttending;
         return result;
     }
 
