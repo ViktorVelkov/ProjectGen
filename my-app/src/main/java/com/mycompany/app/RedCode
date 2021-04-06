@@ -995,3 +995,41 @@ HillClimbing hillClimbing = new HillClimbing(connection);
 
 
     }
+
+
+
+
+
+////Inside the asignAlgorithm
+
+
+            //ONLY FOR TESING =================================================================================================================================
+
+//            ArrayList<DataSetStudents> testing = new ArrayList<>();
+//            ArrayList<DataSetStudents> students_cpu = findInDataByDay(tempAssign, event.getsLect() ,"Monday");
+//            tempAssign = randomlyRemoveFromArray(tempAssign, 21);
+//            int st2_test = 0;
+//            for (int st = 0; st < tempAssign.size(); st++) {
+//                st2_test = st;
+//                tempAssign.get(st).setNumberforCombinations(st);              //gives each datasetstudent object a unique number
+////                tempAssign.get(st).setNumberforCombinations(st);              //gives each datasetstudent object a unique number
+//            }
+//
+//            long start = System.currentTimeMillis();
+//
+//            ArrayList<DataSetStudents[]> result_testing = generate_myGenerate(st2_test, 15, tempAssign );
+//
+//            long end = System.currentTimeMillis();
+//            long result = end - start;
+//
+//            System.out.println("Time taken : " + result);
+//            System.out.println("Going to sleep!!!");
+//            try {
+//                Thread.sleep(114000);
+//                System.exit(0);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+
+
+            //ONLY FOR TESING =================================================================================================================================

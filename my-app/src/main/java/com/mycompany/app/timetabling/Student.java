@@ -18,18 +18,12 @@ public class Student implements Comparable<Student>{
     private int iYearOfStudy = 0;
     private int iAssignedSGTs = 0;
     private File personalSchedule;
-    HashSet<Integer> coursesCodes = new HashSet<>();
-    ArrayList<SGT> courses = new ArrayList<>();
-    ArrayList<Duplet> assignedSGT = new ArrayList<>();
-    HashSet<DataSetStudents> preferences = new HashSet<>();
-
-
-    //heuristics:
-    private int iDaySatisfied;
-    private int iHourSatisfied;
-    private double rawHeuristics;
-    private double scaledHeuristics;
-
+    private HashSet<Integer> coursesCodes = new HashSet<>();
+    private ArrayList<SGT> courses = new ArrayList<>();
+    private ArrayList<Duplet> assignedSGT = new ArrayList<>();
+    private ArrayList<Duplet> assignedLGT = new ArrayList<>();
+    private HashSet<DataSetStudents> preferences = new HashSet<>();
+    private double percentSatisfiability; // each portion of his/her preferences stands for 25 percent
 
     public Student(){}
 
@@ -44,6 +38,22 @@ public class Student implements Comparable<Student>{
     public Student(int iKingsID, int iYearOfStudy) {
         this.iKingsID = iKingsID;
         this.iYearOfStudy = iYearOfStudy;
+    }
+
+    public ArrayList<Duplet> getAssignedLGT() {
+        return assignedLGT;
+    }
+
+    public void setAssignedLGT(ArrayList<Duplet> assignedLGT) {
+        this.assignedLGT = assignedLGT;
+    }
+
+    public void addPercertageSat(double dpp){
+        percentSatisfiability += (dpp * 0.25);
+    }
+
+    public void subtractPercertageSat(double dpp){
+        percentSatisfiability -= dpp * 0.25;
     }
 
     public int getiKingsID() {
@@ -84,7 +94,9 @@ public class Student implements Comparable<Student>{
         String sPath =  Integer.toString(this.iKingsID) + ".csv";
         //Path path = Paths.get(sPath);
         String currentDir = System.getProperty("user.dir");
+        ArrayList <Timeperiod> timeperiods = new ArrayList<>();
         File file = new File(sPath);
+
         boolean exists = file.exists();
         if(exists){
             //
@@ -103,6 +115,11 @@ public class Student implements Comparable<Student>{
             SGT sgt_converter = new SGT(event.getsLect(), event.getsDayOfWeek(),event.getsLectureHall(), event.getiHourScheduled(), event.getiHours());
             this.courses.add(sgt_converter);
         }
+        for(Duplet event : this.assignedLGT){
+                    SGT sgt_converter = new SGT(event.getsLect(), event.getsDayOfWeek(),event.getsLectureHall(), event.getiHourScheduled(), event.getiHours());
+                    this.courses.add(sgt_converter);
+        }
+
 
 
         //I am sorry for the lines that follow, there are many more efficient ways to do this, especially the printing by day
@@ -121,61 +138,133 @@ public class Student implements Comparable<Student>{
             }
         }
 
-        for(SGT personalCourses: array_very_primitive){
-            iCounter++;
-            if(iCounter == 1){
-                fileWriter.write("Monday,\n");
-            }
-            if(personalCourses.getsDayOfWeek().equals("Monday")){
-                fileWriter.write( + personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + ",\n");
-            }
-        }
-        iCounter = 0;
-        for(SGT personalCourses: array_very_primitive){
-            iCounter++;
-            if(iCounter == 1){
-                fileWriter.write("Tuesday,\n");
-            }
-            if(personalCourses.getsDayOfWeek().equals("Tuesday")){
-                fileWriter.write( + personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + ",\n");
-            }
-        }
-        iCounter = 0;
-        for(SGT personalCourses: array_very_primitive){
+        //System.out.print(iKingsID + " ");
+        {
+            for (SGT personalCourses : array_very_primitive) {
+                iCounter++;
+                if (iCounter == 1) {
+                    fileWriter.write("Monday,\n");
+                }
+                if (personalCourses.getsDayOfWeek().equals("Monday")) {
+                    fileWriter.write(+personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + ",\n");
+                    //System.out.print(" M: " + iCounter);
 
-            iCounter++;
-            if(iCounter == 1){
-                fileWriter.write("Wednesday,\n");
+                }
+
             }
-            if(personalCourses.getsDayOfWeek().equals("Wednesday")){
-                fileWriter.write( + personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + ",\n");
+            iCounter = 0;
+            for (SGT personalCourses : array_very_primitive) {
+                iCounter++;
+                if (iCounter == 1) {
+                    fileWriter.write("Tuesday,\n");
+                }
+                if (personalCourses.getsDayOfWeek().equals("Tuesday")) {
+                    fileWriter.write(+personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + ",\n");
+                    //System.out.print(" Tu: " + iCounter);
+
+                }
+
+            }
+            iCounter = 0;
+            for (SGT personalCourses : array_very_primitive) {
+
+                iCounter++;
+                if (iCounter == 1) {
+                    fileWriter.write("Wednesday,\n");
+                }
+                if (personalCourses.getsDayOfWeek().equals("Wednesday")) {
+                    fileWriter.write(+personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + ",\n");
+                    //System.out.print(" W: " + iCounter);
+                }
+
+            }
+            iCounter = 0;
+            for (SGT personalCourses : array_very_primitive) {
+                iCounter++;
+                if (iCounter == 1) {
+                    fileWriter.write("Thursday,\n");
+                }
+                if (personalCourses.getsDayOfWeek().equals("Thursday")) {
+                    fileWriter.write(+personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + ",\n");
+                    //System.out.print(" Th: " + iCounter);
+
+                }
+
+            }
+            iCounter = 0;
+            for (SGT personalCourses : array_very_primitive) {
+                iCounter++;
+                if (iCounter == 1) {
+                    fileWriter.write("Friday,\n");
+                }
+                if (personalCourses.getsDayOfWeek().equals("Friday")) {
+                    fileWriter.write(+personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + ",\n");
+                    //System.out.print(" F: " + iCounter);
+
+                }
+
             }
         }
-        iCounter = 0;
-        for(SGT personalCourses: array_very_primitive){
-            iCounter++;
-            if(iCounter == 1){
-                fileWriter.write("Thursday,\n");
+
+
+        for(SGT event : array_very_primitive){
+            //for testing purposes:
+            int getiHourScheduled= event.getiHourScheduled();
+            timeperiods.add(new Timeperiod(getiHourScheduled, event.getsDayOfWeek()));
+            for(int i = 0; i< ((event.getiHours()*2) - 1); i++){
+                if(event.getiHourScheduled() %100 != 0){
+                    if(i % 2 == 0){
+                        getiHourScheduled = getiHourScheduled+ 70;
+                        timeperiods.add(new Timeperiod(getiHourScheduled, event.getsDayOfWeek()));
+                    }
+                    else{
+                        getiHourScheduled = getiHourScheduled+ 30 ;
+                        timeperiods.add(new Timeperiod(getiHourScheduled, event.getsDayOfWeek()));
+                    };
+
+                }
+                else{
+                    if(event.getiHourScheduled() %100 == 0){
+                        if(i % 2 != 0){
+                            getiHourScheduled = getiHourScheduled+ 70;
+                            timeperiods.add(new Timeperiod(getiHourScheduled, event.getsDayOfWeek()));
+
+                        }
+                        else{
+                            getiHourScheduled = getiHourScheduled+ 30 ;
+                            timeperiods.add(new Timeperiod(getiHourScheduled, event.getsDayOfWeek()));
+                        };
+                    }
+                }
             }
-            if(personalCourses.getsDayOfWeek().equals("Thursday")){
-                fileWriter.write( + personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + ",\n");
+            //testing
+        }
+
+        //for testing purposes
+        iCounter=0;
+        for(int j = 0;j < timeperiods.size(); j++){
+            for(int k = 0; k< timeperiods.size(); k++){
+                if(j != k)
+                if(timeperiods.get(k).getsDay().equals(timeperiods.get(j).getsDay()) && timeperiods.get(j).getiTime() == timeperiods.get(k).getiTime()){
+                    iCounter++;
+                    if(iCounter == 1) {
+                        System.out.println();
+                        System.out.println("Overlapping, my kings_id is: " + iKingsID);
+                        System.out.println();
+                    }
+                }
             }
         }
-        iCounter = 0;
-        for(SGT personalCourses: array_very_primitive){
-            iCounter++;
-            if(iCounter == 1){
-                fileWriter.write("Friday,\n");
-            }
-            if(personalCourses.getsDayOfWeek().equals("Friday")){
-                fileWriter.write( + personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + ",\n");
-            }
-        }
+        System.out.println();
+
         fileWriter.write("\n\n\n");
         fileWriter.close();
 
 
     }
+
+
+
 
     public  void reassign(Duplet event){}
 

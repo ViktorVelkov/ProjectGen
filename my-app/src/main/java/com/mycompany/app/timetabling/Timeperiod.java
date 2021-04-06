@@ -107,24 +107,18 @@ public class Timeperiod implements Cloneable{
 
     @Override
     public int hashCode() {
-//        private int itime = 0;
-//        private double duration=0.0;
-//        private String sHall = "";
-//        private String sActivity = "";
-//        private String sName = "";
-//        private int iEmpty = 0;
-//        private ArrayList<Timeperiod> timePeriod = new ArrayList<>();
 
-
-        final int prime = 7;
+//
         final int prime2 = 41;
-        final int prime3 = 101;
-        int result = 1;
-        result = prime * this.iDate + ((this.sDay == null) ? 0 : this.sDay.hashCode());
-        result += (int)prime3*this.iMonth  + prime2*this.iYear;
-        result += this.iTime/10;
-        if(!sLectureHall.isEmpty())result += sLectureHall.hashCode();
-        return result;
+//        final int prime = 7;
+//        final int prime3 = 101;
+//        int result = 1;
+//        result = prime * this.iDate + ((this.sDay == null) ? 0 : this.sDay.hashCode());
+//        result += (int)prime3*this.iMonth  + prime2*this.iYear;
+//        result += this.iTime;
+//        if(!sLectureHall.isEmpty())result += sLectureHall.hashCode();
+//        return result;
+        return iTime*prime2 + ((sDay == null)?0:sDay.hashCode());
     }
 
     @Override
@@ -162,7 +156,7 @@ public class Timeperiod implements Cloneable{
                 ", " + iDate +
                 ", " + iMonth +
                 ", " + iYear +
-                '}' + "\n";
+                '}' + "@"+ Integer.toString(this.hashCode()) + "\n";
     }
     @Override
     public Object clone()throws CloneNotSupportedException{

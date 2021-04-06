@@ -1,5 +1,6 @@
 package com.mycompany.app.timetabling;
 
+import java.sql.PreparedStatement;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.Date;
     public class Week_Timetable implements Cloneable{
 
     private int iNumDays;
+    private int iWeekNum;
     private ArrayList<Day> weekTimet = new ArrayList<>();
     private String sStartDay = "";
     private String sEndDay = "";
@@ -71,6 +73,14 @@ import java.util.Date;
 
         }
 
+
+        public int getiWeekNum() {
+            return iWeekNum;
+        }
+
+        public void setiWeekNum(int iWeekNum) {
+            this.iWeekNum = iWeekNum;
+        }
 
         public ArrayList<SGT> getUnassignedsgt() {
             return unassignedsgt;
@@ -222,6 +232,13 @@ import java.util.Date;
         for(Day day : weekTimet){
             day.updateDate();
         }
+    }
+
+    public void v_updateLectureDates() throws ParseException {
+            for(Duplet lecture : this.getAssignedLectures()){
+                //update by a week
+                lecture.updateDate(7);
+            }
     }
 
     public String toString(){

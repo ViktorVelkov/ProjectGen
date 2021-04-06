@@ -32,7 +32,7 @@ public class SGT implements Comparable<SGT>, Cloneable{
     private ArrayList<Timeslot> availableSlots = new ArrayList<>();
     private ArrayList<Timeslot> availableSlots_noDependencies = new ArrayList<>();
     private ArrayList<Integer> codesOfStudentsAssigned= new ArrayList<>();
-
+    private HeuristicEvaluation evaluation;
     public SGT(){}
     public SGT(String sAbrev, String sDayOfWeek, int iHourScheduled, double dDuration){
         this.sLect = sAbrev;
@@ -40,7 +40,8 @@ public class SGT implements Comparable<SGT>, Cloneable{
         this.iHourScheduled = iHourScheduled;
         this.iHours = dDuration;
     }
- public SGT(String sAbrev, String sDayOfWeek, String sLectureHall,int iHourScheduled, double dDuration){
+
+    public SGT(String sAbrev, String sDayOfWeek, String sLectureHall,int iHourScheduled, double dDuration){
         this.sLect = sAbrev;
         this.sDayOfWeek = sDayOfWeek;
         this.iHourScheduled = iHourScheduled;
@@ -48,6 +49,42 @@ public class SGT implements Comparable<SGT>, Cloneable{
         this.sLectureHall = sLectureHall;
     }
 
+    public SGT(String sAbrev, String sDayOfWeek, String sLectureHall,int iHourScheduled, double dDuration, int iAdditionalCode,ArrayList<Integer> students, int iDate, int iMonth, int iYear){
+        this.sLect = sAbrev;
+        this.sDayOfWeek = sDayOfWeek;
+        this.iHourScheduled = iHourScheduled;
+        this.iHours = dDuration;
+        this.sLectureHall = sLectureHall;
+        this.iAdditionalCode = iAdditionalCode;
+        this.codesOfStudentsAssigned = students;
+        this.iDayScheduled = iDate;
+        this.iMonthScheduled = iMonth;
+        this.iYearScheduled = iYear;
+    }
+
+
+    public SGT(String sAbrev, String sDayOfWeek, String sLectureHall,int iHourScheduled, double dDuration, int iAdditionalCode,ArrayList<Integer> students, int iDate, int iMonth, int iYear, HeuristicEvaluation evaluation){
+        this.evaluation = evaluation;
+        this.sLect = sAbrev;
+        this.sDayOfWeek = sDayOfWeek;
+        this.iHourScheduled = iHourScheduled;
+        this.iHours = dDuration;
+        this.sLectureHall = sLectureHall;
+        this.iAdditionalCode = iAdditionalCode;
+        this.codesOfStudentsAssigned = students;
+        this.iDayScheduled = iDate;
+        this.iMonthScheduled = iMonth;
+        this.iYearScheduled = iYear;
+    }
+
+
+    public HeuristicEvaluation getEvaluation() {
+        return evaluation;
+    }
+
+    public void setEvaluation(HeuristicEvaluation evaluation) {
+        this.evaluation = evaluation;
+    }
 
     public void setDependentOn(HashSet<SGT> dependentOn) {
         this.dependentOn = dependentOn;
@@ -243,7 +280,7 @@ public class SGT implements Comparable<SGT>, Cloneable{
     }
 
     public String toString(){
-        return sLect + " " + sLectureHall + " " +Double.toString(iHours)  + " " + iNumberOfStudentsAttending + " " + sDayOfWeek + " "  + iHourScheduled + " Date: " + Integer.toString(iDayScheduled) + " " + Integer.toString(iMonthScheduled)+ " " + Integer.toString(iYearScheduled) + "\n";
+        return sLect + " " + sLectureHall + " " +Double.toString(iHours)  + " " + iNumberOfStudentsAttending + " " + sDayOfWeek + " "  + iHourScheduled + " Date: " + Integer.toString(iDayScheduled) + " " + Integer.toString(iMonthScheduled)+ " " + Integer.toString(iYearScheduled) + " " + Integer.toString(this.hashCode()) + " || " + ((evaluation == null)?"":evaluation.toString());
     }
 
 
@@ -273,8 +310,11 @@ public class SGT implements Comparable<SGT>, Cloneable{
         result+= ((sDayOfWeek.isEmpty())?0:sDayOfWeek.hashCode());
         result += iHourScheduled*iPrime;
         result += iHours*iPrime;
-        result += iNumberOfStudentsAttending;
+        result += iNumberOfStudentsAttending*iPrime;
+        result += iAdditionalCode*iPrime;
         return result;
+        //could also be return iAdditionalCode and if empty return the abbrev of the lecture
+        // though this is not a good idea for the simple fact there could be multiple variations of hours and days, which do make for different sgts after all
     }
 
     @Override

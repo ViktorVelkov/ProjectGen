@@ -1,5 +1,9 @@
 package com.mycompany.app.timetabling;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -27,7 +31,7 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
     private ArrayList<Duplet> dependentOn;
     private ArrayList<Duplet> dependentOnTutorials;
     //    private ArrayList<CoupledData> constraintsAllocation;
-
+    private Connection connection;
     public Duplet(){}
 
     public Duplet(String sLect, double iHours, int iNumberOfStudentsAttending){
@@ -53,6 +57,56 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
         this.iCode =iCode;
     }
 
+
+    public int checkAvailabilityOfHall() throws ParseException, SQLException {
+
+        int iDay = this.iDayScheduled;
+        int iMonth =this.iMonthScheduled;
+        int iYear = this.iYearScheduled;
+        if(iYear < 2000) iYear += 1900;
+        String sTimeStart = Integer.toString(iDay)+"/"+ Integer.toString(iMonth) + "/" + Integer.toString(iYear);
+        Date sDate2 = new SimpleDateFormat().parse(sTimeStart);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new SimpleDateFormat().parse(sTimeStart));
+        calendar.add(Calendar.DATE, 7);
+
+        Date newDate = calendar.getTime();
+
+
+        Date date1 = new SimpleDateFormat("dd/MM/yyyy").parse(sTimeStart);
+        String sTableName = "";
+        if (this.sLectureHall.startsWith("W") && iHours < 2.0) {
+            sTableName = "two_weeks_availability_halls_waterloo";
+        } else if (this.sLectureHall.startsWith("B") && iHours < 2.0) {
+            sTableName = "two_weeks_availability_halls_bush_house";
+        }else{
+
+        }
+
+        String sql34 = "";
+            sql34 = " SELECT SUM(AVAILABLE)  FROM " + sTableName + " WHERE DATE >= ? AND MONTH = ? AND YEAR = ? AND HALL = ? AND HOUR >= ? AND HOUR < ?";
+            PreparedStatement prst = this.connection.prepareStatement(sql34);
+            prst = connection.prepareStatement(sql34);
+            prst.setInt(2, date1.getMonth());
+            prst.setInt(1, date1.getDate());
+            prst.setInt(3, (date1.getYear() + 1900));
+            prst.setString(4, sLectureHall);
+            prst.setInt(5, (this.iHourScheduled));
+            if(iHours % 1 == 0){
+                prst.setInt(6, (int) (this.iHourScheduled + iHours*100));
+            }else{
+                prst.setInt(6, (int) (this.iHourScheduled + iHours*100) +30);
+            }
+
+        ResultSet resultSet = prst.executeQuery();
+        while(resultSet.next()){
+            if(resultSet.getInt(1) < iHours*2){
+                return 0;
+            }
+        }
+
+        return 1;
+    }
 
 
     public double getiHours() {
@@ -80,6 +134,7 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
         this.dependentOnTutorials = (ArrayList<Duplet>) dependentOn.clone();
         for(Duplet duplet : dependentOnTutorials){
             this.dependentOnTutorials.add(duplet);
+
         }
     }
 
@@ -251,3 +306,4 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
     }
 
 }
+

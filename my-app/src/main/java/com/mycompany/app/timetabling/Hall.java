@@ -102,6 +102,15 @@ public class Hall implements Comparable<Hall>{
         
     }
 
+
+    public ArrayList<Timeperiod> getAvailability() {
+        return availability;
+    }
+
+    public void setAvailability(ArrayList<Timeperiod> availability) {
+        this.availability = availability;
+    }
+
     public Hall(int iCapacity, String sAbbrev, String sTimeStart, String sTimeEnd){
         this.iCapacity = iCapacity;
         this.sAbbrev = sAbbrev;
@@ -479,6 +488,8 @@ public class Hall implements Comparable<Hall>{
 
     public int checkAvailability(String sDay, int iHour, double duration){
         int iCounter =0;
+
+        if(availability.isEmpty())return 0;
         while(!availability.get(iCounter).getsDay().equals(sDay)){
             if(iCounter > availability.size() - 1){
                 break;
@@ -671,7 +682,7 @@ public class Hall implements Comparable<Hall>{
 
         for (int i = iCount2; i < availability.size(); i++) {
             if (availability.get(i).getsDay().equals(event.getDayAssigned())) {
-                if (availability.get(i).getiTime() >= event.getiHourScheduled() && availability.get(i).getiTime() < event.getiHourScheduled() + event.getiHours() * 100  /* + 100*n /*hours to put as unavailable after the lecture, for example a break*/) {
+                if (availability.get(i).getiTime() < event.getiHourScheduled() + event.getiHours() * 100  /* + 100*n /*hours to put as unavailable after the lecture, for example a break*/) {
                     continue;
                 }
             }
@@ -681,8 +692,9 @@ public class Hall implements Comparable<Hall>{
 
 
         for (Timeslot timeslot : unavailable) { // remove all the depending times from the slotsToUse
-            for (int i = 0; i < timeslot.getTimePeriod().size(); i++) {
-                for(Timeperiod slotts: slotsToUse){
+            for(Timeperiod slotts: slotsToUse){
+                if(timeslot.getTimePeriod().get(0).getsDay().equals(slotts.getsDay()))
+                for (int i = 0; i < timeslot.getTimePeriod().size(); i++) {
                     if(slotts.getsDay().equals(timeslot.getTimePeriod().get(0).getsDay()) && slotts.getiTime() == timeslot.getTimePeriod().get(i).getiTime()  ){
                         slotts.setiAvailable(0);
                         break;
@@ -696,6 +708,10 @@ public class Hall implements Comparable<Hall>{
 
         for(int i = 0; i < slotsToUse.size(); i++) {
             sDay = slotsToUse.get(i).getsDay();
+            int timeItrForTesting = slotsToUse.get(i).getiTime();
+            if(i == 0) {
+                sPrefDay = slotsToUse.get(i).getsDay();
+            }
             if(sDay.equals(sPrevDay)) {
 
                 for (int k = 0; k < iDuration * 2; k++) {
@@ -713,6 +729,11 @@ public class Hall implements Comparable<Hall>{
                                 iCount++;
                                 if (iCount == 1) {
                                     iTime = slotsToUse.get(i + k).getiTime();
+                                    //for safety, could be removed to allow for late classes to be used:
+                                    if(iTime >= 1730 && iDuration > 1.0){
+                                        iCount = 0;
+                                    }
+                                    //
                                 }
 
                         } else {
@@ -733,6 +754,7 @@ public class Hall implements Comparable<Hall>{
                 }
             }
             sPrevDay = slotsToUse.get(i).getsDay();
+            iCount =0;
         }
         return timeslotsAvailable;
     }

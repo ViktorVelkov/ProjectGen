@@ -1372,6 +1372,7 @@ public class GreedyAlgorithm {
                      if(lectureAssigned == 1) break;
 
                     for (int j = 0; j < newhalls.size(); j++) {
+                        if(newhalls.get(j).getAvailability().size() == 0){break;}
                         CoupledData data = new CoupledData();
 
                         if(lectureAssigned == 1) break;
@@ -1454,6 +1455,16 @@ public class GreedyAlgorithm {
                                             Duplet lgt_temp = (Duplet) temp.clone();
                                             temp.setiHours(temp.getiHours() - 1.0);
                                             lgt_temp.setiHours(1.0);
+                                            if(temp.getiHours() % 1 != 0){  //if hour is 2.5 for exapmple
+                                                if(temp.getiHourScheduled() %100 == 0){
+                                                    lgt_temp.setiHourScheduled( temp.getiHourScheduled() + (int)(temp.getiHours() - 0.5)*100 + 30 );
+                                                }else{
+                                                    lgt_temp.setiHourScheduled( temp.getiHourScheduled() + (int)(temp.getiHours() - 0.5)*100 + 70 );
+                                                }
+                                            }
+                                            else{
+                                                lgt_temp.setiHourScheduled( temp.getiHourScheduled() + (int)(temp.getiHours())*100);
+                                            }
                                             myTimetable.getAssignedLGT().add(lgt_temp);
                                         }
                                         return myTimetable;
@@ -1466,6 +1477,7 @@ public class GreedyAlgorithm {
                 }
                 for (int j = 0; j < newhalls.size(); j++) {
 
+                    if(newhalls.get(j).getAvailability().size() == 0){break;}
 
 
                     //first count how many occurrences of lectures from a specific year in a day
@@ -1543,6 +1555,17 @@ public class GreedyAlgorithm {
                                         Duplet lgt_temp = (Duplet) temp.clone();
                                         temp.setiHours(temp.getiHours() - 1.0);
                                         lgt_temp.setiHours(1.0);
+                                        if(temp.getiHours() % 1 != 0){  //if hour is 2.5 for exapmple
+                                            if(temp.getiHourScheduled() %100 == 0){
+                                                lgt_temp.setiHourScheduled( temp.getiHourScheduled() + (int)(temp.getiHours() - 0.5)*100 + 30 );
+                                            }else{
+                                                lgt_temp.setiHourScheduled( temp.getiHourScheduled() + (int)(temp.getiHours() - 0.5)*100 + 70 );
+                                            }
+                                        }
+                                        else{
+                                            lgt_temp.setiHourScheduled( temp.getiHourScheduled() + (int)(temp.getiHours())*100);
+                                        }
+
                                         myTimetable.getAssignedLGT().add(lgt_temp);
                                     }
                                     return myTimetable;
@@ -1791,16 +1814,52 @@ public class GreedyAlgorithm {
             schedule.add(week10);
 
 
-
-
-
-
             fileWriter.close();
 
 
         }
     }
 
+
+    public void reproducePreviousWeek_Lectures(Week_Timetable week_timetableont, Week_Timetable week_timetabletwo) throws CloneNotSupportedException {
+        ArrayList<Duplet> lectures = new ArrayList<>(week_timetabletwo.getLectures());
+        for(Duplet events_firstWeek : week_timetableont.getAssignedLectures()){
+            for(Hall halls_secondWeek: week_timetabletwo.getHalls()){
+                if(halls_secondWeek.getsAbbrev().equals(events_firstWeek.getsLectureHall())){
+                    //check if available
+                    if(1==halls_secondWeek.checkAvailability(events_firstWeek.getsDayOfWeek(), events_firstWeek.getiHourScheduled(), events_firstWeek.getiHours()))
+                    {
+                        if(events_firstWeek.getiHours()%1 != 0){
+                            if(events_firstWeek.getiHourScheduled() %100 == 0){
+                                halls_secondWeek.setAvToZero(events_firstWeek.getiHourScheduled(), events_firstWeek.getiHourScheduled()+(int)(events_firstWeek.getiHours()-0.5)*100 + 30, events_firstWeek.getsDayOfWeek());
+                                week_timetabletwo.getAssignedLectures().add((Duplet) events_firstWeek.clone());
+                                week_timetabletwo.getLectures().remove(events_firstWeek);
+                                lectures.remove(0);
+
+                            }
+                            else{
+                                halls_secondWeek.setAvToZero(events_firstWeek.getiHourScheduled(), events_firstWeek.getiHourScheduled()+(int)(events_firstWeek.getiHours()-0.5)*100 + 70, events_firstWeek.getsDayOfWeek());
+                                week_timetabletwo.getAssignedLectures().add((Duplet) events_firstWeek.clone());
+                                week_timetabletwo.getLectures().remove(events_firstWeek);
+                                lectures.remove(0);
+
+                            }
+                        }
+                        else{
+                            halls_secondWeek.setAvToZero(events_firstWeek.getiHourScheduled(), events_firstWeek.getiHourScheduled()+(int)events_firstWeek.getiHours()*100, events_firstWeek.getsDayOfWeek());
+                            week_timetabletwo.getAssignedLectures().add((Duplet) events_firstWeek.clone());
+                            week_timetabletwo.getLectures().remove(events_firstWeek);
+                            lectures.remove(0);
+
+                        }
+                    }
+                    //if available add to the assigned lectures, update availability
+                    break;
+                }
+            }
+        }
+        week_timetabletwo.setLectures(lectures);
+    }
 
 
     //generate a table for availability and a table for assigning lectures and maybe start updating them
@@ -1868,7 +1927,7 @@ public class GreedyAlgorithm {
         halls2.clear();
 
         int iCounter = 0;
-        while (iCounter != 2000) {
+        while (iCounter != 200) {
 
             int iStudents = 0;
             if (week_timetableont.getLectures().size() != 0 && week_timetableont.getHalls().size() != 0) {
@@ -1883,9 +1942,13 @@ public class GreedyAlgorithm {
                     1, 0, 1, sTableStudents);
         }
 
+        //===========Starting to assig the second week:
+        //if slots for the same timeperiods are available in Halls, don't assign to new timeperiods
+
+        reproducePreviousWeek_Lectures(week_timetableont, week_timetabletwo);
 
         iCounter = 0;
-        while (iCounter != 2000) {
+        while (iCounter != 200) {       //for all remaining unassigned lectures find a solution
             int iStudents = 0;
             if (week_timetabletwo.getLectures().size() != 0 && week_timetabletwo.getHalls().size() != 0) {
                 iStudents = week_timetabletwo.getLectures().get(0).getiNumberOfStudentsAttending();
@@ -1901,12 +1964,17 @@ public class GreedyAlgorithm {
 
         }
 
-
+        //for display purposes
         for (int i = 0; i < week_timetableont.getWeekTimet().size(); i++) {
             Collections.sort(week_timetableont.getWeekTimet().get(i).getoDslot2());
         }
 
+        for (int i = 0; i < week_timetabletwo.getWeekTimet().size(); i++) {
+            Collections.sort(week_timetabletwo.getWeekTimet().get(i).getoDslot2());
+        }
+
         {   //PRINT SECTION
+            /*
             System.out.println("Not Assigned Lectures:");
             System.out.println(week_timetableont.getLectures());
             week_timetableont.v_print();
@@ -1915,6 +1983,8 @@ public class GreedyAlgorithm {
             System.out.println("===================================================================================");
             week_timetabletwo.v_print();
             //end of print section
+
+             */
         }
 
         this.week_timetable_ont = week_timetableont;            //make things global, to be passed on

@@ -96,6 +96,7 @@ public class Timeslot implements Comparable<Timeslot> {
     }
 
 
+
     public int getiAttending() {
         return iAttending;
     }
@@ -174,22 +175,8 @@ public class Timeslot implements Comparable<Timeslot> {
         }
     }
 
-    @Override
-    public String toString() {
-        String sReturn =  "{" +
-                ", Hall='" + sHall + '\'' +
-                ", Activity='" + sActivity + '\'' +
-                ", Name=" + sName
-                + "}";
-        for(Timeperiod tp : this.timePeriod){
-            sReturn += tp.toString() + " ";
-        }
-        sReturn += "\n"; //test for this one
-        return sReturn;
-    }
 
-
-
+    //https://www.baeldung.com/java-hashcode
     @Override
     public int compareTo(Timeslot o) {
         if(this.sHall.compareTo(o.sHall) == 0) return this.itime - o.itime;
@@ -198,25 +185,19 @@ public class Timeslot implements Comparable<Timeslot> {
 
     @Override
     public int hashCode() {
-//        private int itime = 0;
-//        private double duration=0.0;
-//        private String sHall = "";        --
-//        private String sActivity = "";
-//        private String sName = "";        --
-//        private int iEmpty = 0;
-//        private ArrayList<Timeperiod> timePeriod = new ArrayList<>();
 
+        final int prime = 31;
+        int result = 0;
+        result =  itime + ((sHall == null) ? 0 : sHall.hashCode()) + ((sActivity == null) ? 0 : sActivity.hashCode());
 
-        final int prime = 7;
-        int result = 1;
-        result =  itime + ((sHall == null) ? 0 : sHall.hashCode());
-        //result += (int)duration  + sActivity.hashCode();
-        result += ((sName == null) ? 0 : sName.hashCode());
         if(!timePeriod.isEmpty()){
-            result +=  this.getTimePeriod().get(0).getiTime()*prime;
+            result += ((timePeriod.get(0).getsDay() == null) ? 0 : timePeriod.get(0).getsDay().hashCode());
         }
-        result += prime*iAttending;
+
+        //both lines are buggy
         return result;
+        //return (int) (prime*duration*itime + ((sActivity == null) ? 1 : sActivity.hashCode())+((sHall == null) ? 1 : sHall.hashCode())+((sName == null) ? 1 : sName.hashCode()));
+
     }
 
     @Override
@@ -238,6 +219,22 @@ public class Timeslot implements Comparable<Timeslot> {
             return false;
         return true;
     }
+
+
+    @Override
+    public String toString() {
+        String sReturn =  "{" +
+                " H=" + sHall + '\'' +
+                " L=" + sActivity + '\'' +
+                " Hash=" + Integer.toString(this.hashCode())
+                + "}";
+        for(Timeperiod tp : this.timePeriod){
+            sReturn += tp.toString() + " ";
+        }
+        sReturn += "\n";
+        return sReturn;
+    }
+
 
 
 }

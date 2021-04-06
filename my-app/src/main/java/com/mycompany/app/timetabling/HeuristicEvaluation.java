@@ -1,26 +1,29 @@
 package com.mycompany.app.timetabling;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class HeuristicEvaluation {
 
     private double dHeuristics = 0.0;
     private int numPeopleCompleteSatisfiability = 0;
+    private int numPeopleWithZeroPercent = 0;
+    private int numPeopleImpossibleHeuristics =0;
+    private double percentSatisfiability = 0;
     private SGT eventEvaluated;  //remove
     private SGT eventEvaluated_swapped;  //remove
-    private double rawHeuristics;
-    private double scaledHeuristics;
+    private double rawHeuristics = 0.0;
+    private double scaledHeuristics = 0.0;
+    private double finalEvaluation = 0.0;
     private ArrayList<Integer> daySatisfiability = new ArrayList<>();
     private ArrayList<Integer> hourSatisfiability = new ArrayList<>();
     private double iTakeIntoConsideration =0; //if swapping two sgts, use this to show the heuristic outcome for the second sgt
     private SGT sgt;       //remove
     private String sDayOfWeek = "";
     private String sHall = "";
+    private int iHour;
     private int iDate;
     private int iMonth;
     private int iYear;
-    private int iHour;
     public HeuristicEvaluation(){}
 
     public void calculateFromTwoObjects(HeuristicEvaluation h1, HeuristicEvaluation h2,HeuristicEvaluation h3, HeuristicEvaluation h4){
@@ -70,6 +73,40 @@ public class HeuristicEvaluation {
 
     }
 
+
+
+    public HeuristicEvaluation mergeHeuristicEvaluations(HeuristicEvaluation evaluation){
+
+        this.dHeuristics += evaluation.dHeuristics;
+        this.numPeopleCompleteSatisfiability += evaluation.numPeopleCompleteSatisfiability;
+        this.numPeopleWithZeroPercent += evaluation.numPeopleWithZeroPercent;
+        this.percentSatisfiability += evaluation.percentSatisfiability;
+        this.numPeopleImpossibleHeuristics += evaluation.numPeopleImpossibleHeuristics;
+        this.rawHeuristics += evaluation.rawHeuristics;
+        this.scaledHeuristics += evaluation.scaledHeuristics;
+
+        return evaluation;
+    }
+
+    public int getNumPeopleImpossibleHeuristics() {
+        return numPeopleImpossibleHeuristics;
+    }
+
+    public void setNumPeopleImpossibleHeuristics(int numPeopleImpossibleHeuristics) {
+        this.numPeopleImpossibleHeuristics = numPeopleImpossibleHeuristics;
+    }
+
+    public void addToRawHeuristics(double h){this.rawHeuristics += h; }
+    public void addToHeuristics(double h){this.dHeuristics += h;}
+    public void addToScaledHeuristics(double h){this.scaledHeuristics += h;}
+
+    public int getNumPeopleWithZeroPercent() {
+        return numPeopleWithZeroPercent;
+    }
+
+    public void setNumPeopleWithZeroPercent(int numPeopleWithZeroPercent) {
+        this.numPeopleWithZeroPercent = numPeopleWithZeroPercent;
+    }
 
     public String getsHall() {
         return sHall;
@@ -124,6 +161,18 @@ public class HeuristicEvaluation {
         this.sgt = sgt;
     }
 
+
+    public double getPercentSatisfiability() {
+        return percentSatisfiability;
+    }
+
+    public void setPercentSatisfiability(double percentSatisfiability) {
+        this.percentSatisfiability = percentSatisfiability;
+    }
+
+    public void addPerscentSatisfiability(double percentSatisfiability){
+        this.percentSatisfiability += percentSatisfiability;
+    }
 
     public String getsDayOfWeek() {
         return sDayOfWeek;
@@ -199,5 +248,9 @@ public class HeuristicEvaluation {
 
     public void addToHourSatisfiability(int kings_id){
         this.daySatisfiability.add(kings_id);
+    }
+
+    public String toString(){
+        return this.dHeuristics + "  " + this.scaledHeuristics + "  " + this.rawHeuristics + "  " + this.percentSatisfiability + "%   ("+ this.numPeopleCompleteSatisfiability + "  " + this.numPeopleImpossibleHeuristics + "  "+ this.numPeopleImpossibleHeuristics + ")";
     }
 }

@@ -45,8 +45,6 @@ public class App
 
     public static void main( String[] args ) throws SQLException, ParseException, CloneNotSupportedException, IOException, InterruptedException {
         //simplistic
-        File students2 = new File("Students2");
-        students2.mkdir();
         runApplication();
     }
 

@@ -22,15 +22,22 @@ public class Schedule {
 
     public void generate( ArrayList<String> days ,double dScale, int iNumIterations, int iStudentsForTutorialsMinumym) throws SQLException, ParseException, CloneNotSupportedException, IOException, InterruptedException {
 
-        hillClimbing.getGrdAlg().generateGreedySolution_TwoWeeks("courses", "students", 5, 21,days, "", 0);
-        hillClimbing.setTIMETABLEONT_GLOBAL(hillClimbing.getGrdAlg().getWeek_timetable_ont());
-        hillClimbing.setTIMETABLETWO_GLOBAL(hillClimbing.getGrdAlg().getWeek_timetable_spare());
-        hillClimbing.generateHCSolution(dScale, iNumIterations, iStudentsForTutorialsMinumym);  //(0.9, 3, 5)
-        hillClimbing.heuristicEvaluation(hillClimbing.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.get(0),1.5,1,0.5);
-       // hillClimbing.calculationTestsHeuristicsArray(1.5, 1, 0.5);
-        //hillClimbing.testingTestingTesting();
 
-        //hillClimbing.updateSGT_Time(hillClimbing.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.get(0), "Monday", 2000, "WB3H300000", hillClimbing.getTIMETABLETWO_GLOBAL());
+//        for(int i = 0; i < 5; i++) {
+            hillClimbing.getGrdAlg().generateGreedySolution_TwoWeeks("courses", "students", 5, 21, days, "", 0);
+            hillClimbing.setTIMETABLEONT_GLOBAL(hillClimbing.getGrdAlg().getWeek_timetable_ont());
+            hillClimbing.setTIMETABLETWO_GLOBAL(hillClimbing.getGrdAlg().getWeek_timetable_spare());
+            hillClimbing.generateHCSolution(dScale, iNumIterations, iStudentsForTutorialsMinumym, 1.5, 1, 0.5);  //(0.9, 3, 5)
+            //hillClimbing.heuristicEvaluation_function(hillClimbing.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.get(0), 1.5, 1, 0.5);
+            //hillClimbing.testingTestingTesting(hillClimbing.getTIMETABLETWO_GLOBAL());
+            //hillClimbing.evaluateSolution();
+
+            //hillClimbing.updateSGT_Time(hillClimbing.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.get(0), "Monday", 2000, "WB3H300000", hillClimbing.getTIMETABLETWO_GLOBAL());
+
+            //hillClimbing.copyLeadingWeek(hillClimbing.getTIMETABLETWO_GLOBAL());
+
+        //}
+
     }
 
 
