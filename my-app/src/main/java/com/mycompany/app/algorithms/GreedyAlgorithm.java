@@ -1885,7 +1885,10 @@ public class GreedyAlgorithm {
             addDaysToLastMostRecentDay(7);
         }
         Week_Timetable week_timetabletwo = myTimetable(7);
-
+        week_timetableont.setsTableCoures(sTable);
+        week_timetabletwo.setsTableCoures(sTable);
+        week_timetableont.setsTableStudents(sTableStudents);
+        week_timetabletwo.setsTableStudents(sTableStudents);
 
         ArrayList<Duplet> myarr = lecturesToBeAssigned2(getTwoInts(), 1, sTable);  //this ARRAY contains all the info for the lectures, TwoInts is derived from the students_lectures table
         ArrayList<Duplet> weekOne = new ArrayList<>();

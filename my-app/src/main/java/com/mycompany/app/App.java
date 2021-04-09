@@ -23,8 +23,8 @@ public class App
     public static void runApplication() throws SQLException, ParseException, CloneNotSupportedException, IOException, InterruptedException {
         Connection connection = JDBCHelper.getConnection();
 
-        Generator generator = new Generator(connection, "students", "courses");
-
+        Generator generator = new Generator(connection, "s_students", "courses");
+//
 //            generator.v_run_populate_availability("28-Sep-2020", "14-Dec-2020");
 //            generator.populateChoicesOfLectures(1);
 //            generator.v_finalevents(40,100);
@@ -37,7 +37,7 @@ public class App
         days.add("Thursday");
 
         Schedule schedule = new Schedule(connection, generator.getLectureEvents());
-        schedule.generate(days, 0.9,3,5);
+        schedule.generate(days, generator.getsTableCourses(), generator.getsTableStudents(), 0.9,3,5,10, 1.5, 1, 0.5);
 
         connection.close();
     }

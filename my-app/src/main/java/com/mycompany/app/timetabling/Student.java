@@ -87,7 +87,7 @@ public class Student implements Comparable<Student>{
 
     public HashSet<DataSetStudents> getPreferences() { return preferences; }
 
-    public void generate_and_addToFile(int WeekNum,Week_Timetable timetable) throws IOException {
+    public void generate_and_addToFile(int WeekNum,Week_Timetable timetable) throws IOException, CloneNotSupportedException {
         //most inefficient method written in the project, but works
         int iCounter = 0;
         //"C:\\ProjectGen\\" +
@@ -146,7 +146,7 @@ public class Student implements Comparable<Student>{
                     fileWriter.write("Monday,\n");
                 }
                 if (personalCourses.getsDayOfWeek().equals("Monday")) {
-                    fileWriter.write(+personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + ",\n");
+                    fileWriter.write(+personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() +" " + personalCourses.getiAdditionalCode() + ",\n");
                     //System.out.print(" M: " + iCounter);
 
                 }
@@ -159,7 +159,7 @@ public class Student implements Comparable<Student>{
                     fileWriter.write("Tuesday,\n");
                 }
                 if (personalCourses.getsDayOfWeek().equals("Tuesday")) {
-                    fileWriter.write(+personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + ",\n");
+                    fileWriter.write(+personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + " " + personalCourses.getiAdditionalCode() +",\n");
                     //System.out.print(" Tu: " + iCounter);
 
                 }
@@ -173,7 +173,7 @@ public class Student implements Comparable<Student>{
                     fileWriter.write("Wednesday,\n");
                 }
                 if (personalCourses.getsDayOfWeek().equals("Wednesday")) {
-                    fileWriter.write(+personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + ",\n");
+                    fileWriter.write(+personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + " " + personalCourses.getiAdditionalCode() +",\n");
                     //System.out.print(" W: " + iCounter);
                 }
 
@@ -185,7 +185,7 @@ public class Student implements Comparable<Student>{
                     fileWriter.write("Thursday,\n");
                 }
                 if (personalCourses.getsDayOfWeek().equals("Thursday")) {
-                    fileWriter.write(+personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + ",\n");
+                    fileWriter.write(+personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + " " + personalCourses.getiAdditionalCode() +",\n");
                     //System.out.print(" Th: " + iCounter);
 
                 }
@@ -198,7 +198,7 @@ public class Student implements Comparable<Student>{
                     fileWriter.write("Friday,\n");
                 }
                 if (personalCourses.getsDayOfWeek().equals("Friday")) {
-                    fileWriter.write(+personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + ",\n");
+                    fileWriter.write(+personalCourses.getiHourScheduled() + " ,Duration: " + personalCourses.getiHours() + ",Venue: " + personalCourses.getsLectureHall() + "," + personalCourses.getsLect() + " " + personalCourses.getiAdditionalCode() + ",\n");
                     //System.out.print(" F: " + iCounter);
 
                 }
@@ -255,8 +255,17 @@ public class Student implements Comparable<Student>{
                 }
             }
         }
-        System.out.println();
 
+        int iSizeConstant = this.courses.size();
+        for(int i = 0; i < iSizeConstant; i++){
+            if(this.courses.get(0).getiHours() <= 1){
+                SGT temp = (SGT) this.courses.get(0).clone();
+                this.courses.remove(0);
+                this.courses.add(temp);
+            }
+            this.courses.remove(0);
+        }
+        this.assignedSGT = new ArrayList<>();
         fileWriter.write("\n\n\n");
         fileWriter.close();
 
@@ -315,5 +324,9 @@ public class Student implements Comparable<Student>{
     @Override
     public int compareTo(Student o) {
         return o.iKingsID - this.iKingsID;
+    }
+
+    public void removeFromAssignedCourses(Duplet duplet) {
+        this.assignedSGT.remove(duplet);
     }
 }

@@ -2,7 +2,7 @@ package com.mycompany.app.timetabling;
 
 import java.util.ArrayList;
 
-public class Solution {
+public class Solution implements Comparable<Solution> {
 
     private ArrayList<SGT> ASSIGNED_SGTS_CURRENTWEEK_SOLUTION = new ArrayList<SGT>();
     private ArrayList<SGT> UNASSIGNED_SGTS_CURRENTWEEK_SOLUTION = new ArrayList<SGT>();
@@ -32,5 +32,11 @@ public class Solution {
 
     public void setHeuristicEvaluation(HeuristicEvaluation heuristicEvaluation) {
         this.heuristicEvaluation = heuristicEvaluation;
+    }
+
+
+    @Override
+    public int compareTo(Solution o) {
+        return (int)((this.heuristicEvaluation.getPercentSatisfiability() - o.getHeuristicEvaluation().getPercentSatisfiability())*10000);
     }
 }

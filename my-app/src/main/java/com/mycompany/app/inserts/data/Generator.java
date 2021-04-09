@@ -50,7 +50,7 @@ public class Generator {
 
 
     public String getsTableStudents() {
-        return sTableStudents;
+        return this.sTableStudents;
     }
 
     public void setsTableStudents(String sTableStudents) {

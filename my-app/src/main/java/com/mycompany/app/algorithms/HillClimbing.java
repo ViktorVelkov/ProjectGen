@@ -19,6 +19,7 @@ public class HillClimbing {
     private GreedyAlgorithm grdAlg;
     private Solution INITIAL_SOLUTION = new Solution();     //also a data container
     private Solution BEST_SOLUTION = new Solution();        //also a data container
+    private Solution CURRENT_SOLUTION = new Solution();        //also a data container
 
     //scales
     private static double dayScale = 1.0;
@@ -215,9 +216,11 @@ public class HillClimbing {
 
 
     //GETTERS AND SETTERS
-    private Week_Timetable getTIMETABLEONT_GLOBAL() { return TIMETABLEONT_GLOBAL; }
+    public Week_Timetable getTIMETABLEONT_GLOBAL() { return TIMETABLEONT_GLOBAL; }
 
     public void setTIMETABLEONT_GLOBAL(Week_Timetable TIMETABLEONT_GLOBAL) { this.TIMETABLEONT_GLOBAL = TIMETABLEONT_GLOBAL; }
+
+
 
     public Week_Timetable getTIMETABLETWO_GLOBAL() { return TIMETABLETWO_GLOBAL; }
 
@@ -284,33 +287,41 @@ public class HillClimbing {
 
     }
 
-    private ArrayList<DataSetStudents> getHCData(int iYear) throws SQLException {
+    private ArrayList<DataSetStudents> getHCData(int iYear, String sTableName, String sTableNameCourses) throws SQLException {
         ArrayList<DataSetStudents> searchData = new ArrayList<>();
         String sql99 = "";
         if(iYear == 3) {
-            sql99 = "SELECT c.kings_id, lecture_code,abreviation, prefday, preftime, preftime_secondchoice, scale, privileged " +
+            sql99 = "SELECT z.kings_id, lecture_code,abreviation, prefday, preftime, preftime_secondchoice, scale, privileged FROM "+  sTableName + " z JOIN ( ";
+            sql99 += "SELECT c.kings_id, lecture_code,abreviation, prefday, preftime, preftime_secondchoice, scale, privileged " +
                     "FROM ( (select * " +
                     "FROM students_lectures a " +
-                    "JOIN courses b ON a.lecture_code = b.inside_code ) AS c " +
+                    "JOIN " + sTableNameCourses + " b ON a.lecture_code = b.inside_code ) AS c " +
                     "JOIN main_preferences_lectures_students m ON m.course_abreviation = c.abreviation " + "AND c.kings_id = m.kings_id_fk " +
                     "JOIN preferences p ON m.kings_id_fk = p.kings_id ) WHERE c.kings_id < 1900000 ORDER BY c.kings_id";
+            sql99+= " ) d ON z.kings_id = d.kings_id";
+
         }
         if(iYear == 2) {
-            sql99 = "SELECT c.kings_id, lecture_code,abreviation, prefday, preftime, preftime_secondchoice, scale, privileged " +
+            sql99 = "SELECT z.kings_id, lecture_code,abreviation, prefday, preftime, preftime_secondchoice, scale, privileged FROM "+  sTableName + " z JOIN ( ";
+            sql99 += "SELECT c.kings_id, lecture_code,abreviation, prefday, preftime, preftime_secondchoice, scale, privileged " +
                     "FROM ( (select * " +
                     "FROM students_lectures a " +
-                    "JOIN courses b ON a.lecture_code = b.inside_code ) AS c " +
+                    "JOIN " + sTableNameCourses + " b ON a.lecture_code = b.inside_code ) AS c " +
                     "JOIN main_preferences_lectures_students m ON m.course_abreviation = c.abreviation " + "AND c.kings_id = m.kings_id_fk " +
                     "JOIN preferences p ON m.kings_id_fk = p.kings_id ) WHERE c.kings_id > 1900000 && c.kings_id < 2000000 ORDER BY c.kings_id";
+            sql99+= " ) d ON z.kings_id = d.kings_id";
+
         }
 
         if(iYear == 1){
-            sql99 =  "SELECT c.kings_id, lecture_code,abreviation, prefday, preftime, preftime_secondchoice, scale, privileged " +
+            sql99 = "SELECT z.kings_id, lecture_code,abreviation, prefday, preftime, preftime_secondchoice, scale, privileged FROM "+  sTableName + " z JOIN ( ";
+            sql99 +=  "SELECT c.kings_id, lecture_code,abreviation, prefday, preftime, preftime_secondchoice, scale, privileged " +
                     "FROM ( (select * " +
                     "FROM students_lectures a " +
-                    "JOIN courses b ON a.lecture_code = b.inside_code ) AS c " +
+                    "JOIN " + sTableNameCourses + " b ON a.lecture_code = b.inside_code ) AS c " +
                     "JOIN main_preferences_lectures_students m ON m.course_abreviation = c.abreviation " + "AND c.kings_id = m.kings_id_fk " +
                     "JOIN preferences p ON m.kings_id_fk = p.kings_id ) WHERE c.kings_id > 2000000 ORDER BY c.kings_id";
+            sql99+= " ) d ON z.kings_id = d.kings_id";
         }
 
 
@@ -355,12 +366,12 @@ public class HillClimbing {
 
 
     //THIS COULD BE USEFUL
-    private ArrayList<Duplet> checkDuplication(Week_Timetable one, Week_Timetable two) throws SQLException {
+    public ArrayList<Duplet> checkDuplication(Week_Timetable one, Week_Timetable two) throws SQLException {
 
         ArrayList<Duplet> notMatchingLectures = new ArrayList<>();
         String sTableName = "";
-        for(int i = 0; i< TIMETABLEONT_GLOBAL.getAssignedLectures().size();i++){
-            Duplet temp = TIMETABLEONT_GLOBAL.getAssignedLectures().get(i);
+        for(int i = 0; i< one.getAssignedLectures().size();i++){
+            Duplet temp = one.getAssignedLectures().get(i);
             if(temp.getsLectureHall().startsWith("B")){
                 sTableName = "two_weeks_availability_halls_bush_house";
             }
@@ -369,7 +380,7 @@ public class HillClimbing {
             }
 
 
-            String sql77 = "SELECT hour, available FROM " + sTableName
+            String sql77 = "SELECT SUM( available ) FROM " + sTableName
                     + " WHERE hall = '" + (temp.getsLectureHall()) + "'"
                     + " AND DATE = " + Integer.toString(temp.getiDayScheduled())
                     + " AND MONTH = " + Integer.toString(temp.getiMonthScheduled() - 1)
@@ -380,15 +391,114 @@ public class HillClimbing {
             ResultSet resultSet = statement.executeQuery(sql77);
             int iCount = 0;
             while (resultSet.next()){
-                if(resultSet.getInt(2) == 1) iCount++;
-            }
-            if(iCount != temp.getiHours()*2){
-                notMatchingLectures.add(temp);
+                if(resultSet.getInt(2) == resultSet.getInt(1)){
+                    two.getAssignedLectures().add(temp);
+                }else{
+                    notMatchingLectures.add(temp);
+                }
             }
         }
 
         return notMatchingLectures;
     }
+
+
+    public ArrayList<SGT> checkForAQuickAssigning(Week_Timetable one) throws SQLException {
+
+        ArrayList<SGT> availableAtTheSameTimeAsAssignedBefore = new ArrayList<>();
+        ArrayList<SGT> not_AvailableAtTheSameTimeAsAssignedBefore = new ArrayList<>();
+        String sTableName = "";
+        ArrayList<SGT> sgts = new ArrayList<>();
+        //if(one.getiWeekNum() == 2){return not_AvailableAtTheSameTimeAsAssignedBefore;}
+        for(Duplet assignedEvents : one.getAssignedLectures()){
+            for(SGT iterator: this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL){
+                if(iterator.getsLect().equals(assignedEvents.getsLect())){
+                    sgts.add(iterator);
+                }
+            }
+        }
+
+        for(int i = 0; i< sgts.size() ;i++){
+            Duplet temp = one.getAssignedLectures().get(i);
+            SGT tempo = sgts.get(i);
+            if(tempo.getsLectureHall().startsWith("B")){
+                sTableName = "two_weeks_availability_halls_bush_house_tutorials";
+            }
+            else if(tempo.getsLectureHall().startsWith("W")){
+                sTableName = "two_weeks_availability_halls_waterloo_tutorials";
+            }
+
+
+            String sql77 = "SELECT SUM( available ) FROM " + sTableName
+                    + " WHERE hall = '" + (temp.getsLectureHall()) + "'"
+                    + " AND DATE = " + Integer.toString(temp.getiDayScheduled())
+                    + " AND MONTH = " + Integer.toString(temp.getiMonthScheduled() - 1)
+                    + " AND YEAR = " + Integer.toString(temp.getiYearScheduled())
+                    + " AND HOUR >= " + Integer.toString(temp.getiHourScheduled())
+                    + " AND HOUR < " + Integer.toString((int) (temp.getiHourScheduled() + 100*temp.getiHours()));
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(sql77);
+            int iCount = 0;
+            while (resultSet.next()){
+                if(resultSet.getInt(2) == resultSet.getInt(1)){
+                    availableAtTheSameTimeAsAssignedBefore.add(tempo);
+                }else{
+                    not_AvailableAtTheSameTimeAsAssignedBefore.add(tempo);
+                }
+            }
+        }
+        return not_AvailableAtTheSameTimeAsAssignedBefore;
+    }
+
+
+    public void transit_AllAssignedSGTs(ArrayList<SGT> toReassign, Week_Timetable timetable){
+
+        if(timetable.getAssignedLGT().size() > 0){
+            return;
+        }
+        //https://stackoverflow.com/questions/6075894/how-to-exclude-certain-elements-from-a-list
+        this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.removeAll(toReassign);
+        //update the students
+        for(SGT unAssign : toReassign){
+            for(Student student : this.STUDENTS_TO_BE_ASSINGED_GLOBAL.values()){
+                student.getCourses().remove(unAssign);
+            }
+        }
+
+        int iCounter = 0;
+        ArrayList<Duplet> duplets = new ArrayList<>(timetable.getAssignedLectures());
+        ArrayList<Duplet> dupletsToPass = new ArrayList<>();
+        for(Duplet duplet : duplets){
+            iCounter=0;
+            for(SGT sgt :  toReassign){
+                if(  sgt.getsLect().equals(duplet.getsLect()) ) {
+                    Duplet temp = new Duplet(sgt.getiCode());
+                    temp.setsDayOfWeek(duplet.getsDayOfWeek());
+                    temp.setiHours(duplet.getiHours());
+                    temp.setsLect(duplet.getsLect());
+                    temp.setiHourScheduled(duplet.getiHourScheduled());
+                    temp.setiCode(duplet.getiCode());
+                    temp.setiNumberOfStudentsAttending(duplet.getiNumberOfStudentsAttending());
+                    temp.setiDayScheduled(duplet.getiDayScheduled());
+                    temp.setiMonthScheduled(duplet.getiMonthScheduled());
+                    temp.setiYearScheduled(duplet.getiYearScheduled());
+                    dupletsToPass.add(temp);
+                }
+            }
+        }
+        if(weekNumber == 0){    //no iteration of the algorithm has passed
+
+        }
+        else {
+            timetable.setAssignedLectures(dupletsToPass);
+        }
+    }
+
+
+    public void transitionOfSGTsBetweenWeeks(Week_Timetable timetable) throws SQLException {
+        transit_AllAssignedSGTs( checkForAQuickAssigning(timetable),timetable);
+    }
+
 
 ///============================================================================
 
@@ -617,6 +727,57 @@ public class HillClimbing {
 
 
     }
+
+    private ArrayList<CoupledData> heuristics_sgt_preferredHours_fromPreferences(SGT event, double dScale, ArrayList<DataSetStudents> students) throws SQLException {
+
+        if(event == null && event.getsLect().isEmpty()){
+            return null;
+        }
+        ArrayList<CoupledData> info = new ArrayList<>();
+
+        for(int i= 0; i < 11; i++){
+            info.add(new CoupledData(900 + i*100, 0,0.0));
+            info.add(new CoupledData(900 + i*100 + 30, 0,0.0));
+        }
+
+
+
+        for(DataSetStudents studentsChosen : students) {
+
+
+            for (int i = 0; i < info.size(); i++) {
+                if (studentsChosen.getiHour() == info.get(i).getiHour()) {
+                    info.get(i).setHeuristics(info.get(i).getHeuristics() + studentsChosen.getScale()*dScale + studentsChosen.getPrivileged()*10*dScale);
+                    info.get(i).setNumPlp(info.get(i).getNumPlp() + 1);
+                    break;
+                }
+            }
+
+        }
+
+        for(DataSetStudents studentsChosen : students) {
+
+
+            for (int i = 0; i < info.size(); i++) {
+                if (studentsChosen.getiHour2() == info.get(i).getiHour()) {
+                    info.get(i).setHeuristics(info.get(i).getHeuristics() + studentsChosen.getScale()*dScale + studentsChosen.getPrivileged()*10*dScale);
+                    info.get(i).setNumPlp(info.get(i).getNumPlp() + 1);
+                    break;
+                }
+            }
+
+        }
+
+
+        //event.getPreferredDays().setPreferredHour(info);
+
+        Collections.sort(info);
+        return info;
+
+
+    }
+
+
 
     //updates the days heuristics inside PreferredDays, removes the days of the week prior to the lecture. Those are unavailable for heuristics
     private void removeUnusableDays(Week_Timetable timetable){
@@ -986,6 +1147,8 @@ public class HillClimbing {
 
     private ArrayList<DataSetStudents> randomStudents(ArrayList<DataSetStudents> considered, int size){
 
+        if(considered.size() < size) size= considered.size();
+
         Set<DataSetStudents> students =new HashSet<>();
         ArrayList<DataSetStudents> students2 =new ArrayList<>(considered);
         int iCounter = 0;
@@ -1173,122 +1336,232 @@ public class HillClimbing {
     }
 
     //PUBLIC for now
+//    public HeuristicEvaluation heuristicEvaluation_function(SGT event, double scaleForDay, double scaleForHour, double scaleCloseToHour){
+//
+//        //https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places == Rounding doubles
+//        //https://www.geeksforgeeks.org/method-within-method-in-java/#:~:text=Java%20does%20not%20support%20%E2%80%9Cdirectly,method%20so%20this%20does%20compile. == method inside a method
+//
+//
+//
+//        myInterface r = new myInterface() {
+//            public double round(double value, int places)
+//            {
+//                if (places < 0) throw new IllegalArgumentException();
+//
+//                BigDecimal bd = BigDecimal.valueOf(value);
+//                bd = bd.setScale(places, RoundingMode.HALF_UP);
+//                return bd.doubleValue();            };
+//        };
+//
+//
+//
+//        double dEvaluation = 0.0;
+//        double dEvaluationRaw = 0.0;
+//        double dEvaluationScaled = 0.0;
+//        HeuristicEvaluation evaluation = new HeuristicEvaluation();
+//        evaluation.setSgt(event);
+//
+//        for(int kings_id : event.getCodesOfStudentsAssigned()){
+//            int iCounter = 0;
+//            Student student = STUDENTS_TO_BE_ASSINGED_GLOBAL.get(kings_id);
+//
+//             dEvaluation = 0.0;
+//             dEvaluationRaw = 0.0;
+//             dEvaluationScaled = 0.0;
+//
+//            for(DataSetStudents preferences : student.getPreferences()) {
+//
+//                if (preferences.getAbbrev().equals(event.getsLect())) {
+//                    //has entered evaluation
+//                    if (event.getsDayOfWeek().equals(preferences.getPrefDay())) {
+//                        dEvaluation += r.round(preferences.getScale(), 5);                                      //calculating only the scale from the preference
+//                        dEvaluationScaled += r.round(scaleForDay * (preferences.getScale()), 5);             // calculating the scale predefined scale times the scale from the preference of the student
+//                        dEvaluationRaw += scaleForDay;                              //only the predefined scale
+//
+//
+//                    }
+//                        if (event.getiHourScheduled() == preferences.getiHour1() || event.getiHourScheduled() == preferences.getiHour2()) {
+//
+//                            dEvaluation += r.round(preferences.getScale(), 5);
+//                            dEvaluationScaled +=r.round( scaleForHour * (preferences.getScale()), 4);
+//                            dEvaluationRaw += scaleForHour;
+//
+//                        }
+//
+//                    else {
+//
+//                        if (event.getiHourScheduled() % 100 == 0) {
+//                            if (event.getiHourScheduled() + 30 == preferences.getiHour2() || event.getiHourScheduled() + 30 == preferences.getiHour2()) {
+//                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+//                                dEvaluationScaled += r.round(scaleCloseToHour * (preferences.getScale()), 4);             // calculating the scale predefined scale times the scale from the preference of the student
+//                                dEvaluationRaw += scaleCloseToHour;
+//
+//                            } else if (event.getiHourScheduled() + 100 == preferences.getiHour2() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
+//                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+//                                dEvaluationScaled += r.round(scaleCloseToHour * (preferences.getScale()),4);             // calculating the scale predefined scale times the scale from the preference of the student
+//                                dEvaluationRaw += scaleCloseToHour;
+//
+//                            } else if (event.getiHourScheduled() - 100 == preferences.getiHour2() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
+//                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+//                                dEvaluationScaled +=r.round( scaleCloseToHour * (preferences.getScale()),4 );             // calculating the scale predefined scale times the scale from the preference of the student
+//                                dEvaluationRaw += scaleCloseToHour;
+//
+//                            } else if (event.getiHourScheduled() -70 == preferences.getiHour2() || event.getiHourScheduled() -70 == preferences.getiHour2()) {
+//                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+//                                dEvaluationScaled +=r.round( scaleCloseToHour * (preferences.getScale()), 4);             // calculating the scale predefined scale times the scale from the preference of the student
+//                                dEvaluationRaw += scaleCloseToHour;
+//
+//                            }
+//                            else{}
+//
+//
+//
+//                        } else {
+//                            if (event.getiHourScheduled() + 70 == preferences.getiHour2() || event.getiHourScheduled() + 70 == preferences.getiHour2()) {
+//                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+//                                dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
+//                                dEvaluationRaw += scaleCloseToHour;
+//
+//                            } else if (event.getiHourScheduled() + 100 == preferences.getiHour2() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
+//                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+//                                dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
+//                                dEvaluationRaw += scaleCloseToHour;
+//
+//                            } else if (event.getiHourScheduled() - 100 == preferences.getiHour2() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
+//                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+//                                dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
+//                                dEvaluationRaw += scaleCloseToHour;
+//
+//                            } else if (event.getiHourScheduled() -30 == preferences.getiHour2() || event.getiHourScheduled() - 30 == preferences.getiHour2()) {
+//                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+//                                dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
+//                                dEvaluationRaw += scaleCloseToHour;
+//
+//                            } else {
+//                            }
+//                        }
+//
+//                    }
+//
+//                    evaluation.addToRawHeuristics(dEvaluationRaw);
+//                    evaluation.addToHeuristics(dEvaluation);
+//                    evaluation.addToScaledHeuristics(dEvaluationScaled);
+//                    break;
+//                }
+//
+//            }
+//        }
+//        return evaluation;
+//    }
     public HeuristicEvaluation heuristicEvaluation_function(SGT event, double scaleForDay, double scaleForHour, double scaleCloseToHour){
 
-        //https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places == Rounding doubles                                                                                                         
-        //https://www.geeksforgeeks.org/method-within-method-in-java/#:~:text=Java%20does%20not%20support%20%E2%80%9Cdirectly,method%20so%20this%20does%20compile. == method inside a method                         
+            myInterface r = new myInterface() {
+                public double round(double value, int places)
+                {
+                    if (places < 0) throw new IllegalArgumentException();
+
+                    BigDecimal bd = BigDecimal.valueOf(value);
+                    bd = bd.setScale(places, RoundingMode.HALF_UP);
+                    return bd.doubleValue();            };
+            };
+
+            double dEvaluation = 0.0;
+            double dEvaluationRaw = 0.0;
+            double dEvaluationScaled = 0.0;
+            HeuristicEvaluation evaluation = new HeuristicEvaluation();
 
 
-        
-        myInterface r = new myInterface() {
-            public double round(double value, int places)
-            {
-                if (places < 0) throw new IllegalArgumentException();
+            for(int kings_id : event.getCodesOfStudentsAssigned()){
+                int iCounter = 0;
+                Student student = STUDENTS_TO_BE_ASSINGED_GLOBAL.get(kings_id);
+                dEvaluation = 0.0;
+                dEvaluationRaw = 0.0;
+                dEvaluationScaled = 0.0;
 
-                BigDecimal bd = BigDecimal.valueOf(value);
-                bd = bd.setScale(places, RoundingMode.HALF_UP);
-                return bd.doubleValue();            };
-        };
+                for(DataSetStudents preferences : student.getPreferences()) {
 
-
-
-        double dEvaluation = 0.0;
-        double dEvaluationRaw = 0.0;
-        double dEvaluationScaled = 0.0;
-        HeuristicEvaluation evaluation = new HeuristicEvaluation();
-        evaluation.setSgt(event);
-
-        for(int kings_id : event.getCodesOfStudentsAssigned()){
-            int iCounter = 0;
-            Student student = STUDENTS_TO_BE_ASSINGED_GLOBAL.get(kings_id);
-
-             dEvaluation = 0.0;
-             dEvaluationRaw = 0.0;
-             dEvaluationScaled = 0.0;
-
-            for(DataSetStudents preferences : student.getPreferences()) {
-
-                if (preferences.getAbbrev().equals(event.getsLect())) {
-                    //has entered evaluation
-                    if (event.getsDayOfWeek().equals(preferences.getPrefDay())) {
-                        dEvaluation += r.round(preferences.getScale(), 5);                                      //calculating only the scale from the preference
-                        dEvaluationScaled += r.round(scaleForDay * (preferences.getScale()), 5);             // calculating the scale predefined scale times the scale from the preference of the student
-                        dEvaluationRaw += scaleForDay;                              //only the predefined scale
+                    if (preferences.getAbbrev().equals(event.getsLect())) {
+                        //has entered evaluation
+                        if (event.getsDayOfWeek().equals(preferences.getPrefDay())) {
+                            dEvaluation += r.round(preferences.getScale(), 5);                                      //calculating only the scale from the preference
+                            dEvaluationScaled += r.round(scaleForDay * (preferences.getScale()), 5);             // calculating the scale predefined scale times the scale from the preference of the student
+                            dEvaluationRaw += scaleForDay;                              //only the predefined scale
 
 
-                    }
+                        }
                         if (event.getiHourScheduled() == preferences.getiHour1() || event.getiHourScheduled() == preferences.getiHour2()) {
 
                             dEvaluation += r.round(preferences.getScale(), 5);
-                            dEvaluationScaled +=r.round( scaleForHour * (preferences.getScale()), 4);
+                            dEvaluationScaled += scaleForHour * (preferences.getScale());
                             dEvaluationRaw += scaleForHour;
 
                         }
 
-                    else {
+                        else {
 
-                        if (event.getiHourScheduled() % 100 == 0) {
-                            if (event.getiHourScheduled() + 30 == preferences.getiHour2() || event.getiHourScheduled() + 30 == preferences.getiHour2()) {
-                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
-                                dEvaluationScaled += r.round(scaleCloseToHour * (preferences.getScale()), 4);             // calculating the scale predefined scale times the scale from the preference of the student
-                                dEvaluationRaw += scaleCloseToHour;
+                            if (event.getiHourScheduled() % 100 == 0) {
+                                if (event.getiHourScheduled() + 30 == preferences.getiHour2() || event.getiHourScheduled() + 30 == preferences.getiHour2()) {
+                                    dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+                                    dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
+                                    dEvaluationRaw += scaleCloseToHour;
 
-                            } else if (event.getiHourScheduled() + 100 == preferences.getiHour2() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
-                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
-                                dEvaluationScaled += r.round(scaleCloseToHour * (preferences.getScale()),4);             // calculating the scale predefined scale times the scale from the preference of the student
-                                dEvaluationRaw += scaleCloseToHour;
+                                } else if (event.getiHourScheduled() + 100 == preferences.getiHour2() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
+                                    dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+                                    dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
+                                    dEvaluationRaw += scaleCloseToHour;
 
-                            } else if (event.getiHourScheduled() - 100 == preferences.getiHour2() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
-                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
-                                dEvaluationScaled +=r.round( scaleCloseToHour * (preferences.getScale()),4 );             // calculating the scale predefined scale times the scale from the preference of the student
-                                dEvaluationRaw += scaleCloseToHour;
+                                } else if (event.getiHourScheduled() - 100 == preferences.getiHour2() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
+                                    dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+                                    dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
+                                    dEvaluationRaw += scaleCloseToHour;
 
-                            } else if (event.getiHourScheduled() -70 == preferences.getiHour2() || event.getiHourScheduled() -70 == preferences.getiHour2()) {
-                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
-                                dEvaluationScaled +=r.round( scaleCloseToHour * (preferences.getScale()), 4);             // calculating the scale predefined scale times the scale from the preference of the student
-                                dEvaluationRaw += scaleCloseToHour;
+                                } else if (event.getiHourScheduled() -70 == preferences.getiHour2() || event.getiHourScheduled() -70 == preferences.getiHour2()) {
+                                    dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+                                    dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
+                                    dEvaluationRaw += scaleCloseToHour;
 
-                            }
-                            else{}
+                                }
+                                else{}
 
 
-
-                        } else {
-                            if (event.getiHourScheduled() + 70 == preferences.getiHour2() || event.getiHourScheduled() + 70 == preferences.getiHour2()) {
-                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
-                                dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
-                                dEvaluationRaw += scaleCloseToHour;
-
-                            } else if (event.getiHourScheduled() + 100 == preferences.getiHour2() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
-                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
-                                dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
-                                dEvaluationRaw += scaleCloseToHour;
-
-                            } else if (event.getiHourScheduled() - 100 == preferences.getiHour2() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
-                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
-                                dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
-                                dEvaluationRaw += scaleCloseToHour;
-
-                            } else if (event.getiHourScheduled() -30 == preferences.getiHour2() || event.getiHourScheduled() - 30 == preferences.getiHour2()) {
-                                dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
-                                dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
-                                dEvaluationRaw += scaleCloseToHour;
 
                             } else {
+                                if (event.getiHourScheduled() + 70 == preferences.getiHour2() || event.getiHourScheduled() + 70 == preferences.getiHour2()) {
+                                    dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+                                    dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
+                                    dEvaluationRaw += scaleCloseToHour;
+
+                                } else if (event.getiHourScheduled() + 100 == preferences.getiHour2() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
+                                    dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+                                    dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
+                                    dEvaluationRaw += scaleCloseToHour;
+
+                                } else if (event.getiHourScheduled() - 100 == preferences.getiHour2() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
+                                    dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+                                    dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
+                                    dEvaluationRaw += scaleCloseToHour;
+
+                                } else if (event.getiHourScheduled() -30 == preferences.getiHour2() || event.getiHourScheduled() - 30 == preferences.getiHour2()) {
+                                    dEvaluation += r.round(preferences.getScale(),5);                                      //calculating only the scale from the preference
+                                    dEvaluationScaled += scaleCloseToHour * (preferences.getScale());             // calculating the scale predefined scale times the scale from the preference of the student
+                                    dEvaluationRaw += scaleCloseToHour;
+
+                                } else {
+                                }
                             }
+
                         }
 
+                        evaluation.addToRawHeuristics(dEvaluationRaw);
+                        evaluation.addToHeuristics(dEvaluation);
+                        evaluation.addToScaledHeuristics(dEvaluationScaled);
+                        break;
                     }
 
-                    evaluation.addToRawHeuristics(dEvaluationRaw);
-                    evaluation.addToHeuristics(dEvaluation);
-                    evaluation.addToScaledHeuristics(dEvaluationScaled);
-                    break;
                 }
-
             }
-        }
-        return evaluation;
+            return evaluation;
+
     }
 
 
@@ -1310,227 +1583,440 @@ public class HillClimbing {
 
     public HeuristicEvaluation heuristicEvaluation_percentage(SGT event, double scaleForDay, double scaleForHour, double scaleCloseToHour, Week_Timetable timetable, int iOption){
 
-        //https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places == Rounding doubles
-        //https://www.geeksforgeeks.org/method-within-method-in-java/#:~:text=Java%20does%20not%20support%20%E2%80%9Cdirectly,method%20so%20this%20does%20compile. == method inside a method
+            //https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places == Rounding doubles
+            //https://www.geeksforgeeks.org/method-within-method-in-java/#:~:text=Java%20does%20not%20support%20%E2%80%9Cdirectly,method%20so%20this%20does%20compile. == method inside a method
 
 
-        //a student is 20% happy if he is assigned to a time that is +- 1 hour or half an hour from what he/she has specified as a preference for time. The day of his preference doesn't match
-        //a student is 40% happy if he is assigned to his time of specified choice
-        //a student is 60% happy if day assigned only matches preference
-        //a student is 75% happy if hour +- 1 hour to preference + day of choice matches
-        // 100% if both preferences for hour and time are fulfilled
+            myInterface r = new myInterface() {
+                public double round(double value, int places)
+                {
+                    if (places < 0) throw new IllegalArgumentException();
+
+                    BigDecimal bd = BigDecimal.valueOf(value);
+                    bd = bd.setScale(places, RoundingMode.HALF_UP);
+                    return bd.doubleValue();            };
+            };
 
 
-        myInterface r = new myInterface() {
-            public double round(double value, int places)
-            {
-                if (places < 0) throw new IllegalArgumentException();
-
-                BigDecimal bd = BigDecimal.valueOf(value);
-                bd = bd.setScale(places, RoundingMode.HALF_UP);
-                return bd.doubleValue();            };
-        };
-
-
-        double dEvaluation = 0.0;
-        double dEvaluationPersonal = 0.0;
-        int numPeopleWithZeroPercent = 0;
-        int numPeopleImpossibleHeuristics = 0;
-        int numPeopleFullSatisfiability = 0;
-        HashMap<String, Integer> days = new HashMap<>();
-        days.put("",0);
-        days.put("Monday",1);
-        days.put("Tuesday",2);
-        days.put("Wednesday",3);
-        days.put("Thursday", 4);
-        days.put("Friday", 5);
+            double dEvaluation = 0.0;
+            double dEvaluationPersonal = 0.0;
+            int numPeopleWithZeroPercent = 0;
+            int numPeopleImpossibleHeuristics = 0;
+            int numPeopleFullSatisfiability = 0;
+            HashMap<String, Integer> days = new HashMap<>();
+            days.put("",0);
+            days.put("Monday",1);
+            days.put("Tuesday",2);
+            days.put("Wednesday",3);
+            days.put("Thursday", 4);
+            days.put("Friday", 5);
 
 
 
 
-        HeuristicEvaluation evaluation = new HeuristicEvaluation();
-        evaluation.setSgt(event);
+            HeuristicEvaluation evaluation = new HeuristicEvaluation();
+            //evaluation.setSgt(event);
 
-        for(int kings_id : event.getCodesOfStudentsAssigned()){
-            int iCounter = 0;
-             dEvaluation = 0.0;
-             dEvaluationPersonal = 0.0;
+            for(int kings_id : event.getCodesOfStudentsAssigned()){
+                int iCounter = 0;
+                Student student = STUDENTS_TO_BE_ASSINGED_GLOBAL.get(kings_id);
+                dEvaluation = 0.0;
+                dEvaluationPersonal = 0.0;
 
-            Student student = STUDENTS_TO_BE_ASSINGED_GLOBAL.get(kings_id);
+                for(DataSetStudents preferences : student.getPreferences()) {
+//                dEvaluationPersonal = 0;
+                    if (preferences.getAbbrev().equals(event.getsLect())) {
 
-            for(DataSetStudents preferences : student.getPreferences()) {
-                dEvaluationPersonal = 0;
-                if (preferences.getAbbrev().equals(event.getsLect())) {
-
-                    if (event.getsDayOfWeek().equals(preferences.getPrefDay())) {
-                        dEvaluation = r.round(60.0/event.getCodesOfStudentsAssigned().size(),4);                                      //calculating only the scale from the preference
-                        dEvaluationPersonal += 60;
-                        evaluation.addPerscentSatisfiability(dEvaluation);
-
-                        if (event.getiHourScheduled() == preferences.getiHour1() || event.getiHourScheduled() == preferences.getiHour2()) {
-                            dEvaluation = r.round(40.0/event.getCodesOfStudentsAssigned().size(), 4);
-                            dEvaluationPersonal =40;
+                        if (event.getsDayOfWeek().equals(preferences.getPrefDay())) {
+                            dEvaluation = r.round(60.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                            dEvaluationPersonal = 60;
                             evaluation.addPerscentSatisfiability(dEvaluation);
-                            if(iOption == 1)if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-                            numPeopleFullSatisfiability++;
 
-                            evaluation.setNumPeopleCompleteSatisfiability(numPeopleFullSatisfiability);
+                            if (event.getiHourScheduled() == preferences.getiHour1() || event.getiHourScheduled() == preferences.getiHour2()) {
+                                dEvaluation = r.round(40.0/event.getCodesOfStudentsAssigned().size(), 4);
+                                dEvaluationPersonal =40;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                numPeopleFullSatisfiability++;
+                                evaluation.setNumPeopleCompleteSatisfiability(numPeopleFullSatisfiability);
 
-                            break;
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            }
+                            else if (event.getiHourScheduled() + 30 == preferences.getiHour1() || event.getiHourScheduled() + 30 == preferences.getiHour2()) {
+                                dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                                dEvaluationPersonal =15;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else if (event.getiHourScheduled() + 100 == preferences.getiHour1() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
+                                dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                                dEvaluationPersonal =15;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else if (event.getiHourScheduled() - 100 == preferences.getiHour1() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
+                                dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);
+                                dEvaluationPersonal =15;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else if (event.getiHourScheduled() - 70 == preferences.getiHour1() || event.getiHourScheduled() - 70 == preferences.getiHour2()) {
+                                dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(),4 );
+                                dEvaluationPersonal =15;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else if (event.getiHourScheduled() + 70 == preferences.getiHour1() || event.getiHourScheduled() + 70 == preferences.getiHour2()) {
+                                dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                                dEvaluationPersonal =15;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else if (event.getiHourScheduled() + 100 == preferences.getiHour1() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
+                                dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                                dEvaluationPersonal =15;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else if (event.getiHourScheduled() - 100 ==  preferences.getiHour1() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
+                                dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                                dEvaluationPersonal =15;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else if (event.getiHourScheduled() - 30 == preferences.getiHour1() || event.getiHourScheduled() - 30 == preferences.getiHour2()) {
+                                dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                                dEvaluationPersonal =15;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else {
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+                            }
+
                         }
-                        else if (event.getiHourScheduled() + 30 == preferences.getiHour1() || event.getiHourScheduled() + 30 == preferences.getiHour2()) {
-                            dEvaluation = r.round(15.0/(event.getCodesOfStudentsAssigned().size()), 4);                                      //calculating only the scale from the preference
-                            dEvaluationPersonal =15;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else if (event.getiHourScheduled() + 100 == preferences.getiHour1() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
-                            dEvaluation = r.round(15.0/event.getCodesOfStudentsAssigned().size(),4);                                      //calculating only the scale from the preference
-                            dEvaluationPersonal =15;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else if (event.getiHourScheduled() - 100 == preferences.getiHour1() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
-                            dEvaluation = r.round(15.0/event.getCodesOfStudentsAssigned().size(),4);
-                            dEvaluationPersonal =15;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else if (event.getiHourScheduled() - 70 == preferences.getiHour1() || event.getiHourScheduled() - 70 == preferences.getiHour2()) {
-                            dEvaluation = r.round(15.0/event.getCodesOfStudentsAssigned().size(), 4);
-                            dEvaluationPersonal =15;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else if (event.getiHourScheduled() + 70 == preferences.getiHour1() || event.getiHourScheduled() + 70 == preferences.getiHour2()) {
-                            dEvaluation = r.round( 15.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
-                            dEvaluationPersonal =15;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else if (event.getiHourScheduled() + 100 == preferences.getiHour1() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
-                            dEvaluation = r.round(15.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
-                            dEvaluationPersonal =15;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else if (event.getiHourScheduled() - 100 == preferences.getiHour1() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
-                            dEvaluation = r.round(15.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
-                            dEvaluationPersonal =15;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else if (event.getiHourScheduled() - 30 == preferences.getiHour1() || event.getiHourScheduled() - 30 == preferences.getiHour2()) {
-                            dEvaluation = r.round(15.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
-                            dEvaluationPersonal =15;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else {
-                            if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-                        }
-
-                    }
-                    else{
+                        else{
 
 
-                        //Check how many peaple have heuristics for a day unsatisfiable
-                        //and how many of them are not possible in the timeline of events occuring, no sgt before the lecture
+                            //Check how many peaple have heuristics for a day unsatisfiable
+                            //and how many of them are not possible in the timeline of events occuring, no sgt before the lecture
 
-                        int a = days.get(preferences.getPrefDay());
-                        int b = days.get(findDayOfLecture_By_name(timetable, event.getsLect()));
-                        if( a < b ) {
+                            int a = days.get(preferences.getPrefDay());
+                            int b = days.get(findDayOfLecture_By_name(timetable, event.getsLect()));
+                            if( a < b ) {
                                 numPeopleImpossibleHeuristics++;
                                 evaluation.setNumPeopleImpossibleHeuristics(numPeopleImpossibleHeuristics);
+                            }
+                            if (event.getiHourScheduled() == preferences.getiHour1() || event.getiHourScheduled() == preferences.getiHour2()) {
+                                dEvaluation = r.round(40.0/event.getCodesOfStudentsAssigned().size(), 4);
+                                dEvaluationPersonal =40;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else if (event.getiHourScheduled() + 30 == preferences.getiHour1() || event.getiHourScheduled() + 30 == preferences.getiHour2()) {
+                                dEvaluation = r.round(20.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                                dEvaluationPersonal =20;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else if (event.getiHourScheduled() + 100 == preferences.getiHour1() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
+                                dEvaluation = r.round(20.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                                dEvaluationPersonal =20;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else if (event.getiHourScheduled() - 100 == preferences.getiHour1() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
+                                dEvaluation = r.round(20.0/event.getCodesOfStudentsAssigned().size(), 4);
+                                dEvaluationPersonal =20;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else if (event.getiHourScheduled() - 70 == preferences.getiHour1() || event.getiHourScheduled() - 70 == preferences.getiHour2()) {
+                                dEvaluation = r.round(20.0/event.getCodesOfStudentsAssigned().size(), 4);
+                                dEvaluationPersonal =20;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else if (event.getiHourScheduled() + 70 == preferences.getiHour1() || event.getiHourScheduled() + 70 == preferences.getiHour2()) {
+                                dEvaluation = r.round(20.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                                dEvaluationPersonal =20;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else if (event.getiHourScheduled() + 100 == preferences.getiHour1() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
+                                dEvaluation = r.round(20.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                                dEvaluationPersonal =20;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else if (event.getiHourScheduled() - 100 == preferences.getiHour1() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
+                                dEvaluation = r.round(20.0/event.getCodesOfStudentsAssigned().size() , 4);                                      //calculating only the scale from the preference
+                                dEvaluationPersonal =20;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else if (event.getiHourScheduled() - 30 == preferences.getiHour1() || event.getiHourScheduled() - 30 == preferences.getiHour2()) {
+                                dEvaluation = r.round(20.0/event.getCodesOfStudentsAssigned().size() , 4);                                      //calculating only the scale from the preference
+                                dEvaluationPersonal =20;
+                                evaluation.addPerscentSatisfiability(dEvaluation);
+                                if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+
+                                break;
+                            } else {
+                            }
+                            numPeopleWithZeroPercent++;
+                            evaluation.setNumPeopleWithZeroPercent(numPeopleWithZeroPercent);
                         }
-                        if (event.getiHourScheduled() == preferences.getiHour1() || event.getiHourScheduled() == preferences.getiHour2()) {
-                            dEvaluation = r.round(40.0/event.getCodesOfStudentsAssigned().size(),4);
-                            dEvaluationPersonal =40;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else if (event.getiHourScheduled() + 30 == preferences.getiHour1() || event.getiHourScheduled() + 30 == preferences.getiHour2()) {
-                            dEvaluation = r.round(20.0/event.getCodesOfStudentsAssigned().size(), 4);
-                            dEvaluationPersonal =20/event.getCodesOfStudentsAssigned().size();
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else if (event.getiHourScheduled() + 100 == preferences.getiHour1() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
-                            dEvaluation =r.round( 20.0/event.getCodesOfStudentsAssigned().size(), 4 ) ;
-                            dEvaluationPersonal =20;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else if (event.getiHourScheduled() - 100 == preferences.getiHour1() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
-                            dEvaluation =r.round( 20.0/event.getCodesOfStudentsAssigned().size(), 4);
-                            dEvaluationPersonal =20;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else if (event.getiHourScheduled() - 70 == preferences.getiHour1() || event.getiHourScheduled() - 70 == preferences.getiHour2()) {
-                            dEvaluation =r.round( 20.0/event.getCodesOfStudentsAssigned().size(), 4);
-                            dEvaluationPersonal =20;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else if (event.getiHourScheduled() + 70 == preferences.getiHour1() || event.getiHourScheduled() + 70 == preferences.getiHour2()) {
-                            dEvaluation = r.round( 20.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
-                            dEvaluationPersonal =20;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else if (event.getiHourScheduled() + 100 == preferences.getiHour1() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
-                            dEvaluation = r.round( 20.0/event.getCodesOfStudentsAssigned().size(),4);                                      //calculating only the scale from the preference
-                            dEvaluationPersonal =20;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else if (event.getiHourScheduled() - 100 == preferences.getiHour1() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
-                            dEvaluation = r.round(20.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
-                            dEvaluationPersonal =20;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else if (event.getiHourScheduled() - 30 == preferences.getiHour1() || event.getiHourScheduled() - 30 == preferences.getiHour2()) {
-                            dEvaluation = r.round(20.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
-                            dEvaluationPersonal =20;
-                            evaluation.addPerscentSatisfiability(dEvaluation);
-                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
-
-                            break;
-                        } else {
-                        }
-                        numPeopleWithZeroPercent++;
-                        evaluation.addPerscentSatisfiability(dEvaluation);
-                        evaluation.setNumPeopleWithZeroPercent(numPeopleWithZeroPercent);
-                        if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
                     }
-                    break;
-
                 }
+
             }
 
+            evaluation.addPerscentSatisfiability(dEvaluation/event.getCodesOfStudentsAssigned().size());
+            return evaluation;
         }
 
-        evaluation.addPerscentSatisfiability(dEvaluation/event.getCodesOfStudentsAssigned().size());
-        return evaluation;
-    }
+    
+//    public HeuristicEvaluation heuristicEvaluation_percentage(SGT event, double scaleForDay, double scaleForHour, double scaleCloseToHour, Week_Timetable timetable, int iOption){
+//
+//        //https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places == Rounding doubles
+//        //https://www.geeksforgeeks.org/method-within-method-in-java/#:~:text=Java%20does%20not%20support%20%E2%80%9Cdirectly,method%20so%20this%20does%20compile. == method inside a method
+//
+//
+//        //a student is 20% happy if he is assigned to a time that is +- 1 hour or half an hour from what he/she has specified as a preference for time. The day of his preference doesn't match
+//        //a student is 40% happy if he is assigned to his time of specified choice
+//        //a student is 60% happy if day assigned only matches preference
+//        //a student is 75% happy if hour +- 1 hour to preference + day of choice matches
+//        // 100% if both preferences for hour and time are fulfilled
+//
+//
+//        myInterface r = new myInterface() {
+//            public double round(double value, int places)
+//            {
+//                if (places < 0) throw new IllegalArgumentException();
+//
+//                BigDecimal bd = BigDecimal.valueOf(value);
+//                bd = bd.setScale(places, RoundingMode.HALF_UP);
+//                return bd.doubleValue();            };
+//        };
+//
+//
+//        double dEvaluation = 0.0;
+//        double dEvaluationPersonal = 0.0;
+//        int numPeopleWithZeroPercent = 0;
+//        int numPeopleImpossibleHeuristics = 0;
+//        int numPeopleFullSatisfiability = 0;
+//        HashMap<String, Integer> days = new HashMap<>();
+//        days.put("",0);
+//        days.put("Monday",1);
+//        days.put("Tuesday",2);
+//        days.put("Wednesday",3);
+//        days.put("Thursday", 4);
+//        days.put("Friday", 5);
+//
+//
+//
+//
+//        HeuristicEvaluation evaluation = new HeuristicEvaluation();
+//        evaluation.setSgt(event);
+//
+//        for(int kings_id : event.getCodesOfStudentsAssigned()){
+//            int iCounter = 0;
+//             dEvaluation = 0.0;
+//             dEvaluationPersonal = 0.0;
+//
+//            Student student = STUDENTS_TO_BE_ASSINGED_GLOBAL.get(kings_id);
+//
+//            for(DataSetStudents preferences : student.getPreferences()) {
+//                dEvaluationPersonal = 0;
+//                if (preferences.getAbbrev().equals(event.getsLect())) {
+//
+//                    if (event.getsDayOfWeek().equals(preferences.getPrefDay())) {
+//                        dEvaluation = r.round(60.0/event.getCodesOfStudentsAssigned().size(),4);                                      //calculating only the scale from the preference
+//                        dEvaluationPersonal += 60;
+//                        evaluation.addPerscentSatisfiability(dEvaluation);
+//
+//                        if (event.getiHourScheduled() == preferences.getiHour1() || event.getiHourScheduled() == preferences.getiHour2()) {
+//                            dEvaluation = r.round(40.0/event.getCodesOfStudentsAssigned().size(), 4);
+//                            dEvaluationPersonal =40;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                            if(iOption == 1)if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//                            numPeopleFullSatisfiability++;
+//
+//                            evaluation.setNumPeopleCompleteSatisfiability(numPeopleFullSatisfiability);
+//
+//                            break;
+//                        }
+//                        else if (event.getiHourScheduled() + 30 == preferences.getiHour1() || event.getiHourScheduled() + 30 == preferences.getiHour2()) {
+//                            dEvaluation = r.round((20.0/*15.0*/) /(event.getCodesOfStudentsAssigned().size()), 4);                                      //calculating only the scale from the preference
+//                            dEvaluationPersonal =15;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else if (event.getiHourScheduled() + 100 == preferences.getiHour1() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
+//                            dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(),4);                                      //calculating only the scale from the preference
+//                            dEvaluationPersonal =15;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else if (event.getiHourScheduled() - 100 == preferences.getiHour1() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
+//                            dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(),4);
+//                            dEvaluationPersonal =15;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else if (event.getiHourScheduled() - 70 == preferences.getiHour1() || event.getiHourScheduled() - 70 == preferences.getiHour2()) {
+//                            dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);
+//                            dEvaluationPersonal =15;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else if (event.getiHourScheduled() + 70 == preferences.getiHour1() || event.getiHourScheduled() + 70 == preferences.getiHour2()) {
+//                            dEvaluation = r.round( (20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+//                            dEvaluationPersonal =15;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else if (event.getiHourScheduled() + 100 == preferences.getiHour1() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
+//                            dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+//                            dEvaluationPersonal =15;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else if (event.getiHourScheduled() - 100 == preferences.getiHour1() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
+//                            dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+//                            dEvaluationPersonal =15;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else if (event.getiHourScheduled() - 30 == preferences.getiHour1() || event.getiHourScheduled() - 30 == preferences.getiHour2()) {
+//                            dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+//                            dEvaluationPersonal =15;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else {
+//                            if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//                        }
+//
+//                    }
+//                    else{
+//
+//
+//                        //Check how many peaple have heuristics for a day unsatisfiable
+//                        //and how many of them are not possible in the timeline of events occuring, no sgt before the lecture
+//
+//                        int a = days.get(preferences.getPrefDay());
+//                        int b = days.get(findDayOfLecture_By_name(timetable, event.getsLect()));
+//                        if( a < b ) {
+//                                numPeopleImpossibleHeuristics++;
+//                                evaluation.setNumPeopleImpossibleHeuristics(numPeopleImpossibleHeuristics);
+//                        }
+//                        if (event.getiHourScheduled() == preferences.getiHour1() || event.getiHourScheduled() == preferences.getiHour2()) {
+//                            dEvaluation = r.round(40.0/event.getCodesOfStudentsAssigned().size(),4);
+//                            dEvaluationPersonal =40;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else if (event.getiHourScheduled() + 30 == preferences.getiHour1() || event.getiHourScheduled() + 30 == preferences.getiHour2()) {
+//                            dEvaluation = r.round(20.0/event.getCodesOfStudentsAssigned().size(), 4);
+//                            dEvaluationPersonal =20/event.getCodesOfStudentsAssigned().size();
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else if (event.getiHourScheduled() + 100 == preferences.getiHour1() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
+//                            dEvaluation =r.round( 20.0/event.getCodesOfStudentsAssigned().size(), 4 ) ;
+//                            dEvaluationPersonal =20;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else if (event.getiHourScheduled() - 100 == preferences.getiHour1() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
+//                            dEvaluation =r.round( 20.0/event.getCodesOfStudentsAssigned().size(), 4);
+//                            dEvaluationPersonal =20;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else if (event.getiHourScheduled() - 70 == preferences.getiHour1() || event.getiHourScheduled() - 70 == preferences.getiHour2()) {
+//                            dEvaluation =r.round( 20.0/event.getCodesOfStudentsAssigned().size(), 4);
+//                            dEvaluationPersonal =20;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else if (event.getiHourScheduled() + 70 == preferences.getiHour1() || event.getiHourScheduled() + 70 == preferences.getiHour2()) {
+//                            dEvaluation = r.round( 20.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+//                            dEvaluationPersonal =20;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else if (event.getiHourScheduled() + 100 == preferences.getiHour1() || event.getiHourScheduled() + 100 == preferences.getiHour2()) {
+//                            dEvaluation = r.round( 20.0/event.getCodesOfStudentsAssigned().size(),4);                                      //calculating only the scale from the preference
+//                            dEvaluationPersonal =20;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else if (event.getiHourScheduled() - 100 == preferences.getiHour1() || event.getiHourScheduled() - 100 == preferences.getiHour2()) {
+//                            dEvaluation = r.round(20.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+//                            dEvaluationPersonal =20;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else if (event.getiHourScheduled() - 30 == preferences.getiHour1() || event.getiHourScheduled() - 30 == preferences.getiHour2()) {
+//                            dEvaluation = r.round(20.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+//                            dEvaluationPersonal =20;
+//                            evaluation.addPerscentSatisfiability(dEvaluation);
+//                             if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//
+//                            break;
+//                        } else {
+//                        }
+//                        numPeopleWithZeroPercent++;
+//                        evaluation.addPerscentSatisfiability(dEvaluation);
+//                        evaluation.setNumPeopleWithZeroPercent(numPeopleWithZeroPercent);
+//                        if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
+//                    }
+//                    break;
+//
+//                }
+//            }
+//
+//        }
+//
+//        evaluation.addPerscentSatisfiability(dEvaluation/event.getCodesOfStudentsAssigned().size());
+//        return evaluation;
+//    }
 
     public HeuristicEvaluation heuristicEvaluation_percentage_newTimeslot(SGT event,String sDay, int iHour, double scaleForDay, double scaleForHour, double scaleCloseToHour, Week_Timetable timetable, int iOption){
 
@@ -1595,56 +2081,56 @@ public class HillClimbing {
                             break;
                         }
                         else if (iHour + 30 == preferences.getiHour1() || iHour + 30 == preferences.getiHour2()) {
-                            dEvaluation = r.round(15.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                            dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
                             dEvaluationPersonal =15;
                             evaluation.addPerscentSatisfiability(dEvaluation);
                              if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
 
                             break;
                         } else if (iHour + 100 == preferences.getiHour1() || iHour + 100 == preferences.getiHour2()) {
-                            dEvaluation = r.round(15.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                            dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
                             dEvaluationPersonal =15;
                             evaluation.addPerscentSatisfiability(dEvaluation);
                              if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
 
                             break;
                         } else if (iHour - 100 == preferences.getiHour1() || iHour - 100 == preferences.getiHour2()) {
-                            dEvaluation = r.round(15.0/event.getCodesOfStudentsAssigned().size(), 4);
+                            dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);
                             dEvaluationPersonal =15;
                             evaluation.addPerscentSatisfiability(dEvaluation);
                              if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
 
                             break;
                         } else if (iHour - 70 == preferences.getiHour1() || iHour - 70 == preferences.getiHour2()) {
-                            dEvaluation = r.round(15.0/event.getCodesOfStudentsAssigned().size(),4 );
+                            dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(),4 );
                             dEvaluationPersonal =15;
                             evaluation.addPerscentSatisfiability(dEvaluation);
                              if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
 
                             break;
                         } else if (iHour + 70 == preferences.getiHour1() || iHour + 70 == preferences.getiHour2()) {
-                            dEvaluation = r.round(15.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                            dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
                             dEvaluationPersonal =15;
                             evaluation.addPerscentSatisfiability(dEvaluation);
                              if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
 
                             break;
                         } else if (iHour + 100 == preferences.getiHour1() || iHour + 100 == preferences.getiHour2()) {
-                            dEvaluation = r.round(15.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                            dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
                             dEvaluationPersonal =15;
                             evaluation.addPerscentSatisfiability(dEvaluation);
                              if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
 
                             break;
                         } else if (iHour - 100 ==  preferences.getiHour1() || iHour - 100 == preferences.getiHour2()) {
-                            dEvaluation = r.round(15.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                            dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
                             dEvaluationPersonal =15;
                             evaluation.addPerscentSatisfiability(dEvaluation);
                              if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
 
                             break;
                         } else if (iHour - 30 == preferences.getiHour1() || iHour - 30 == preferences.getiHour2()) {
-                            dEvaluation = r.round(15.0/event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
+                            dEvaluation = r.round((20.0/*15.0*/) /event.getCodesOfStudentsAssigned().size(), 4);                                      //calculating only the scale from the preference
                             dEvaluationPersonal =15;
                             evaluation.addPerscentSatisfiability(dEvaluation);
                              if(iOption == 1)student.addPercertageSat(dEvaluationPersonal);
@@ -1745,7 +2231,7 @@ public class HillClimbing {
     }
 
     //TRY A DIFF VARIATION OF THE SGT BY TESTING WITH A NEW DAY AND HOUR, depends on the available slots the sgt has
-    public HeuristicEvaluation heuristicEvaluation_Changed_TimeSlot(SGT event,String sDay, int ihour, int iDate, int iMonth,int iYear, double scaleForDay, double scaleForHour, double scaleCloseToHour){
+    public HeuristicEvaluation heuristicEvaluation_function_Changed_TimeSlot(SGT event,String sDay, int ihour, int iDate, int iMonth,int iYear, double scaleForDay, double scaleForHour, double scaleCloseToHour){
 
 
         myInterface r = new myInterface() {
@@ -1897,7 +2383,7 @@ public class HillClimbing {
     public void dependencies_for_building_graph() throws CloneNotSupportedException {
 
         HashSet<SGT> dependencies = new HashSet<>();
-        ArrayList<SGT> allDepssUnfilterred = new ArrayList<>();
+        ArrayList<SGT> allDepssUnfilterred = new ArrayList<>();             //for testing purposes
         for(SGT sgt : this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL){
             SGT currentsgt = sgt;
             dependencies.clear();
@@ -1960,7 +2446,7 @@ public class HillClimbing {
         HeuristicEvaluation current = heuristicEvaluation_function(sgt, 1.5, 1, 0.5);
 
         for(Timeslot availableSlots : sgt.getAvailableSlots()){
-            evaluations.add( heuristicEvaluation_Changed_TimeSlot(sgt,
+            evaluations.add( heuristicEvaluation_function_Changed_TimeSlot(sgt,
                                                             availableSlots.getTimePeriod().get(0).getsDay(),
                                                             availableSlots.getTimePeriod().get(0).getiTime(),
                                                             availableSlots.getTimePeriod().get(0).getiDate(),
@@ -1994,13 +2480,13 @@ public class HillClimbing {
         ArrayList<HeuristicEvaluation> evaluations = new ArrayList<>();
         ArrayList<Change> swappingTwoSGTs = new ArrayList<>();
         for(SGT sgt_loop : this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL){
-            if(dayAvailableCheck(sgt_loop, sgt.getsDayOfWeek()) == 1 && dayAvailableCheck(sgt, sgt_loop.getsDayOfWeek()) == 1 && checkStudents(sgt, sgt_loop.getsDayOfWeek(), 4, timetable) == 1 && checkStudents(sgt_loop, sgt.getsDayOfWeek(), 4, timetable) == 1) {
-
+            if(dayAvailableCheck(sgt_loop, sgt.getsDayOfWeek()) == 1 && dayAvailableCheck(sgt, sgt_loop.getsDayOfWeek()) == 1 && checkStudents(sgt, sgt_loop.getsDayOfWeek(), 4, timetable) == 1 && checkStudents(sgt_loop, sgt.getsDayOfWeek(), 4, timetable) == 1 && sgt.getiAdditionalCode() != sgt_loop.getiAdditionalCode()) {
+                if(checkStudents_TimeDependency(sgt, sgt_loop) == 0) continue;
                 Change step = new Change();
                 HeuristicEvaluation calcBenefit1 = (heuristicEvaluation_percentage_newTimeslot(sgt_loop, sgt.getsDayOfWeek(), sgt.getiHourScheduled(), 1.5, 1, 0.5, timetable, 0));
                 HeuristicEvaluation calcBenefit2 = (heuristicEvaluation_percentage_newTimeslot(sgt, sgt_loop.getsDayOfWeek(), sgt_loop.getiHourScheduled(),1.5, 1, 0.5, timetable, 0));
-                HeuristicEvaluation calcBenefit3 = (heuristicEvaluation_Changed_TimeSlot(sgt_loop, sgt.getsDayOfWeek(), sgt.getiHourScheduled(), sgt.getiDayScheduled(), sgt.getiMonthScheduled(), sgt.getiYearScheduled(), 1.5, 1, 0.5));
-                HeuristicEvaluation calcBenefit4 = (heuristicEvaluation_Changed_TimeSlot(sgt, sgt_loop.getsDayOfWeek(), sgt_loop.getiHourScheduled(), sgt_loop.getiDayScheduled(), sgt_loop.getiMonthScheduled(), sgt_loop.getiYearScheduled(), 1.5, 1, 0.5));
+                HeuristicEvaluation calcBenefit3 = (heuristicEvaluation_function_Changed_TimeSlot(sgt_loop, sgt.getsDayOfWeek(), sgt.getiHourScheduled(), sgt.getiDayScheduled(), sgt.getiMonthScheduled(), sgt.getiYearScheduled(), 1.5, 1, 0.5));
+                HeuristicEvaluation calcBenefit4 = (heuristicEvaluation_function_Changed_TimeSlot(sgt, sgt_loop.getsDayOfWeek(), sgt_loop.getiHourScheduled(), sgt_loop.getiDayScheduled(), sgt_loop.getiMonthScheduled(), sgt_loop.getiYearScheduled(), 1.5, 1, 0.5));
 
                 //    public HeuristicEvaluation heuristicEvaluation_percentage_newTimeslot(SGT event,String sDay, int iHour, double scaleForDay, double scaleForHour, double scaleCloseToHour, Week_Timetable timetable, int iOption){
 
@@ -2098,7 +2584,29 @@ public class HillClimbing {
         }
     }
 
+    public void removeLecturesFromStudents(Week_Timetable timetable){
+        Iterator iterator = this.STUDENTS_TO_BE_ASSINGED_GLOBAL.values().iterator();
+        for(int i =0; i < this.STUDENTS_TO_BE_ASSINGED_GLOBAL.size(); i++){
+            Student student = (Student) iterator.next();
+            ArrayList<Integer> lecturecodes = new ArrayList<>(student.getCoursesCodes());
+            ArrayList<Duplet> duplets = lecturesOfStudentsFromOnlyCodes(lecturecodes, timetable);
+            for(Duplet duplet : duplets){
+                student.removeFromAssignedCourses(duplet);
+            }
+        }
+    }
+
     private void addLGTsToStudents(Week_Timetable timetable) {
+        if(!timetable.getSgt().isEmpty()){
+
+            Iterator iterator = this.STUDENTS_TO_BE_ASSINGED_GLOBAL.values().iterator();
+            for(int i =0; i < this.STUDENTS_TO_BE_ASSINGED_GLOBAL.size(); i++){
+                Student student = (Student) iterator.next();
+                student.setAssignedLGT(new ArrayList<>());
+            }
+
+
+        }
         Iterator iterator = this.STUDENTS_TO_BE_ASSINGED_GLOBAL.values().iterator();
         for(int i =0; i < this.STUDENTS_TO_BE_ASSINGED_GLOBAL.size(); i++){
             Student student = (Student) iterator.next();
@@ -2124,9 +2632,20 @@ public class HillClimbing {
     public void takeASolutionSnap(){
 
         HeuristicEvaluation snapHeuristics  = evaluateSolution();
-        BEST_SOLUTION.setassigned_SGTs(this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL);
-        BEST_SOLUTION.setUnassignedSGTs(this.NOT_ASSIGNED_SGTS_CURRENTWEEK_GLOBAL);
-        BEST_SOLUTION.setHeuristicEvaluation(snapHeuristics);
+        CURRENT_SOLUTION.setassigned_SGTs(this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL);
+        CURRENT_SOLUTION.setUnassignedSGTs(this.NOT_ASSIGNED_SGTS_CURRENTWEEK_GLOBAL);
+        CURRENT_SOLUTION.setHeuristicEvaluation(snapHeuristics);
+
+    }
+
+
+    public Solution takeASolutionSnap_object(){
+        Solution ss = new Solution();
+        HeuristicEvaluation snapHeuristics  = evaluateSolution();
+        ss.setassigned_SGTs(this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL);
+        ss.setUnassignedSGTs(this.NOT_ASSIGNED_SGTS_CURRENTWEEK_GLOBAL);
+        ss.setHeuristicEvaluation(snapHeuristics);
+        return ss;
     }
 
 
@@ -2134,6 +2653,15 @@ public class HillClimbing {
         //update the date
         //update the students -- automatic
         //update the Day -- probably not doable
+
+        int sgtInitialHourTemp = sgtInitial.getiHourScheduled();
+        String sgtInitialSDay = sgtInitial.getDayAssigned();
+        int sgtInitialDayTemp = sgtInitial.getiDayScheduled();
+        int sgtInitialMonthTemp = sgtInitial.getiMonthScheduled();
+        int sgtInitialYearTemp = sgtInitial.getiYearScheduled();
+        String sgtInitialSHall = sgtInitial.getsLectureHall();
+
+
         sgtInitial.setiHourScheduled(sgtSwapped.getiHourScheduled());
         sgtInitial.setDayAssigned(sgtSwapped.getDayAssigned());
         sgtInitial.setiDayScheduled(sgtSwapped.getiDayScheduled());
@@ -2142,24 +2670,32 @@ public class HillClimbing {
         sgtInitial.setsLectureHall(sgtSwapped.getsLectureHall());
         //sgtInitial.setEvaluation();
 
-        sgtSwapped.setiHourScheduled(sgtInitial.getiHourScheduled());
-        sgtSwapped.setDayAssigned(sgtInitial.getDayAssigned());
-        sgtSwapped.setiDayScheduled(sgtInitial.getiDayScheduled());
-        sgtSwapped.setiMonthScheduled(sgtInitial.getiMonthScheduled());
-        sgtSwapped.setiYearScheduled(sgtInitial.getiYearScheduled());
-        sgtSwapped.setsLectureHall(sgtInitial.getsLectureHall());
+        sgtSwapped.setiHourScheduled(sgtInitialHourTemp);
+        sgtSwapped.setDayAssigned(sgtInitialSDay);
+        sgtSwapped.setiDayScheduled(sgtInitialDayTemp);
+        sgtSwapped.setiMonthScheduled(sgtInitialMonthTemp);
+        sgtSwapped.setiYearScheduled(sgtInitialYearTemp);
+        sgtSwapped.setsLectureHall(sgtInitialSHall);
         //sgtSwapped.setEvaluation();
 
 
     }
 
-    private void reassingSGTEvent(SGT resgt, String sDay,String sHall,  int iHour,int iDay, int iMonth, int iYear){
+    private void reassingSGTEvent(Week_Timetable timeable , SGT resgt, String sDay,String sHall,  int iHour,int iDay, int iMonth, int iYear){
 
         resgt.setiHourScheduled(iHour);
-        resgt.setDayAssigned(sDay);
+        resgt.setsDayOfWeek(sDay);
         resgt.setiDayScheduled(iDay);
         resgt.setiMonthScheduled(iMonth);
         resgt.setiYearScheduled(iYear);
+        for(Hall halls : timeable.getHalls()){
+            if(halls.getsAbbrev().equals(resgt.getsLectureHall())){
+                halls.setAvToOne(resgt.getiHourScheduled(), (int) (resgt.getiHourScheduled() + 1.0), resgt.getDayAssigned());
+            }
+            if(halls.getsAbbrev().equals(sHall)){
+                halls.setAvToZero(iHour ,(int)( iHour + 1.0), sDay );
+            }
+        }
         resgt.setsLectureHall(sHall);
 
     }
@@ -2175,18 +2711,19 @@ public class HillClimbing {
 
     private double calculation_slotChange_stepBenefit_simple(Change stepEval){
         //calculation based on the percentage and scaledHeuristics
-//        if(stepEval.getSgtMain().getEvaluation().getPercentSatisfiability() <=  stepEval.getEvalSecondary().getPercentSatisfiability()){
-//            return stepEval.getEvalSecondary().getdHeuristics() - stepEval.getSgtMain().getEvaluation().getdHeuristics();
-//        }
-//        return 0.0;
-        return stepEval.getEvalSecondary().getdHeuristics() - stepEval.getSgtMain().getEvaluation().getdHeuristics();
+        if(stepEval.getSgtMain().getEvaluation().getPercentSatisfiability() <  stepEval.getEvalSecondary().getPercentSatisfiability()){
+            return stepEval.getEvalSecondary().getdHeuristics() - stepEval.getSgtMain().getEvaluation().getdHeuristics();
+        }
+        //return stepEval.getEvalSecondary().getdHeuristics() - stepEval.getSgtMain().getEvaluation().getdHeuristics();
+        return 0.0;
+
     }
 
 
     private double calculation_swap_stepBenefit_simple(Change stepEval){
         //calculation based on the percentage and scaledHeuristics
         if(stepEval.getSgtMain().getEvaluation().getPercentSatisfiability() + stepEval.getSgtSecondary().getEvaluation().getPercentSatisfiability()
-                <=  stepEval.getEvalMain().getPercentSatisfiability() + stepEval.getEvalSecondary().getPercentSatisfiability())
+                <  stepEval.getEvalMain().getPercentSatisfiability() + stepEval.getEvalSecondary().getPercentSatisfiability())
         {
             return stepEval.getEvalMain().getdHeuristics() + stepEval.getEvalSecondary().getdHeuristics() - (stepEval.getSgtMain().getEvaluation().getdHeuristics() + stepEval.getSgtSecondary().getEvaluation().getdHeuristics());
         }
@@ -2233,7 +2770,7 @@ public class HillClimbing {
             if(checkStudents(sgt, available.getTimePeriod().get(0).getsDay(),4,timetable) != 0) {
                 Change change = new Change();
                 Timeperiod temp = available.getTimePeriod().get(0);
-                HeuristicEvaluation stepEval = heuristicEvaluation_Changed_TimeSlot(sgt, temp.getsDay(), temp.getiTime(), temp.getiDate(), temp.getiMonth(), temp.getiYear(), 1.5, 1, 0.5);
+                HeuristicEvaluation stepEval = heuristicEvaluation_function_Changed_TimeSlot(sgt, temp.getsDay(), temp.getiTime(), temp.getiDate(), temp.getiMonth(), temp.getiYear(), 1.5, 1, 0.5);
                 HeuristicEvaluation stepEval_percentage = heuristicEvaluation_percentage_newTimeslot(sgt, temp.getsDay(), temp.getiTime(), 1.5, 1, 0.5, timetable, 0);
                 stepEval.setiHour(temp.getiTime());
                 stepEval.setsDayOfWeek(temp.getsDay());
@@ -2254,40 +2791,108 @@ public class HillClimbing {
         return steps;
     }
 
-    public void implementChange(Change change){
+    public void implementChange(Week_Timetable timetable, Change change){
         if(change.getSgtSecondary() == null){
             HeuristicEvaluation evaluation = change.getEvalSecondary();
-            reassingSGTEvent(change.getSgtMain(), evaluation.getsDayOfWeek(), evaluation.getsHall(), evaluation.getiHour(), evaluation.getiDate(), evaluation.getiMonth(), evaluation.getiYear());
+            reassingSGTEvent(timetable,change.getSgtMain(), evaluation.getsDayOfWeek(), evaluation.getsHall(), evaluation.getiHour(), evaluation.getiDate(), evaluation.getiMonth(), evaluation.getiYear());
         }else{
             swap(change.getSgtMain(), change.getSgtSecondary());
         }
     }
 
 
-    private void hillClimbing(Week_Timetable timetable, int iITeration) throws CloneNotSupportedException {
+    public Change copyChange(Change iterated) throws CloneNotSupportedException {
+        Change toReturn = (Change) iterated.clone();
+        if(iterated.getSgtMain() != null){
+            SGT sgt = iterated.getSgtMain();
+            //change.setSgtMain(new SGT(sgt.getsLect(), sgt.getDayAssigned(), sgt.getsLectureHall(), sgt.getiHourScheduled(), sgt.getiHours(), sgt.getiAdditionalCode(), sgt.getCodesOfStudentsAssigned(), sgt.getiDayScheduled(), sgt.getiMonthScheduled(), sgt.getiYearScheduled()));
+            toReturn.setSgtMain(new SGT(sgt.getsLect(), sgt.getDayAssigned(), sgt.getsLectureHall(), sgt.getiHourScheduled(), sgt.getiHours(), sgt.getiAdditionalCode(), sgt.getCodesOfStudentsAssigned(), sgt.getiDayScheduled(), sgt.getiMonthScheduled(), sgt.getiYearScheduled(), (HeuristicEvaluation) sgt.getEvaluation().clone()));
+        }
+        if(iterated.getSgtSecondary() != null){
+            SGT sgt = iterated.getSgtSecondary();
+            //change.setSgtMain(new SGT(sgt.getsLect(), sgt.getDayAssigned(), sgt.getsLectureHall(), sgt.getiHourScheduled(), sgt.getiHours(), sgt.getiAdditionalCode(), sgt.getCodesOfStudentsAssigned(), sgt.getiDayScheduled(), sgt.getiMonthScheduled(), sgt.getiYearScheduled()));
+            toReturn.setSgtSecondary(new SGT(sgt.getsLect(), sgt.getDayAssigned(), sgt.getsLectureHall(), sgt.getiHourScheduled(), sgt.getiHours(), sgt.getiAdditionalCode(), sgt.getCodesOfStudentsAssigned(), sgt.getiDayScheduled(), sgt.getiMonthScheduled(), sgt.getiYearScheduled(), (HeuristicEvaluation) sgt.getEvaluation().clone()));
+        }
+
+        return toReturn;
+    }
+
+    private void hillClimbing(Week_Timetable timetable, int iITeration, double scaleForDay, double scaleForHour, double scaleCloseToHour) throws CloneNotSupportedException, InterruptedException {
         //previous to running this algorithm, I have had the SGTs assigned, the dependencies for each one of them built, also their HE(Heursticevailation) attached; all students have their preferences, assigned SGTs and also the lectures(lectures are not used however)
+        Solution solutionIterated = new Solution();
+        Solution bestSolutionFound = new Solution();
         ArrayList<Change> visited = new ArrayList<>();
         ArrayList<Change> allpossibleSteps = new ArrayList<>();
-        for(int i = 0; i < iITeration; i++){
 
-             allpossibleSteps = completeNeighbourhood(timetable);
+
+        allpossibleSteps = completeNeighbourhood(timetable);
+        for(Change change : allpossibleSteps){
+                change.setFinalEffect(stepBenefit(change));
+        }
+        Collections.sort(allpossibleSteps);
+
+        int iCounter = 0;
+        if(!allpossibleSteps.isEmpty())
+        while(allpossibleSteps.get(0).getFinalEffect() > 1  ){
+            iCounter++;
+            if(iCounter == 2)break; //for testing
+
+            //very optimistic algorithm, looking for the local minimum
+            Change dataCopy = copyChange(allpossibleSteps.get(0));
+            System.out.println(dataCopy.toString() + " ICOUNTER : " + iCounter);
+            System.out.println();
+            /*Timeperiod temp = available.getTimePeriod().get(0);
+                HeuristicEvaluation stepEval = heuristicEvaluation_function_Changed_TimeSlot(sgt, temp.getsDay(), temp.getiTime(), temp.getiDate(), temp.getiMonth(), temp.getiYear(), 1.5, 1, 0.5);
+                HeuristicEvaluation stepEval_percentage = heuristicEvaluation_percentage_newTimeslot(sgt, temp.getsDay(), temp.getiTime(), 1.5, 1, 0.5, timetable, 0);
+                stepEval.setiHour(temp.getiTime());
+                stepEval.setsDayOfWeek(temp.getsDay());
+                stepEval.setsHall(available.getsHall());
+                stepEval.setiDate(temp.getiDate());
+                stepEval.setiMonth(temp.getiMonth());
+                stepEval.setiYear(temp.getiYear());
+                stepEval.mergeHeuristicEvaluations(stepEval_percentage);
+                change.setEvalSecondary(stepEval);
+                //change.setSgtMain(new SGT(sgt.getsLect(), sgt.getDayAssigned(), sgt.getsLectureHall(), sgt.getiHourScheduled(), sgt.getiHours(), sgt.getiAdditionalCode(), sgt.getCodesOfStudentsAssigned(), sgt.getiDayScheduled(), sgt.getiMonthScheduled(), sgt.getiYearScheduled()));
+                change.setSgtMain(sgt);
+                //change.setEvalMain(sgt.getEvaluation());
+                change.setsDaySecondary(temp.getsDay());
+                change.setiHourSecondary(temp.getiTime());
+
+            * */
+
+            implementChange(timetable, allpossibleSteps.get(0));               //later on to be subbed with more complex algo
+            updateAllDependencies(timetable);
+            visited.add(dataCopy);
+            calculationHeuristicsArray(scaleForDay,scaleForHour,scaleCloseToHour, timetable);
+
+
+            solutionIterated = takeASolutionSnap_object();
+
+            //https://www.w3schools.com/java/ref_string_compareto.asp
+            if(bestSolutionFound.compareTo(solutionIterated)  < 0){
+                bestSolutionFound = solutionIterated;
+                takeASolutionSnap();
+            }
+
+
+            allpossibleSteps = completeNeighbourhood(timetable);
             for(Change change : allpossibleSteps){
                 change.setFinalEffect(stepBenefit(change));
             }
+
+            Collections.sort(allpossibleSteps);
+            //pick the best choice at each step, test , implement and start over
+            //for testing purposes let's implement the first , take a snapshot of the solution and update
+            if(allpossibleSteps.isEmpty()) break;
+
         }
-        Collections.sort(allpossibleSteps);
-        //pick a few, test them, implement and start over
-        //for testing purposes let's implement the first , take a snapshot of the solution and update
-        implementChange(allpossibleSteps.get(0));               //later on to be subbed with more complex algo
-        takeASolutionSnap();
-        updateAllDependencies(timetable);
 
-
+        Thread.sleep(0);
     }
 
 
 
-    private void hillClimbing_sgt(Week_Timetable timetable, double iScale, int iCondition,int iCondition_UnusedDays, int iNumberOfIterations, int minNumForTutorials, double scaleForDay, double scaleForHour, double scaleCloseToHour) throws SQLException, ParseException, CloneNotSupportedException, IOException, InterruptedException {
+    private void hillClimbing_sgt(Week_Timetable timetable, double iScale, int iCondition,int iCondition_UnusedDays, int iNumberOfIterations, int minNumForTutorials, int maxNumForTutorials, double scaleForDay, double scaleForHour, double scaleCloseToHour) throws SQLException, ParseException, CloneNotSupportedException, IOException, InterruptedException {
 
 //        ArrayList<DataSetStudents> data = getHCData(1);
 //        ArrayList<DataSetStudents> data2 = getHCData(2);
@@ -2308,8 +2913,8 @@ public class HillClimbing {
         //the code on the previous lines should be used, but there has to be a way to keep all my unassigned stuff, also the assigend most probably
          */
 
-        this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL = new ArrayList<>();
-        this.STUDENTS_TO_BE_ASSINGED_GLOBAL = new HashMap<>();
+//        this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL = new ArrayList<>();
+//        this.STUDENTS_TO_BE_ASSINGED_GLOBAL = new HashMap<>();
 
         extractSGTsFromLGTs(timetable);
         updateTimeline_SGT(timetable);
@@ -2328,17 +2933,17 @@ public class HillClimbing {
         timetable.setHalls(grdAlg.hallsAvailability_Tutorials(timetable.getsStartDay(), timetable.getsEndDay()));
 
         //this algorithm can be run without trying to comply to soft cinstraints
-        //algorithmAssigning_year2_5050filtering(timetable, iNumberOfIterations,minNumForTutorials, 1);                                  //apply the same thing for years 1 and 2
-        algorithmAssigning_year2_5050filtering(timetable, iNumberOfIterations,minNumForTutorials, 2);                                  //apply the same thing for years 1 and 2
+        //algorithmAssigning_5050filtering(timetable, iNumberOfIterations,minNumForTutorials, 1);                                  //apply the same thing for years 1 and 2
+        algorithmAssigning_5050filtering(timetable, iNumberOfIterations,minNumForTutorials, maxNumForTutorials , 2);                                  //apply the same thing for years 1 and 2
         updateAllDependencies(timetable);                         //writes to stidents' assignedSGT
         //take a snap of the current solution/starting point;
 
         if(!this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.isEmpty()){
             calculationHeuristicsArray(scaleForDay, scaleForHour, scaleCloseToHour,timetable);                                              //heuristics calculated for each sgt that has been assigned
             takeASolutionSnap_initial();
-            testingTestingTesting(timetable);
+            //testingTestingTesting(timetable);
             //run the HC algorithm
-            hillClimbing(timetable, 3);
+            hillClimbing(timetable, 3,scaleForDay, scaleForHour, scaleCloseToHour);
 
         }
         addLecturesToStudents(timetable);
@@ -2383,6 +2988,42 @@ public class HillClimbing {
        return 1;
     }
 
+
+    public int checkStudents_TimeDependency(SGT sgtInitial, SGT sgtSecondary){
+        //additional calculation to assure that the two sgts do not overlap an event once they have been swapped
+        for(int kingsCode : sgtInitial.getCodesOfStudentsAssigned()){
+            Student student = this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(kingsCode);
+            for(SGT assigned : student.getCourses()){
+                if(assigned.getsLect().equals(sgtInitial.getsLect())) continue;
+                if(assigned.getsDayOfWeek().equals(sgtSecondary.getsDayOfWeek())){
+                    if(assigned.getiHourScheduled() >= sgtSecondary.getiHourScheduled() && assigned.getiHourScheduled() < sgtSecondary.getiHourScheduled() + sgtSecondary.getiHours()*100){
+                        //overlap of the event being swapped occurs:
+                        return 0;
+                    }
+                }
+            }
+
+        }
+
+
+        for(int kingsCode : sgtSecondary.getCodesOfStudentsAssigned()){
+            Student student = this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(kingsCode);
+            for(SGT assigned : student.getCourses()){
+                if(assigned.getsLect().equals(sgtSecondary.getsLect())) continue;
+                if(assigned.getsDayOfWeek().equals(sgtInitial.getsDayOfWeek())){
+                    if(assigned.getiHourScheduled() >= sgtInitial.getiHourScheduled() && assigned.getiHourScheduled() < sgtInitial.getiHourScheduled() + sgtInitial.getiHours()*100){
+                        //overlap of the event being reassigned occurs:
+                        return 0;
+                    }
+                }
+            }
+
+        }
+
+
+        return 1;
+    }
+
     private ArrayList<Integer> codesFromDataSetStudents(ArrayList<DataSetStudents> students){
         ArrayList<Integer> toReturn = new ArrayList<>();
         for(DataSetStudents setStudents : students){
@@ -2391,7 +3032,7 @@ public class HillClimbing {
         return toReturn;
     }
 
-    public void printPersonalSchedules(int WeekNum, Week_Timetable timetable) throws IOException {
+    public void printPersonalSchedules(int WeekNum, Week_Timetable timetable) throws IOException, CloneNotSupportedException {
         Iterator iterator = this.STUDENTS_TO_BE_ASSINGED_GLOBAL.values().iterator();
         for(int i= 0; i < this.STUDENTS_TO_BE_ASSINGED_GLOBAL.size();i++){
             Student student = (Student) iterator.next();
@@ -2400,7 +3041,7 @@ public class HillClimbing {
     }
 
 
-    public void crearAllData(){
+    public void clearAllData(){
 
         this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL = new ArrayList<>();
         this.STUDENTS_TO_BE_ASSINGED_GLOBAL = new HashMap<>();
@@ -2412,11 +3053,67 @@ public class HillClimbing {
 
     }
 
-    public void algorithmAssigning_year2_5050filtering(Week_Timetable timetable, int iPredefinedIterations, int minNumForTutorials, int iYearOfStudy) throws SQLException, CloneNotSupportedException, ParseException {
+
+    public void combinationsResult(ArrayList<DataSetStudents> students, ArrayList<DataSetStudents> toAssign,int size){
+        //if the combinations do not take too much time -> calculating 31 million combinations would take at most 6 minutes
+        int st2 = 0;
+        for (int st = 0; st < students.size(); st++) {
+            st2 = st;
+            students.get(st).setNumberforCombinations(st);
+        }
+
+
+        ArrayList<DataSetStudents> filtered = new ArrayList<>();
+        ArrayList<DataSetStudents[]> filtered2 = generate_myGenerate(st2 + 1, size, students);        //find the combination of students suitable for my needs(lowest/highest number of lecture code dependencies)
+        ArrayList<Integer> lowestFound = lectureCodesOfStudents(new ArrayList<>(Arrays.asList(filtered2.get(0))), toAssign);
+        ArrayList<Integer> iteration = new ArrayList<>();
+
+        for (int k = 1; k < filtered2.size(); k++) {           //traverse the combinations
+            ArrayList<DataSetStudents> combination = new ArrayList<>(Arrays.asList(filtered2.get(k)));
+
+            iteration = lectureCodesOfStudents(combination, toAssign);
+            if (iteration.size() < lowestFound.size()) {
+                lowestFound = iteration;
+                filtered = combination;
+            }
+
+        }
+
+        for(Integer id : lowestFound){
+            for(DataSetStudents retrieve : toAssign){
+                if(retrieve.getKings_id() == id){
+                    filtered.add(retrieve);
+                }
+            }
+        }
+
+        students = new ArrayList<>(filtered);
+
+    }
+
+    //develop if more time
+    public void pleaseAssignMe(Duplet event, ArrayList<DataSetStudents> students){
+        for(SGT alreadyAssignedSGTs : this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL){
+            if(alreadyAssignedSGTs.getsLect().equals(event.getsLect())){
+                for(DataSetStudents dataSetStudents : students){
+                    Student student = this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(dataSetStudents.getKings_id());
+                    for(SGT dependencies : student.getCourses()){}
+                }
+            }
+        }
+    }
+
+
+    ////===============================================================
+
+
+    //couldn't implemen maximum number of students in time
+    public void algorithmAssigning_5050filtering(Week_Timetable timetable, int iPredefinedIterations, int minNumForTutorials,int maxNumForTutorials,  int iYearOfStudy) throws SQLException, CloneNotSupportedException, ParseException {
 
 
         int iLectureAssignedSuccessfully  = 0;
-        ArrayList<DataSetStudents> toAssign = getHCData(iYearOfStudy);
+        ArrayList<DataSetStudents> toAssign = getHCData(iYearOfStudy, timetable.getsTableStudents(), timetable.getsTableCoures());
+        //I need to pass the students actually I want for the testing, not all of them every time
         ArrayList<DataSetStudents> tempAssign =  new ArrayList<>();         // I need the list of duplets plus all their details for week2s
         ArrayList<Duplet> sgts = new ArrayList<>();
 
@@ -2503,7 +3200,7 @@ public class HillClimbing {
         int secondaryAdditionalCode = 0;
         for(Duplet event : sgts){ //start assigning each event
             ArrayList<Integer> codesOfLectures = new ArrayList<>();             //I NEED TO FILL THIS ARRAY AS THOSE ARE THE DEPENDENCIES, each event holds the dependencies of the lecture,
-                                                                                // currently due to the large number of students and variations, each event holds as dependencies all the other lectures in the same year, so I could use this to check for
+            // currently due to the large number of students and variations, each event holds as dependencies all the other lectures in the same year, so I could use this to check for
             secondaryAdditionalCode++;
             Duplet temp = (Duplet) event.clone();
             SGT temp_sgt = new SGT();
@@ -2582,86 +3279,86 @@ public class HillClimbing {
                         }
 
 
-                            ArrayList<Timeslot> notAvailable = notavailableTime_specificDay(students, timetable, temp_sgt);               //ONLY FOR TESTING
-                            //ArrayList<Timeslot> notAvailable_onlyLectures = notavailableTime_specificDay_onlyLectures(students, timetable);               //ONLY FOR TESTING
+                        ArrayList<Timeslot> notAvailable = notavailableTime_specificDay(students, timetable, temp_sgt);               //ONLY FOR TESTING
+                        //ArrayList<Timeslot> notAvailable_onlyLectures = notavailableTime_specificDay_onlyLectures(students, timetable);               //ONLY FOR TESTING
 
-                            temp_sgt.setNotAvailableSlots(notAvailable);
+                        temp_sgt.setNotAvailableSlots(notAvailable);
 
-                            ArrayList<Timeslot> iTimes = halls.findAvailableSlot_PreferredDay_sgt_remastered(900, 1.0, heuristicsData.getsDay(), event, temp_sgt.getNotAvailableSlots());
+                        ArrayList<Timeslot> iTimes = halls.findAvailableSlot_PreferredDay_sgt_remastered(900, 1.0, heuristicsData.getsDay(), event, temp_sgt.getNotAvailableSlots());
 
-                            //ArrayList<Timeslot> iTimes_Lectures = halls.findAvailableSlot_PreferredDay_sgt_remastered(900, 1.0, heuristicsData.getsDay(), event, notAvailable_onlyLectures);
-                            //temp_sgt.getAvailableSlots().addAll(iTimes);
+                        //ArrayList<Timeslot> iTimes_Lectures = halls.findAvailableSlot_PreferredDay_sgt_remastered(900, 1.0, heuristicsData.getsDay(), event, notAvailable_onlyLectures);
+                        //temp_sgt.getAvailableSlots().addAll(iTimes);
 
-                            temp_sgt.setAvailableSlots(iTimes);
-                            temp_sgt.setCodesOfStudentsAssigned( codesFromDataSetStudents(students) );
+                        temp_sgt.setAvailableSlots(iTimes);
+                        temp_sgt.setCodesOfStudentsAssigned( codesFromDataSetStudents(students) );
 
-                            //temp_sgt.setAvailableSlots_noDependencies(iTimes_Lectures);         //only for testing, changes every time the hall is changed, so not very useful
+                        //temp_sgt.setAvailableSlots_noDependencies(iTimes_Lectures);         //only for testing, changes every time the hall is changed, so not very useful
 
-                            ArrayList<CoupledData> times_coupledData = heuristics_sgt_preferredHours(event, DSCALE_GLOBAL, sDayIteration);
-                            for (CoupledData coupledData : times_coupledData) {
-                                int iHourFound = i_prefferedTime_byDay_check(temp_sgt, sDayIteration, coupledData.getiHour(), halls.getsAbbrev());
+                        ArrayList<CoupledData> times_coupledData = heuristics_sgt_preferredHours(event, DSCALE_GLOBAL, sDayIteration);
+                        for (CoupledData coupledData : times_coupledData) {
+                            int iHourFound = i_prefferedTime_byDay_check(temp_sgt, sDayIteration, coupledData.getiHour(), halls.getsAbbrev());
 //                                int iHourFound = halls.checkAvailability(sDayIteration, coupledData.getiHour(), 1.0);
-                                if(iHallFound == 1) break;
+                            if(iHallFound == 1) break;
 
-                                if (iHourFound != 0) {
-                                    int iFinalCheck = halls.checkAvailability(sDayIteration, iHourFound, 1.0);
-                                    if(iFinalCheck == 0 && coupledData.getiHour() == times_coupledData.get(times_coupledData.size() - 1).getiHour() ){}
+                            if (iHourFound != 0) {
+                                int iFinalCheck = halls.checkAvailability(sDayIteration, iHourFound, 1.0);
+                                if(iFinalCheck == 0 && coupledData.getiHour() == times_coupledData.get(times_coupledData.size() - 1).getiHour() ){}
 
-                                    if (iFinalCheck != 0 && checkStudents(temp_sgt, sDayIteration, 4, timetable) != 0) {
+                                if (iFinalCheck != 0 && checkStudents(temp_sgt, sDayIteration, 4, timetable) != 0) {
 
-                                        int iAddCode = halls.getiAdditionalCode();
-                                        for (int t = 0; t < timetable.getHalls().size(); t++) {
-                                            if (timetable.getHalls().get(t).getiAdditionalCode() == iAddCode) {
-                                                timetable.getHalls().get(t).setAvToZero(iHourFound, (int) (iHourFound + 1 * 100), sDayIteration);   // ONLY TRIES THE FIRST CHOICE OF HEURISTICS
-                                                updateAvailabilitySlotsSGT(temp_sgt, sDayIteration, halls.getsAbbrev(),iHourFound);
+                                    int iAddCode = halls.getiAdditionalCode();
+                                    for (int t = 0; t < timetable.getHalls().size(); t++) {
+                                        if (timetable.getHalls().get(t).getiAdditionalCode() == iAddCode) {
+                                            timetable.getHalls().get(t).setAvToZero(iHourFound, (int) (iHourFound + 1 * 100), sDayIteration);   // ONLY TRIES THE FIRST CHOICE OF HEURISTICS
+                                            updateAvailabilitySlotsSGT(temp_sgt, sDayIteration, halls.getsAbbrev(),iHourFound);
 
-                                                    for (int f = 0; f < timetable.getWeekTimet().size(); f++) {                 //add to the Day log, for printing purposes + check
-                                                    if (timetable.getWeekTimet().get(f).getSname().toLowerCase(Locale.ROOT).equals(sDayIteration.toLowerCase(Locale.ROOT))) {
-                                                        timetable.getWeekTimet().get(f).v_assignEvent(iHourFound, 1, halls.getsAbbrev(), temp.getsLect(), "event");
-                                                        int iDate = timetable.getWeekTimet().get(f).getiDate();
-                                                        int iMonth = timetable.getWeekTimet().get(f).getiMonth();//+1
-                                                        int iYear = timetable.getWeekTimet().get(f).getiYear();//+1900
-                                                        iHallFound = 1;
-                                                        temp_sgt.setDayAssigned(sDayIteration);//this line is wrong
-                                                        temp_sgt.setiHourScheduled(iHourFound);
-                                                        temp_sgt.setiDayScheduled(iDate);
-                                                        temp_sgt.setiMonthScheduled(iMonth + 1);
-                                                        temp_sgt.setiYearScheduled(iYear); // + 1900
-                                                        temp_sgt.setsDayOfWeek(sDayIteration);
-                                                        temp_sgt.setsLectureHall(timetable.getHalls().get(t).getsAbbrev());
-                                                        temp_sgt.setiSizeOfHall(halls.getiCapacity());
-                                                        break;
-                                                    }
+                                            for (int f = 0; f < timetable.getWeekTimet().size(); f++) {                 //add to the Day log, for printing purposes + check
+                                                if (timetable.getWeekTimet().get(f).getSname().toLowerCase(Locale.ROOT).equals(sDayIteration.toLowerCase(Locale.ROOT))) {
+                                                    timetable.getWeekTimet().get(f).v_assignEvent(iHourFound, 1, halls.getsAbbrev(), temp.getsLect(), "event");
+                                                    int iDate = timetable.getWeekTimet().get(f).getiDate();
+                                                    int iMonth = timetable.getWeekTimet().get(f).getiMonth();//+1
+                                                    int iYear = timetable.getWeekTimet().get(f).getiYear();//+1900
+                                                    iHallFound = 1;
+                                                    temp_sgt.setDayAssigned(sDayIteration);//this line is wrong
+                                                    temp_sgt.setiHourScheduled(iHourFound);
+                                                    temp_sgt.setiDayScheduled(iDate);
+                                                    temp_sgt.setiMonthScheduled(iMonth + 1);
+                                                    temp_sgt.setiYearScheduled(iYear); // + 1900
+                                                    temp_sgt.setsDayOfWeek(sDayIteration);
+                                                    temp_sgt.setsLectureHall(timetable.getHalls().get(t).getsAbbrev());
+                                                    temp_sgt.setiSizeOfHall(halls.getiCapacity());
+                                                    break;
                                                 }
                                             }
                                         }
+                                    }
 
 
-                                        // change this to the size of the array assigning which is of course == capacity of the hall
-                                        //the only place where adding to the students' assigned sgts happens
-                                        for (int stdItr = 0; stdItr < students.size(); stdItr++) {
-                                            //increase the number of attending students for this sgt
-                                            tempAssign.remove(students.get(stdItr));
-                                            temp_sgt.setiNumberOfStudentsAttending(stdItr + 1);
-                                            //temp_sgt.addToCodesOfStudentsAssigned(students.get(stdItr).getKings_id());
-                                            this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(stdItr).getKings_id()).addToCourses(temp_sgt);                                 //so now when the sgt updates itself, the update would reflect inside the student's array of sgts
-                                            this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(stdItr).getKings_id()).increaseAssignedCoursesNumber();
-                                            this.ASSIGNED_STUDENTS_GLOBAL.put((students.get(stdItr).getKings_id()), this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(stdItr).getKings_id()));
-
-                                        }
-
-                                        //carry on assigning people until all people are assigned, if there is
-                                        //no available spot for the rest of the people/ all of them then
-                                        //try at random, and if again, then add to the unsuccessfully assigned lectures
-
-                                        //now remove them from the data so that they are not retrieved again
-                                        updateAvailailitySlotsSGT_AllEvents(temp_sgt);
-                                        this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.add(temp_sgt);//or a clone, this is inside the first for(!)
+                                    // change this to the size of the array assigning which is of course == capacity of the hall
+                                    //the only place where adding to the students' assigned sgts happens
+                                    for (int stdItr = 0; stdItr < students.size(); stdItr++) {
+                                        //increase the number of attending students for this sgt
+                                        tempAssign.remove(students.get(stdItr));
+                                        temp_sgt.setiNumberOfStudentsAttending(stdItr + 1);
+                                        //temp_sgt.addToCodesOfStudentsAssigned(students.get(stdItr).getKings_id());
+                                        this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(stdItr).getKings_id()).addToCourses(temp_sgt);                                 //so now when the sgt updates itself, the update would reflect inside the student's array of sgts
+                                        this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(stdItr).getKings_id()).increaseAssignedCoursesNumber();
+                                        this.ASSIGNED_STUDENTS_GLOBAL.put((students.get(stdItr).getKings_id()), this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(stdItr).getKings_id()));
 
                                     }
 
+                                    //carry on assigning people until all people are assigned, if there is
+                                    //no available spot for the rest of the people/ all of them then
+                                    //try at random, and if again, then add to the unsuccessfully assigned lectures
+
+                                    //now remove them from the data so that they are not retrieved again
+                                    updateAvailailitySlotsSGT_AllEvents(temp_sgt);
+                                    this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.add(temp_sgt);//or a clone, this is inside the first for(!)
+
                                 }
+
                             }
+                        }
 
 
                     }//END OF HALLS
@@ -2690,105 +3387,105 @@ public class HillClimbing {
 
                     int iHallFound = 0;
 
-                        for (CoupledData heuristicsData : event.getPreferredDays().getHeuristics()){
+                    for (CoupledData heuristicsData : event.getPreferredDays().getHeuristics()){
+                        if(tempAssign.isEmpty()) break;
+                        if(iHallFound == 1) break;
+                        String sDayIteration = heuristicsData.getsDay();
+
+                        for (Hall halls : timetable.getHalls()) {                     //test for each day the availability if not available proceed to assigning toa free slot,if there are available
+                            //could add the combinations filter here // add if (hallsFound == 1 ) break;
+
                             if(tempAssign.isEmpty()) break;
                             if(iHallFound == 1) break;
-                            String sDayIteration = heuristicsData.getsDay();
 
-                            for (Hall halls : timetable.getHalls()) {                     //test for each day the availability if not available proceed to assigning toa free slot,if there are available
-                                //could add the combinations filter here // add if (hallsFound == 1 ) break;
+                            students = randomStudents(tempAssign, halls.getiCapacity());
+                            if(tempAssign.size() < halls.getiCapacity()){//change this to tempAssign
+                                students = new ArrayList<>(tempAssign);
+                            }
+                            ArrayList<CoupledData> hours = v_hoursHeuristics_RemainingStudents(students, DSCALE_GLOBAL);
 
-                                if(tempAssign.isEmpty()) break;
-                                if(iHallFound == 1) break;
+                            ArrayList<Timeslot> notAvailable = notavailableTime_specificDay(students, timetable, temp_sgt);               //ONLY FOR TESTING
 
-                                students = randomStudents(tempAssign, halls.getiCapacity());
-                                if(tempAssign.size() < halls.getiCapacity()){//change this to tempAssign
-                                    students = new ArrayList<>(tempAssign);
-                                }
-                                ArrayList<CoupledData> hours = v_hoursHeuristics_RemainingStudents(students, DSCALE_GLOBAL);
+                            temp_sgt.setNotAvailableSlots(notAvailable);
 
-                                ArrayList<Timeslot> notAvailable = notavailableTime_specificDay(students, timetable, temp_sgt);               //ONLY FOR TESTING
+                            ArrayList<Timeslot> iTimes = halls.findAvailableSlot_PreferredDay_sgt_remastered(900, 1.0, heuristicsData.getsDay(), event, temp_sgt.getNotAvailableSlots());
+                            temp_sgt.setAvailableSlots(iTimes);
+                            temp_sgt.setCodesOfStudentsAssigned( codesFromDataSetStudents(students) );
 
-                                temp_sgt.setNotAvailableSlots(notAvailable);
+                            for( CoupledData coupledData : hours) {
 
-                                ArrayList<Timeslot> iTimes = halls.findAvailableSlot_PreferredDay_sgt_remastered(900, 1.0, heuristicsData.getsDay(), event, temp_sgt.getNotAvailableSlots());
-                                temp_sgt.setAvailableSlots(iTimes);
-                                temp_sgt.setCodesOfStudentsAssigned( codesFromDataSetStudents(students) );
+                                if (iHallFound == 1) break;
+                                if (tempAssign.isEmpty()) break;
 
-                                    for( CoupledData coupledData : hours) {
+                                int iHourFound = i_prefferedTime_byDay_check(temp_sgt, sDayIteration, coupledData.getiHour(),halls.getsAbbrev());
 
-                                            if (iHallFound == 1) break;
-                                            if (tempAssign.isEmpty()) break;
+                                if (iHourFound != 0){
 
-                                            int iHourFound = i_prefferedTime_byDay_check(temp_sgt, sDayIteration, coupledData.getiHour(),halls.getsAbbrev());
+                                    int iFinalCheck = halls.checkAvailability(sDayIteration, iHourFound, 1.0);
+                                    if(iFinalCheck == 0 && coupledData.getiHour() == hours.get(hours.size()-1).getiHour()){ break; }
+                                    if (iFinalCheck != 0 && checkStudents(temp_sgt, sDayIteration, 4, timetable) != 0) {
 
-                                            if (iHourFound != 0){
+                                        int iAddCode = halls.getiAdditionalCode();
+                                        for (int t = 0; t < timetable.getHalls().size(); t++) {
+                                            if (timetable.getHalls().get(t).getiAdditionalCode() == iAddCode) {
+                                                timetable.getHalls().get(t).setAvToZero(iHourFound, (int) (iHourFound + 1 * 100), sDayIteration);   // ONLY TRIES THE FIRST CHOICE OF HEURISTICS
+                                                updateAvailabilitySlotsSGT(temp_sgt, sDayIteration, halls.getsAbbrev(),iHourFound);
 
-                                                int iFinalCheck = halls.checkAvailability(sDayIteration, iHourFound, 1.0);
-                                                if(iFinalCheck == 0 && coupledData.getiHour() == hours.get(hours.size()-1).getiHour()){ break; }
-                                                if (iFinalCheck != 0 && checkStudents(temp_sgt, sDayIteration, 4, timetable) != 0) {
-
-                                                    int iAddCode = halls.getiAdditionalCode();
-                                                    for (int t = 0; t < timetable.getHalls().size(); t++) {
-                                                        if (timetable.getHalls().get(t).getiAdditionalCode() == iAddCode) {
-                                                            timetable.getHalls().get(t).setAvToZero(iHourFound, (int) (iHourFound + 1 * 100), sDayIteration);   // ONLY TRIES THE FIRST CHOICE OF HEURISTICS
-                                                            updateAvailabilitySlotsSGT(temp_sgt, sDayIteration, halls.getsAbbrev(),iHourFound);
-
-                                                            for (int f = 0; f < timetable.getWeekTimet().size(); f++) {                 //add to the Day log, for printing purposes + check
-                                                                if (timetable.getWeekTimet().get(f).getSname().toLowerCase(Locale.ROOT).equals(sDayIteration.toLowerCase(Locale.ROOT))) {
-                                                                    timetable.getWeekTimet().get(f).v_assignEvent(iHourFound, 1, halls.getsAbbrev(), temp.getsLect(), "event");
-                                                                    int iDate = timetable.getWeekTimet().get(f).getiDate();
-                                                                    int iMonth = timetable.getWeekTimet().get(f).getiMonth();//+1
-                                                                    int iYear = timetable.getWeekTimet().get(f).getiYear();//+1900
-                                                                    iHallFound = 1;
-                                                                    temp_sgt.setDayAssigned(sDayIteration);
-                                                                    temp_sgt.setsDayOfWeek(sDayIteration);
-                                                                    temp_sgt.setiHourScheduled(iHourFound);
-                                                                    temp_sgt.setiDayScheduled(iDate);
-                                                                    temp_sgt.setiMonthScheduled(iMonth + 1);
-                                                                    temp_sgt.setiYearScheduled(iYear); // + 1900
-                                                                    temp_sgt.setsLectureHall(timetable.getHalls().get(t).getsAbbrev());
-                                                                    temp_sgt.setiSizeOfHall(halls.getiCapacity());
-                                                                    break;
-                                                                }
-                                                            }
-                                                        }
+                                                for (int f = 0; f < timetable.getWeekTimet().size(); f++) {                 //add to the Day log, for printing purposes + check
+                                                    if (timetable.getWeekTimet().get(f).getSname().toLowerCase(Locale.ROOT).equals(sDayIteration.toLowerCase(Locale.ROOT))) {
+                                                        timetable.getWeekTimet().get(f).v_assignEvent(iHourFound, 1, halls.getsAbbrev(), temp.getsLect(), "event");
+                                                        int iDate = timetable.getWeekTimet().get(f).getiDate();
+                                                        int iMonth = timetable.getWeekTimet().get(f).getiMonth();//+1
+                                                        int iYear = timetable.getWeekTimet().get(f).getiYear();//+1900
+                                                        iHallFound = 1;
+                                                        temp_sgt.setDayAssigned(sDayIteration);
+                                                        temp_sgt.setsDayOfWeek(sDayIteration);
+                                                        temp_sgt.setiHourScheduled(iHourFound);
+                                                        temp_sgt.setiDayScheduled(iDate);
+                                                        temp_sgt.setiMonthScheduled(iMonth + 1);
+                                                        temp_sgt.setiYearScheduled(iYear); // + 1900
+                                                        temp_sgt.setsLectureHall(timetable.getHalls().get(t).getsAbbrev());
+                                                        temp_sgt.setiSizeOfHall(halls.getiCapacity());
+                                                        break;
                                                     }
-
-
-                                                    // change this to the size of the array assigning which is of course == capacity of the hall
-                                                    for (int my_itr = 0; my_itr < students.size(); my_itr++) {
-                                                        //increase the number of attending students for this sgt
-                                                        tempAssign.remove(students.get(my_itr));
-                                                        temp_sgt.setiNumberOfStudentsAttending(my_itr + 1);
-                                                        //temp_sgt.addToCodesOfStudentsAssigned(students.get(my_itr).getKings_id());
-                                                        this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(my_itr).getKings_id()).addToCourses(temp_sgt);                                 //so now when the sgt updates itself, the update would reflect inside the student's array of sgts
-                                                        this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(my_itr).getKings_id()).increaseAssignedCoursesNumber();
-                                                        this.ASSIGNED_STUDENTS_GLOBAL.put((students.get(my_itr).getKings_id()), this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(my_itr).getKings_id()));
-                                                    }
-
-                                                    //carry on assigning people until all people are assigned, if there is
-                                                    //no available spot for the rest of the people/ all of them then
-                                                    //try at random, and if again, then add to the unsuccessfully assigned lectures
-
-                                                    //now remove them from the data so that they are not retrieved again
-
-                                                    updateAvailailitySlotsSGT_AllEvents(temp_sgt);
-                                                    this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.add(temp_sgt); //set students to 0 //inside the if
-
                                                 }
-
-
-
                                             }
                                         }
 
 
-                                }
+                                        // change this to the size of the array assigning which is of course == capacity of the hall
+                                        for (int my_itr = 0; my_itr < students.size(); my_itr++) {
+                                            //increase the number of attending students for this sgt
+                                            tempAssign.remove(students.get(my_itr));
+                                            temp_sgt.setiNumberOfStudentsAttending(my_itr + 1);
+                                            //temp_sgt.addToCodesOfStudentsAssigned(students.get(my_itr).getKings_id());
+                                            this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(my_itr).getKings_id()).addToCourses(temp_sgt);                                 //so now when the sgt updates itself, the update would reflect inside the student's array of sgts
+                                            this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(my_itr).getKings_id()).increaseAssignedCoursesNumber();
+                                            this.ASSIGNED_STUDENTS_GLOBAL.put((students.get(my_itr).getKings_id()), this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(my_itr).getKings_id()));
+                                        }
 
+                                        //carry on assigning people until all people are assigned, if there is
+                                        //no available spot for the rest of the people/ all of them then
+                                        //try at random, and if again, then add to the unsuccessfully assigned lectures
+
+                                        //now remove them from the data so that they are not retrieved again
+
+                                        updateAvailailitySlotsSGT_AllEvents(temp_sgt);
+                                        this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.add(temp_sgt); //set students to 0 //inside the if
+
+                                    }
+
+
+
+                                }
+                            }
 
 
                         }
+
+
+
+                    }
 
 
 
@@ -2819,10 +3516,10 @@ public class HillClimbing {
 
     ///????????????????????????????????????????????????????????///
     //////////////////////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    public void generateHCSolution(double iScale, int iterations, int minNumForTutorials, double scaleForDay, double scaleForHour, double scaleCloseToHour) throws SQLException, CloneNotSupportedException, IOException, ParseException, InterruptedException {
+    public void generateHCSolution(double iScale, int iterations, int minNumForTutorials,int maxNumForTutorials, double scaleForDay, double scaleForHour, double scaleCloseToHour) throws SQLException, CloneNotSupportedException, IOException, ParseException, InterruptedException {
 
-        //hillClimbing_sgt(TIMETABLEONT_GLOBAL, iScale, 1, 0, iterations, minNumForTutorials);
-        hillClimbing_sgt(TIMETABLETWO_GLOBAL, iScale, 1, 0, iterations, minNumForTutorials, scaleForDay, scaleForHour, scaleCloseToHour);
+        hillClimbing_sgt(TIMETABLEONT_GLOBAL, iScale, 1, 0, iterations, minNumForTutorials,maxNumForTutorials, scaleForDay, scaleForHour,scaleCloseToHour);
+        hillClimbing_sgt(TIMETABLETWO_GLOBAL, iScale, 1, 0, iterations, minNumForTutorials,maxNumForTutorials, scaleForDay, scaleForHour, scaleCloseToHour);
 
 
     }

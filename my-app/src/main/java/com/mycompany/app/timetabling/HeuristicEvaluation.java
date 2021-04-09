@@ -2,7 +2,7 @@ package com.mycompany.app.timetabling;
 
 import java.util.ArrayList;
 
-public class HeuristicEvaluation {
+public class HeuristicEvaluation implements Cloneable{
 
     private double dHeuristics = 0.0;
     private int numPeopleCompleteSatisfiability = 0;
@@ -251,6 +251,13 @@ public class HeuristicEvaluation {
     }
 
     public String toString(){
-        return this.dHeuristics + "  " + this.scaledHeuristics + "  " + this.rawHeuristics + "  " + this.percentSatisfiability + "%   ("+ this.numPeopleCompleteSatisfiability + "  " + this.numPeopleImpossibleHeuristics + "  "+ this.numPeopleImpossibleHeuristics + ")";
+        return this.dHeuristics + "  " + this.scaledHeuristics + "  " + this.rawHeuristics + "  " + this.percentSatisfiability + "%   ("+ this.numPeopleCompleteSatisfiability + "  " + this.numPeopleWithZeroPercent + "  "+ this.numPeopleImpossibleHeuristics + ")";
     }
+
+
+    @Override
+    public Object clone()throws CloneNotSupportedException{
+        return super.clone();
+    }
+
 }

@@ -280,7 +280,7 @@ public class SGT implements Comparable<SGT>, Cloneable{
     }
 
     public String toString(){
-        return sLect + " " + sLectureHall + " " +Double.toString(iHours)  + " " + iNumberOfStudentsAttending + " " + sDayOfWeek + " "  + iHourScheduled + " Date: " + Integer.toString(iDayScheduled) + " " + Integer.toString(iMonthScheduled)+ " " + Integer.toString(iYearScheduled) + " " + Integer.toString(this.hashCode()) + " || " + ((evaluation == null)?"":evaluation.toString());
+        return sLect + " " + Integer.toString(iAdditionalCode) + " " + sLectureHall + " " +Double.toString(iHours)  + " " + iNumberOfStudentsAttending + " " + sDayOfWeek + " "  + iHourScheduled + " Date: " + Integer.toString(iDayScheduled) + " " + Integer.toString(iMonthScheduled)+ " " + Integer.toString(iYearScheduled) + " " + Integer.toString(this.hashCode()) + " || " + ((evaluation == null)?"":evaluation.toString());
     }
 
 

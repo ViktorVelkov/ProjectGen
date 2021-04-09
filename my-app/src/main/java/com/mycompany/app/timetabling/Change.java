@@ -1,6 +1,6 @@
 package com.mycompany.app.timetabling;
 
-public class Change implements Comparable<Change> {
+public class Change implements Comparable<Change>, Cloneable{
     private HeuristicEvaluation evalMain;                               //the sgt that the step/change is started from
     private HeuristicEvaluation evalSecondary;                          //the sgt or the timeslot the step is made towards to
     private SGT sgtMain;
@@ -14,6 +14,11 @@ public class Change implements Comparable<Change> {
     private String sHallSecondary = "";
     private int iHourMain = 0;
     private int iHourSecondary = 0;
+
+    public Change() {
+    }
+
+
 
     public double getFinalEffect() {
         return finalEffect;
@@ -124,6 +129,18 @@ public class Change implements Comparable<Change> {
         return (int)((o.finalEffect - this.finalEffect)*10000);
     }
 
+
+    @Override
+    public Object clone()throws CloneNotSupportedException{
+        return (Change)super.clone();
+    }
+
+    public String toString(){
+        return ((sgtMain == null)?" null ": sgtMain.toString()) + " || "
+                + ((sgtSecondary == null)?" null ": sgtSecondary.toString()) + " || "
+                + ((evalMain == null)?" null ": evalMain.toString()) + " || "
+                +((evalSecondary == null)?" null ": evalSecondary.toString());
+    };
 
     //either pass the two sgts or pass their parameters
 }

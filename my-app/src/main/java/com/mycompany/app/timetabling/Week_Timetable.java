@@ -14,6 +14,8 @@ import java.util.Date;
     private ArrayList<Day> weekTimet = new ArrayList<>();
     private String sStartDay = "";
     private String sEndDay = "";
+    private String sTableStudents = "";
+    private String sTableCoures = "";
     private ArrayList<Hall> halls = new ArrayList<>();
     private ArrayList <Duplet> lectures = new ArrayList<>();
     private ArrayList <Duplet> assignedLectures = new ArrayList<>();
@@ -43,7 +45,23 @@ import java.util.Date;
         }
     }
 
-    public int getiNumDays() {
+        public String getsTableStudents() {
+            return sTableStudents;
+        }
+
+        public void setsTableStudents(String sTableStudents) {
+            this.sTableStudents = sTableStudents;
+        }
+
+        public String getsTableCoures() {
+            return sTableCoures;
+        }
+
+        public void setsTableCoures(String sTableCoures) {
+            this.sTableCoures = sTableCoures;
+        }
+
+        public int getiNumDays() {
         return iNumDays;
     }
 
@@ -233,6 +251,8 @@ import java.util.Date;
             day.updateDate();
         }
     }
+
+
 
     public void v_updateLectureDates() throws ParseException {
             for(Duplet lecture : this.getAssignedLectures()){
