@@ -2,6 +2,9 @@ package com.mycompany.app.algorithms;
 
 import com.mycompany.app.timetabling.*;
 
+import javax.swing.*;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -41,9 +44,12 @@ public class HillClimbing {
     private HashMap<Integer, Student> NOT_ASSIGNED_STUDENTS_GLOBAL=new HashMap<>();
     private HashMap<Integer, Student> STUDENTS_TO_BE_ASSINGED_GLOBAL = new HashMap<>();
     public ArrayList<SGT> ASSIGNED_SGTS_CURRENTWEEK_GLOBAL = new ArrayList<SGT>();
-    private ArrayList<SGT> NOT_ASSIGNED_SGTS_CURRENTWEEK_GLOBAL = new ArrayList<SGT>();
+    public ArrayList<SGT> NOT_ASSIGNED_SGTS_CURRENTWEEK_GLOBAL = new ArrayList<SGT>();
     private ArrayList<DataSetStudents> data = new ArrayList<>();
 
+    //for display
+    private ArrayList<Change> visitedSteps_GLOBAL = new ArrayList<>(); //for printing purposes
+    private JTextArea textArea;
 
 
 
@@ -54,6 +60,22 @@ public class HillClimbing {
         this.grdAlg = new GreedyAlgorithm(connection);
     }
 
+
+    public JTextArea getTextArea() {
+        return textArea;
+    }
+
+    public void setTextArea(JTextArea textArea) {
+        this.textArea = textArea;
+    }
+
+    public ArrayList<Change> getVisitedSteps_GLOBAL() {
+        return visitedSteps_GLOBAL;
+    }
+
+    public void setVisitedSteps_GLOBAL(ArrayList<Change> visitedSteps_GLOBAL) {
+        this.visitedSteps_GLOBAL = visitedSteps_GLOBAL;
+    }
 
     public Solution getINITIAL_SOLUTION() {
         return INITIAL_SOLUTION;
@@ -233,35 +255,35 @@ public class HillClimbing {
     //end of getters and setters
 
 
-    private void updateTimeline_SGT(Week_Timetable TIMETABLEONT_GLOBAL){
+    private void updateTimeline_SGT(Week_Timetable timetable){
         //what I do here is remove all the unneeded dependencies if any are left
         ArrayList<String> empty = new ArrayList<>();
-        for(int i =0; i< TIMETABLEONT_GLOBAL.getSgt().size(); i++){
-            TIMETABLEONT_GLOBAL.getSgt().get(i).getPreferredDays().setPrefDay(empty);
-            TIMETABLEONT_GLOBAL.getSgt().get(i).getPreferredDays().setForsgt_usage(TIMETABLEONT_GLOBAL.getSgt().get(i).getsDayOfWeek());             //turning
-            TIMETABLEONT_GLOBAL.getSgt().get(i).getPreferredDays().setNotAvailableBefore((int)(TIMETABLEONT_GLOBAL.getSgt().get(i).getiHourScheduled() + 100*TIMETABLEONT_GLOBAL.getSgt().get(i).getiHours()));
-//            TIMETABLEONT_GLOBAL.getSgt().get(i).getPreferredDays().setMandatory();
-//            TIMETABLEONT_GLOBAL.getSgt().get(i).getPreferredDays().setiPrefHour();
+        for(int i =0; i< timetable.getSgt().size(); i++){
+            timetable.getSgt().get(i).getPreferredDays().setPrefDay(empty);
+            timetable.getSgt().get(i).getPreferredDays().setForsgt_usage(timetable.getSgt().get(i).getsDayOfWeek());             //turning
+            timetable.getSgt().get(i).getPreferredDays().setNotAvailableBefore((int)(timetable.getSgt().get(i).getiHourScheduled() + 100*timetable.getSgt().get(i).getiHours()));
+//            timetable.getSgt().get(i).getPreferredDays().setMandatory();
+//            timetable.getSgt().get(i).getPreferredDays().setiPrefHour();
         }
 
     }
 
-    private void extractSGTsFromLGTs(Week_Timetable TIMETABLEONT_GLOBAL){
+    private void extractSGTsFromLGTs(Week_Timetable timetable){
 
-        for(int z = 0; z < TIMETABLEONT_GLOBAL.getAssignedLectures().size(); z++) {
+        for(int z = 0; z < timetable.getAssignedLectures().size(); z++) {
             int iCounter = 0;
-            Duplet temp = TIMETABLEONT_GLOBAL.getAssignedLectures().get(z);
-            for (int i = 0; i < TIMETABLEONT_GLOBAL.getAssignedLGT().size(); i++) {
+            Duplet temp = timetable.getAssignedLectures().get(z);
+            for (int i = 0; i < timetable.getAssignedLGT().size(); i++) {
                 //if it's inside then we can't assign it a SGT for this week
-                if (TIMETABLEONT_GLOBAL.getAssignedLGT().get(i).getsLect().equals(TIMETABLEONT_GLOBAL.getAssignedLectures().get(z).getsLect())) {
+                if (timetable.getAssignedLGT().get(i).getsLect().equals(timetable.getAssignedLectures().get(z).getsLect())) {
                     //do not add it to the sgt list
                     break;
                 }
                 iCounter++;
             }
-            if(iCounter == TIMETABLEONT_GLOBAL.getAssignedLGT().size()){
+            if(iCounter == timetable.getAssignedLGT().size()){
                 //temp.setiHours(1.0);
-                TIMETABLEONT_GLOBAL.getSgt().add(temp);
+                timetable.getSgt().add(temp);
             }
         }
     }
@@ -2353,8 +2375,17 @@ public class HillClimbing {
         for(SGT tutorial : this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL){
             solution.mergeHeuristicEvaluations(tutorial.getEvaluation());
         }
+        solution.normalize_heuristics(this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.size());
         return solution;
     }
+
+//    public HeuristicEvaluation evaluateSolution(){
+//        HeuristicEvaluation solution = new HeuristicEvaluation();
+//        for(SGT tutorial : this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL){
+//            solution.mergeHeuristicEvaluations(tutorial.getEvaluation());
+//        }
+//        return solution;
+//    }
 
 
     //PUBLIC for now, FUNCTION FOR CALCULATING HEURISTICS,current, for all lectures
@@ -2663,6 +2694,7 @@ public class HillClimbing {
 
 
         sgtInitial.setiHourScheduled(sgtSwapped.getiHourScheduled());
+        sgtInitial.setsDayOfWeek(sgtSwapped.getsDayOfWeek());  //added this line after submitting my code
         sgtInitial.setDayAssigned(sgtSwapped.getDayAssigned());
         sgtInitial.setiDayScheduled(sgtSwapped.getiDayScheduled());
         sgtInitial.setiMonthScheduled(sgtSwapped.getiMonthScheduled());
@@ -2671,6 +2703,7 @@ public class HillClimbing {
         //sgtInitial.setEvaluation();
 
         sgtSwapped.setiHourScheduled(sgtInitialHourTemp);
+        sgtSwapped.setsDayOfWeek(sgtInitialSDay); //added this line after submitting my code
         sgtSwapped.setDayAssigned(sgtInitialSDay);
         sgtSwapped.setiDayScheduled(sgtInitialDayTemp);
         sgtSwapped.setiMonthScheduled(sgtInitialMonthTemp);
@@ -2831,11 +2864,15 @@ public class HillClimbing {
         }
         Collections.sort(allpossibleSteps);
 
+        takeASolutionSnap();
+        System.out.println();
+        System.out.println(this.CURRENT_SOLUTION);
+
         int iCounter = 0;
         if(!allpossibleSteps.isEmpty())
         while(allpossibleSteps.get(0).getFinalEffect() > 1  ){
             iCounter++;
-            if(iCounter == 2)break; //for testing
+           // if(iCounter == 2)break; //for testing
 
             //very optimistic algorithm, looking for the local minimum
             Change dataCopy = copyChange(allpossibleSteps.get(0));
@@ -2863,8 +2900,13 @@ public class HillClimbing {
             implementChange(timetable, allpossibleSteps.get(0));               //later on to be subbed with more complex algo
             updateAllDependencies(timetable);
             visited.add(dataCopy);
-            calculationHeuristicsArray(scaleForDay,scaleForHour,scaleCloseToHour, timetable);
+    //        this.visitedSteps_GLOBAL.add((Change) dataCopy.clone());
 
+            this.textArea.append(dataCopy.toString() + "\n\n");
+            //this.textArea.revalidate();
+            this.textArea.update(this.textArea.getGraphics());
+
+            calculationHeuristicsArray(scaleForDay,scaleForHour,scaleCloseToHour, timetable);
 
             solutionIterated = takeASolutionSnap_object();
 
@@ -2884,37 +2926,121 @@ public class HillClimbing {
             //pick the best choice at each step, test , implement and start over
             //for testing purposes let's implement the first , take a snapshot of the solution and update
             if(allpossibleSteps.isEmpty()) break;
+            Thread.sleep(1000);
 
         }
 
-        Thread.sleep(0);
+        System.out.println(bestSolutionFound);
+        Thread.sleep(3000);
+
     }
 
+    public void removeDayOfLectureFromPreferences(Week_Timetable timetable){
+        for(Duplet sgt : timetable.getSgt()){
+            int iCounter = 0;
+            for(CoupledData prefs : sgt.getPreferredDays().getHeuristics()){
+                iCounter++;
+                if (prefs.getsDay().equals(sgt.getsDayOfWeek())){
+                    break;
+                }
+            }
+            if(sgt.getsDayOfWeek().equals(sgt.getPreferredDays().getHeuristics().get(iCounter - 1))) sgt.getPreferredDays().getDayHeuristics().remove(iCounter - 1);
+        }
+    }
+
+//    private void hillClimbing_sgt(Week_Timetable timetable, double iScale, int iCondition,int iCondition_UnusedDays, int iNumberOfIterations, int minNumForTutorials, int maxNumForTutorials, double scaleForDay, double scaleForHour, double scaleCloseToHour) throws SQLException, ParseException, CloneNotSupportedException, IOException, InterruptedException {
+//
+////        ArrayList<DataSetStudents> data = getHCData(1);
+////        ArrayList<DataSetStudents> data2 = getHCData(2);
+////        ArrayList<DataSetStudents> data3 = getHCData(3);
+////        this.data = data;
+////        this.data.addAll(data2);                                                                                     //global data of all the students and their variations of courses and preferences
+////        this.data.addAll(data3);
+//
+//
+//        // Week_Timetable nextWeek = sortOutWeek_nextWeek(grdAlg.getWeek_timetable_ont());
+//        // Week_Timetable nextnextWeek = sortOutWeek_nextWeek(grdAlg.getWeek_timetable_spare());
+//        weekNumber = timetable.getiWeekNum();
+//        timetable.setiWeekNum(weekNumber);
+//
+//        /*
+//        this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL = new ArrayList<>();
+//        this.STUDENTS_TO_BE_ASSINGED_GLOBAL = new HashMap<>();
+//        //the code on the previous lines should be used, but there has to be a way to keep all my unassigned stuff, also the assigend most probably
+//         */
+//
+////        this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL = new ArrayList<>();
+////        this.STUDENTS_TO_BE_ASSINGED_GLOBAL = new HashMap<>();
+//
+//        extractSGTsFromLGTs(timetable);
+//        updateTimeline_SGT(timetable);
+//        heuristics_sgt_preferreddays(timetable, iScale);
+//        heuristics_sgt_hours(timetable, data ,iScale);
+//        removeUnusableDays(timetable);
+//
+//        if(iCondition_UnusedDays != 0) {
+//            //removeDayOfLectureFromPreferences(timetable);
+//            //removeHeuristicDaysWithNull(timetable);
+//            //
+//        }
+//
+//        if(iCondition == 1){
+//            reorderHeuristics_days(timetable);
+//        }
+//
+//        timetable.setHalls(grdAlg.hallsAvailability_Tutorials(timetable.getsStartDay(), timetable.getsEndDay()));
+//
+//        //this algorithm can be run without trying to comply to soft cinstraints
+//        algorithmAssigning_5050filtering(timetable, iNumberOfIterations,minNumForTutorials,maxNumForTutorials, 1);                                  //apply the same thing for years 1 and 2
+//        algorithmAssigning_5050filtering(timetable, iNumberOfIterations,minNumForTutorials, maxNumForTutorials , 2);                                  //apply the same thing for years 1 and 2
+//        algorithmAssigning_5050filtering(timetable, iNumberOfIterations,minNumForTutorials, maxNumForTutorials , 3);                                  //apply the same thing for years 1 and 2
+//        updateAllDependencies(timetable);                         //writes to stidents' assignedSGT
+//        //take a snap of the current solution/starting point;
+////
+////        if(!this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.isEmpty()){
+////            calculationHeuristicsArray(scaleForDay, scaleForHour, scaleCloseToHour,timetable);                                              //heuristics calculated for each sgt that has been assigned
+////            takeASolutionSnap_initial();
+////            //testingTestingTesting(timetable);
+////            //run the HC algorithm
+////            hillClimbing(timetable, 3,scaleForDay, scaleForHour, scaleCloseToHour);
+////
+////        }
+//        if(!this.NOT_ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.isEmpty()){
+//            //write to file the ones not assigned and also the students involved
+//            String sPath =  "notassigned.csv";
+//            //Path path = Paths.get(sPath);
+//            File file = new File(sPath);
+//            boolean exists = file.exists();
+//            if(exists){
+//            }
+//            else{
+//                file.createNewFile();
+//            }
+//
+//
+//            FileWriter fileWriter = new FileWriter(sPath, true);
+//            fileWriter.write("SGTs not assigned,\n");
+//            for(SGT notAssigned : this.NOT_ASSIGNED_SGTS_CURRENTWEEK_GLOBAL){
+//                fileWriter.write("WEEK " + notAssigned + ",\n");
+//            }
+//            fileWriter.write("students not assigned,\n");
+//            for(Student student : this.NOT_ASSIGNED_STUDENTS_GLOBAL.values()){
+//
+//                fileWriter.write(student.getiKingsID() + ",\n");
+//
+//            }
+//
+//
+//        }
+//    }
 
 
     private void hillClimbing_sgt(Week_Timetable timetable, double iScale, int iCondition,int iCondition_UnusedDays, int iNumberOfIterations, int minNumForTutorials, int maxNumForTutorials, double scaleForDay, double scaleForHour, double scaleCloseToHour) throws SQLException, ParseException, CloneNotSupportedException, IOException, InterruptedException {
 
-//        ArrayList<DataSetStudents> data = getHCData(1);
-//        ArrayList<DataSetStudents> data2 = getHCData(2);
-//        ArrayList<DataSetStudents> data3 = getHCData(3);
-//        this.data = data;
-//        this.data.addAll(data2);                                                                                     //global data of all the students and their variations of courses and preferences
-//        this.data.addAll(data3);
 
-
-        // Week_Timetable nextWeek = sortOutWeek_nextWeek(grdAlg.getWeek_timetable_ont());
-        // Week_Timetable nextnextWeek = sortOutWeek_nextWeek(grdAlg.getWeek_timetable_spare());
         weekNumber++;
         timetable.setiWeekNum(weekNumber);
 
-        /*
-        this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL = new ArrayList<>();
-        this.STUDENTS_TO_BE_ASSINGED_GLOBAL = new HashMap<>();
-        //the code on the previous lines should be used, but there has to be a way to keep all my unassigned stuff, also the assigend most probably
-         */
-
-//        this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL = new ArrayList<>();
-//        this.STUDENTS_TO_BE_ASSINGED_GLOBAL = new HashMap<>();
 
         extractSGTsFromLGTs(timetable);
         updateTimeline_SGT(timetable);
@@ -2933,11 +3059,26 @@ public class HillClimbing {
         timetable.setHalls(grdAlg.hallsAvailability_Tutorials(timetable.getsStartDay(), timetable.getsEndDay()));
 
         //this algorithm can be run without trying to comply to soft cinstraints
-        //algorithmAssigning_5050filtering(timetable, iNumberOfIterations,minNumForTutorials, 1);                                  //apply the same thing for years 1 and 2
+        algorithmAssigning_5050filtering(timetable, iNumberOfIterations,minNumForTutorials,maxNumForTutorials, 1);                                  //apply the same thing for years 1 and 2
         algorithmAssigning_5050filtering(timetable, iNumberOfIterations,minNumForTutorials, maxNumForTutorials , 2);                                  //apply the same thing for years 1 and 2
+        algorithmAssigning_5050filtering(timetable, iNumberOfIterations,minNumForTutorials, maxNumForTutorials , 3);                                  //apply the same thing for years 1 and 2
         updateAllDependencies(timetable);                         //writes to stidents' assignedSGT
         //take a snap of the current solution/starting point;
 
+
+//        addLecturesToStudents(timetable);
+//        printPersonalSchedules(weekNumber,timetable);
+
+    }
+
+
+
+    public void printPersonalSchedules_CSV(Week_Timetable timetable) throws IOException, CloneNotSupportedException {
+        addLecturesToStudents(timetable);
+        printPersonalSchedules(weekNumber,timetable);
+    }
+
+    public void hillClimbingAlgorithm(double scaleForDay, double scaleForHour, double scaleCloseToHour, Week_Timetable timetable) throws InterruptedException, CloneNotSupportedException {
         if(!this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.isEmpty()){
             calculationHeuristicsArray(scaleForDay, scaleForHour, scaleCloseToHour,timetable);                                              //heuristics calculated for each sgt that has been assigned
             takeASolutionSnap_initial();
@@ -2946,10 +3087,8 @@ public class HillClimbing {
             hillClimbing(timetable, 3,scaleForDay, scaleForHour, scaleCloseToHour);
 
         }
-        addLecturesToStudents(timetable);
-        printPersonalSchedules(weekNumber,timetable);
-
     }
+
 
     //Function to not allow more than fixed number of tutorials per day
     //mind that this will traverse the lectures as well
@@ -2989,15 +3128,134 @@ public class HillClimbing {
     }
 
 
+    //new function after submitting my code
+
+    private int overlaps_time(SGT first, SGT second){
+        //time overlapping function, if two functions have the same day and similar hours, they might overlap and appear in one's timetable at the same timeslot, making it impossible for
+        // a student to participate at both at the same time
+        ArrayList<Timeperiod> timeperiods_first = new ArrayList<>();
+        ArrayList<Timeperiod> timeperiods_second = new ArrayList<>();
+        if((first.getiHourScheduled() - 30) %100 == 0){
+            for(int i = 0; i < first.getiHours() ; i++){
+                timeperiods_first.add(new Timeperiod(first.getiHourScheduled() + (i*100), first.getsDayOfWeek()));
+                timeperiods_first.add(new Timeperiod((first.getiHourScheduled() + (i*100) + 70), first.getsDayOfWeek()));
+            }
+        }
+        else{
+            for(int i = 0; i < first.getiHours()  ; i++){
+                timeperiods_first.add(new Timeperiod(first.getiHourScheduled() + (i*100), first.getsDayOfWeek()));
+                timeperiods_first.add(new Timeperiod((first.getiHourScheduled() + (i*100)  + 30), first.getsDayOfWeek()));
+            }
+        }
+
+        if((second.getiHourScheduled() - 30) %100 == 0){
+            for(int i = 0; i < second.getiHours() ; i++){
+                timeperiods_first.add(new Timeperiod(second.getiHourScheduled() + (i*100), second.getsDayOfWeek()));
+                timeperiods_first.add(new Timeperiod((second.getiHourScheduled() + (i*100) + 70), second.getsDayOfWeek()));
+            }
+        }
+        else{
+            for(int i = 0; i < second.getiHours()  ; i++){
+                timeperiods_second.add(new Timeperiod(second.getiHourScheduled() + (i*100), second.getsDayOfWeek()));
+                timeperiods_second.add(new Timeperiod((second.getiHourScheduled() + (i*100)  + 30), second.getsDayOfWeek()));
+            }
+        }
+
+        for(Timeperiod time : timeperiods_first){
+            for(Timeperiod time2 : timeperiods_second){
+                if(time.getiTime() == time2.getiTime()){
+                   return 1;
+                }
+            }
+        }
+        return 0;
+    }
+
+
+    private int overlap_lecture(SGT swapped, int iHour, double dDuration, String sDay){
+        //overlap with a lecture if swapped ?
+        String startsWith = "";
+        ArrayList<Duplet> lectures = new ArrayList<>();
+        ArrayList<Timeperiod> notAvailable = new ArrayList<>();
+//
+//        if(swappedCheck.getsLect().startsWith("6")){
+//            startsWith = "6";
+//        }
+//        if(swappedCheck.getsLect().startsWith("5")){
+//            startsWith = "5";
+//        }
+//        if(swappedCheck.getsLect().startsWith("4")){
+//            startsWith = "4";
+//        }
+//
+//        for(Duplet duplet : timetable.getAssignedLectures()){
+//            if(duplet.getsLect().startsWith(startsWith)){
+//                lectures.add(duplet);
+//            }
+//        }
+
+
+        ArrayList<Timeperiod> timeperiods_swapped = new ArrayList<>();
+
+        if((iHour - 30) %100 == 0){
+            for(int i = 0; i < dDuration ; i++){
+                timeperiods_swapped.add(new Timeperiod(iHour + (i*100), sDay));
+                timeperiods_swapped.add(new Timeperiod((iHour + (i*100) + 70), sDay));
+            }
+        }
+        else{
+            for(int i = 0; i < dDuration  ; i++){
+                timeperiods_swapped.add(new Timeperiod(iHour, sDay));
+                timeperiods_swapped.add(new Timeperiod((iHour + (i*100)  + 30), sDay));
+            }
+        }
+
+
+
+        for(Timeslot check : swapped.getNotAvailableSlots()){
+            for(Timeperiod timeperiod : timeperiods_swapped) {
+                if(check.getTimePeriod().get(0).getsDay().equals(timeperiod.getsDay()))
+                for (int i = 0; i < check.getTimePeriod().size(); i++) {
+                    if (check.getTimePeriod().get(i).getiTime() == timeperiod.getiTime()) {
+                        return 1;
+                    }
+                }
+                else break;
+            }
+        }
+        return 0;
+    }
+
+
+    //end of new function after submitting my code
+
     public int checkStudents_TimeDependency(SGT sgtInitial, SGT sgtSecondary){
         //additional calculation to assure that the two sgts do not overlap an event once they have been swapped
+
+//
+//        if(sgtInitial.getsLect().equals(  "4CCS1DST" ) && sgtSecondary.getsLect().equals( "6CCS3CFL" )){
+//            int hello = 0;
+//        }
+
+
+        //added new lines here
+
+        if(overlap_lecture(sgtInitial, sgtSecondary.getiHourScheduled(), sgtSecondary.getiHours() ,sgtSecondary.getsDayOfWeek()) == 1) return 0;
+        if(overlap_lecture(sgtSecondary, sgtInitial.getiHourScheduled(), sgtInitial.getiHours() ,sgtInitial.getsDayOfWeek()) == 1) return 0;
+        //
+
+
         for(int kingsCode : sgtInitial.getCodesOfStudentsAssigned()){
             Student student = this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(kingsCode);
             for(SGT assigned : student.getCourses()){
                 if(assigned.getsLect().equals(sgtInitial.getsLect())) continue;
                 if(assigned.getsDayOfWeek().equals(sgtSecondary.getsDayOfWeek())){
-                    if(assigned.getiHourScheduled() >= sgtSecondary.getiHourScheduled() && assigned.getiHourScheduled() < sgtSecondary.getiHourScheduled() + sgtSecondary.getiHours()*100){
-                        //overlap of the event being swapped occurs:
+//                    if(assigned.getiHourScheduled() >= sgtSecondary.getiHourScheduled() && assigned.getiHourScheduled() < sgtSecondary.getiHourScheduled() + sgtSecondary.getiHours()*100){
+//                        //overlap of the event being swapped occurs:
+//
+//                        return 0;
+//                    }
+                    if(overlaps_time(sgtInitial, assigned) == 1){
                         return 0;
                     }
                 }
@@ -3011,12 +3269,22 @@ public class HillClimbing {
             for(SGT assigned : student.getCourses()){
                 if(assigned.getsLect().equals(sgtSecondary.getsLect())) continue;
                 if(assigned.getsDayOfWeek().equals(sgtInitial.getsDayOfWeek())){
-                    if(assigned.getiHourScheduled() >= sgtInitial.getiHourScheduled() && assigned.getiHourScheduled() < sgtInitial.getiHourScheduled() + sgtInitial.getiHours()*100){
-                        //overlap of the event being reassigned occurs:
+//                    if(assigned.getiHourScheduled() >= sgtInitial.getiHourScheduled() && assigned.getiHourScheduled() < sgtInitial.getiHourScheduled() + sgtInitial.getiHours()*100){
+//                        //overlap of the event being reassigned occurs:
+//                        //added this following line after submitting
+//                        if(assigned.getiHourScheduled() + 100*assigned.getiHours() >= sgtInitial.getiHourScheduled() && assigned.getiHourScheduled() < sgtInitial.getiHourScheduled()+ sgtInitial.getiHours()*100 )
+//                        return 0;
+//                    }
+//                    if(assigned.getiHourScheduled() + 100*assigned.getiHours() >= sgtInitial.getiHourScheduled() && assigned.getiHourScheduled() < sgtInitial.getiHourScheduled()+ sgtInitial.getiHours()*100 ){
+//                        return 0;
+//                    }
+                    if(overlaps_time(sgtSecondary, assigned) == 1){
                         return 0;
                     }
+
                 }
             }
+
 
         }
 

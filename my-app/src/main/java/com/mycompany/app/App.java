@@ -1,5 +1,6 @@
 package com.mycompany.app;
 
+import com.mycompany.app.GUI.EntryPoint;
 import com.mycompany.app.algorithms.BetterGreedyAlgorithm;
 import com.mycompany.app.algorithms.GreedyAlgorithm;
 import com.mycompany.app.algorithms.HillClimbing;
@@ -37,15 +38,41 @@ public class App
         days.add("Thursday");
 
         Schedule schedule = new Schedule(connection, generator.getLectureEvents());
-        schedule.generate(days, generator.getsTableCourses(), generator.getsTableStudents(), 0.9,3,5,10, 1.5, 1, 0.5);
 
+        AppForm prototypeWindow = new AppForm();
+
+        prototypeWindow.setSchedule(schedule);
+        prototypeWindow.runInitialWindow();
+
+        //schedule.generate(days, generator.getsTableCourses(), generator.getsTableStudents(), 0.9,3,5,10, 1.5, 1, 0.5, "");
         connection.close();
+//        System.exit(0);
+
     }
 
 
+    public static void runApplication2()throws SQLException, ParseException, CloneNotSupportedException, IOException, InterruptedException {
+        Connection connection = JDBCHelper.getConnection();
+
+        AppForm prototypeWindow = new AppForm();
+
+        prototypeWindow.setConnection(connection);
+        prototypeWindow.runInitialWindow();
+
+    }
+    public static void runApplication3()throws SQLException, ParseException, CloneNotSupportedException, IOException, InterruptedException {
+        Connection connection = JDBCHelper.getConnection();
+
+        EntryPoint entryPoint = new EntryPoint();
+        entryPoint.setConnection(connection);
+        entryPoint.setVisible(true);
+
+
+    }
+
     public static void main( String[] args ) throws SQLException, ParseException, CloneNotSupportedException, IOException, InterruptedException {
         //simplistic
-        runApplication();
+        runApplication3();
     }
 
 }

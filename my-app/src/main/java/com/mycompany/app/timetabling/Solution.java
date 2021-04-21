@@ -30,10 +30,14 @@ public class Solution implements Comparable<Solution> {
         return heuristicEvaluation;
     }
 
-    public void setHeuristicEvaluation(HeuristicEvaluation heuristicEvaluation) {
-        this.heuristicEvaluation = heuristicEvaluation;
-    }
+    public void setHeuristicEvaluation(HeuristicEvaluation heuristicEvaluation) { this.heuristicEvaluation = heuristicEvaluation; }
 
+    @Override
+    public String toString() {
+        return "Solution{" +
+                " heuristicEvaluation=" + heuristicEvaluation +
+                '}';
+    }
 
     @Override
     public int compareTo(Solution o) {

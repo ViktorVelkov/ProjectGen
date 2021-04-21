@@ -1993,6 +1993,7 @@ public class GreedyAlgorithm {
         this.week_timetable_ont = week_timetableont;            //make things global, to be passed on
         this.week_timetable_spare = week_timetabletwo;
 
+
             if(week_timetableont.getLectures().size() == 0 ){
                 // solution found
                 return 1;

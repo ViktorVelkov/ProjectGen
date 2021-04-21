@@ -88,6 +88,19 @@ public class HeuristicEvaluation implements Cloneable{
         return evaluation;
     }
 
+    //new function added after submitting the code
+    public void normalize_heuristics(int inormalizer){
+        this.dHeuristics /= inormalizer;
+        this.numPeopleCompleteSatisfiability /= inormalizer;
+        this.numPeopleWithZeroPercent /= inormalizer;
+        this.percentSatisfiability /= inormalizer;
+        this.numPeopleImpossibleHeuristics /=inormalizer;
+        this.rawHeuristics /= inormalizer;
+        this.scaledHeuristics /= inormalizer;
+
+    }
+    //
+
     public int getNumPeopleImpossibleHeuristics() {
         return numPeopleImpossibleHeuristics;
     }

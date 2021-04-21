@@ -286,7 +286,7 @@ public class Duplet implements Comparable<Duplet>, Cloneable{
     }
 
     public String toString(){
-        return sLect + " "  +Double.toString(iHours) + " " + preferredDays + " " + iNumberOfStudentsAttending + " Scheduled:" + sDayOfWeek + " " + Integer.toString(iCode) +  " " + Integer.toString(iDayScheduled) + " " + Integer.toString(iMonthScheduled)+ " " + Integer.toString(iYearScheduled) + "\n";
+        return "[" +  sLect + "]--" + "scheduled:" + iDayScheduled + "/" + iMonthScheduled + "/" + iYearScheduled + ", (" + sDayOfWeek + "), " +  "duration("  +  Double.toString(iHours) + " h.), avenue:"+ sLectureHall + ", attending(" + iNumberOfStudentsAttending + ")\n" ;
     }
 
 

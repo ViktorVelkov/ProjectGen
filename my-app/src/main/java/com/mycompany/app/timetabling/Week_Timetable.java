@@ -3,11 +3,9 @@ package com.mycompany.app.timetabling;
 import java.sql.PreparedStatement;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
+import java.util.*;
 
-    public class Week_Timetable implements Cloneable{
+public class Week_Timetable implements Cloneable{
 
     private int iNumDays;
     private int iWeekNum;
@@ -262,7 +260,26 @@ import java.util.Date;
     }
 
     public String toString(){
-        return "Empty, use v_print";
+            String toReturn = "Week Period: ";
+            toReturn += this.sStartDay + "-" + this.sEndDay + "\n\n";
+            toReturn += "Assigned Lectures:\n\n";
+//
+//        Collections.sort(this.assignedLectures, new Comparator<Student>() {
+//            public int compare(Duplet s1, Duplet s2) {
+//                return s1.getsLect().compareTo(s2.getsLect());
+//            }
+//        });
+
+            for(Duplet assigned : this.assignedLectures){
+                toReturn += assigned.toString() + "\n";
+            }
+            toReturn +=  "\n\n";
+            toReturn += "Not Assigned Lectures:\n\n";
+
+            for(Duplet assigned : this.unassignedLectures){
+                    toReturn += assigned.toString() + "\n";
+                }
+                return toReturn;
     }
 
         @Override
