@@ -180,7 +180,7 @@ public class Inserter_LecturesAssigned {
             mandatoryEvents = new ArrayList<>();
 
 
-            while(rS3.next()){
+            while (rS3.next()) {
                 if (rS3.getInt(2) == 0) {
                     electableEvents.add(rS3.getInt(1));
                 } else {
@@ -197,31 +197,34 @@ public class Inserter_LecturesAssigned {
 //                mandatoryEvents_copy.add(mandatoryEvents.get(i));
 //            }
 
-            electableEvents_copy = new ArrayList<>(electableEvents);
-            mandatoryEvents_copy = new ArrayList<>(mandatoryEvents);
+            //if(iSize != 0)
+            {
+                electableEvents_copy = new ArrayList<>(electableEvents);
+                mandatoryEvents_copy = new ArrayList<>(mandatoryEvents);
 
-            while (rS4.next()) {
-                //assign the ones which are mandatory first ?
-                for (int i = 0; i < 4 - iSize; i++) {
-                    //pick at random
-                    int iRandom = (int) (Math.random() * (electableEvents.size()));
-                    mandatoryEvents.add(electableEvents.get(iRandom));
-                    //to fix the problem let's remove that ones selected from the electbleEvents
-                    electableEvents.remove(iRandom);
+                while (rS4.next()) {
+                    //assign the ones which are mandatory first ?
+                    for (int i = 0; i < 4 - iSize; i++) {
+                        //pick at random
+                        if(electableEvents.size() == 0) break;
+                        int iRandom = (int) (Math.random() * (electableEvents.size()));
+                        mandatoryEvents.add(electableEvents.get(iRandom));
+                        //to fix the problem let's remove that ones selected from the electbleEvents
+                        electableEvents.remove(iRandom);
+                    }
+
+                    for (int i = 0; i < mandatoryEvents.size(); i++) {
+                        preparedStatement.setInt(1, rS4.getInt(1));
+                        preparedStatement.setInt(2, mandatoryEvents.get(i));
+                        preparedStatement.setInt(3, 1);
+                        preparedStatement.executeUpdate();
+                    }
+
+                    //now reset:
+                    electableEvents = new ArrayList<>(electableEvents_copy);
+                    mandatoryEvents = new ArrayList<>(mandatoryEvents_copy);
                 }
-
-                for (int i = 0; i < mandatoryEvents.size(); i++) {
-                    preparedStatement.setInt(1, rS4.getInt(1));
-                    preparedStatement.setInt(2, mandatoryEvents.get(i));
-                    preparedStatement.setInt(3, 1);
-                    preparedStatement.executeUpdate();
-                }
-
-                //now reset:
-                electableEvents = new ArrayList<>(electableEvents_copy);
-                mandatoryEvents = new ArrayList<>(mandatoryEvents_copy);
             }
-
 
             rS3.close();
             rS4.close();
@@ -615,7 +618,7 @@ public class Inserter_LecturesAssigned {
     }
 
 
-    private ArrayList<TwoInts> reassignCourses(ArrayList<TwoInts> values,ArrayList<Integer> initial_values,int min,int max) throws SQLException {
+    private ArrayList<TwoInts> reassignCourses(ArrayList<TwoInts> values,ArrayList<Integer> initial_values,int max,int min) throws SQLException {
         ArrayList<Integer> choices = new ArrayList<>();
         ArrayList<Integer> joinRandomly = new ArrayList<>();
         ArrayList<Integer> notAssigned = new ArrayList<>();

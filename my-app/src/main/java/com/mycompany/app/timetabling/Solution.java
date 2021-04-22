@@ -35,8 +35,21 @@ public class Solution implements Comparable<Solution> {
     }
 
 
+    public void normalize(){
+        this.heuristicEvaluation.normalizeHeuristicEvaluations(this.ASSIGNED_SGTS_CURRENTWEEK_SOLUTION.size());
+    }
+
     @Override
     public int compareTo(Solution o) {
         return (int)((this.heuristicEvaluation.getPercentSatisfiability() - o.getHeuristicEvaluation().getPercentSatisfiability())*10000);
+    }
+
+
+    @Override
+    public String toString() {
+        return "Solution{ assigned: "  + ASSIGNED_SGTS_CURRENTWEEK_SOLUTION.size() +
+                "\nunassigned: " + UNASSIGNED_SGTS_CURRENTWEEK_SOLUTION.size() +
+                "\nheuristicEvaluation=" + heuristicEvaluation +
+                '}';
     }
 }

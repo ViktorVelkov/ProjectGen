@@ -32,7 +32,7 @@ public class Schedule {
 //            hillClimbing.generateHCSolution(dScale, iNumIterations, iStudentsForTutorialsMinumym,iStudentsForTutorialsMaximum, 1.5, 1, 0.5);  //(0.9, 3, 5)
 //        }
 
-        for(int i = 0; i < 5; i++) {
+        for(int i = 0; i < 1; i++) {
             hillClimbing.getGrdAlg().generateGreedySolution_TwoWeeks(sCoursesTable, sStudentsTable, iStudentsForTutorialsMinumym, iStudentsForTutorialsMaximum, days, "", 0);
             hillClimbing.setTIMETABLEONT_GLOBAL(hillClimbing.getGrdAlg().getWeek_timetable_ont());
             hillClimbing.setTIMETABLETWO_GLOBAL(hillClimbing.getGrdAlg().getWeek_timetable_spare());

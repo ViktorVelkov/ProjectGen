@@ -32,10 +32,17 @@ public class GreedyAlgorithm {
         public ArrayList<String> prefdDays;
 
 
-
-
+    public void clearData(){
+        twoInts = new ArrayList<>();
+        week_timetable_ont= null;
+        week_timetable_spare= null;
+        s_mostRecentDate = "";
+        s_lastmostRecentDate = "";
+    }
     public GreedyAlgorithm(Connection connection){
+
         this.connection = connection;
+        clearData();
     }
 
     /**/

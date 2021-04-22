@@ -894,6 +894,94 @@ public class HillClimbing {
 
     }
 
+
+    //new function after submitting my code
+
+    private int overlaps_time(SGT first, SGT second){
+        //time overlapping function, if two functions have the same day and similar hours, they might overlap and appear in one's timetable at the same timeslot, making it impossible for
+        // a student to participate at both at the same time
+        ArrayList<Timeperiod> timeperiods_first = new ArrayList<>();
+        ArrayList<Timeperiod> timeperiods_second = new ArrayList<>();
+        if((first.getiHourScheduled() - 30) %100 == 0){
+            for(int i = 0; i < first.getiHours() ; i++){
+                timeperiods_first.add(new Timeperiod(first.getiHourScheduled() + (i*100), first.getsDayOfWeek()));
+                timeperiods_first.add(new Timeperiod((first.getiHourScheduled() + (i*100) + 70), first.getsDayOfWeek()));
+            }
+        }
+        else{
+            for(int i = 0; i < first.getiHours()  ; i++){
+                timeperiods_first.add(new Timeperiod(first.getiHourScheduled() + (i*100), first.getsDayOfWeek()));
+                timeperiods_first.add(new Timeperiod((first.getiHourScheduled() + (i*100)  + 30), first.getsDayOfWeek()));
+            }
+        }
+
+        if((second.getiHourScheduled() - 30) %100 == 0){
+            for(int i = 0; i < second.getiHours() ; i++){
+                timeperiods_first.add(new Timeperiod(second.getiHourScheduled() + (i*100), second.getsDayOfWeek()));
+                timeperiods_first.add(new Timeperiod((second.getiHourScheduled() + (i*100) + 70), second.getsDayOfWeek()));
+            }
+        }
+        else{
+            for(int i = 0; i < second.getiHours()  ; i++){
+                timeperiods_second.add(new Timeperiod(second.getiHourScheduled() + (i*100), second.getsDayOfWeek()));
+                timeperiods_second.add(new Timeperiod((second.getiHourScheduled() + (i*100)  + 30), second.getsDayOfWeek()));
+            }
+        }
+
+        for(Timeperiod time : timeperiods_first){
+            for(Timeperiod time2 : timeperiods_second){
+                if(time.getiTime() == time2.getiTime()){
+                    return 1;
+                }
+            }
+        }
+        return 0;
+    }
+
+
+    private int overlap_lecture(SGT swapped, int iHour, double dDuration, String sDay){
+        //overlap with a lecture if swapped ?
+        String startsWith = "";
+        ArrayList<Duplet> lectures = new ArrayList<>();
+        ArrayList<Timeperiod> notAvailable = new ArrayList<>();
+
+
+
+        ArrayList<Timeperiod> timeperiods_swapped = new ArrayList<>();
+
+        if((iHour - 30) %100 == 0){
+            for(int i = 0; i < dDuration ; i++){
+                timeperiods_swapped.add(new Timeperiod(iHour + (i*100), sDay));
+                timeperiods_swapped.add(new Timeperiod((iHour + (i*100) + 70), sDay));
+            }
+        }
+        else{
+            for(int i = 0; i < dDuration  ; i++){
+                timeperiods_swapped.add(new Timeperiod(iHour, sDay));
+                timeperiods_swapped.add(new Timeperiod((iHour + (i*100)  + 30), sDay));
+            }
+        }
+
+
+
+        for(Timeslot check : swapped.getNotAvailableSlots()){
+            for(Timeperiod timeperiod : timeperiods_swapped) {
+                if(check.getTimePeriod().get(0).getsDay().equals(timeperiod.getsDay()))
+                    for (int i = 0; i < check.getTimePeriod().size(); i++) {
+                        if (check.getTimePeriod().get(i).getiTime() == timeperiod.getiTime()) {
+                            return 1;
+                        }
+                    }
+                else break;
+            }
+        }
+        return 0;
+    }
+
+
+    //end of new function after submitting my code
+
+
     //find info on the students, used for exhaustive search, base of HC algorithm
     private ArrayList<DataSetStudents> findInData(ArrayList<DataSetStudents> data, String course){
         ArrayList<DataSetStudents> reData = new ArrayList<>();
@@ -2653,6 +2741,9 @@ public class HillClimbing {
         //update the date
         //update the students -- automatic
         //update the Day -- probably not doable
+        if(sgtInitial.getsLect().equals("4CCS1PRP") && sgtSwapped.getsLect().equals("5CCS2ENM")){
+            int hello = 0;
+        }
 
         int sgtInitialHourTemp = sgtInitial.getiHourScheduled();
         String sgtInitialSDay = sgtInitial.getDayAssigned();
@@ -2664,6 +2755,7 @@ public class HillClimbing {
 
         sgtInitial.setiHourScheduled(sgtSwapped.getiHourScheduled());
         sgtInitial.setDayAssigned(sgtSwapped.getDayAssigned());
+        sgtInitial.setsDayOfWeek(sgtSwapped.getsDayOfWeek());
         sgtInitial.setiDayScheduled(sgtSwapped.getiDayScheduled());
         sgtInitial.setiMonthScheduled(sgtSwapped.getiMonthScheduled());
         sgtInitial.setiYearScheduled(sgtSwapped.getiYearScheduled());
@@ -2672,6 +2764,7 @@ public class HillClimbing {
 
         sgtSwapped.setiHourScheduled(sgtInitialHourTemp);
         sgtSwapped.setDayAssigned(sgtInitialSDay);
+        sgtSwapped.setsDayOfWeek(sgtInitialSDay);
         sgtSwapped.setiDayScheduled(sgtInitialDayTemp);
         sgtSwapped.setiMonthScheduled(sgtInitialMonthTemp);
         sgtSwapped.setiYearScheduled(sgtInitialYearTemp);
@@ -2824,7 +2917,9 @@ public class HillClimbing {
         ArrayList<Change> visited = new ArrayList<>();
         ArrayList<Change> allpossibleSteps = new ArrayList<>();
 
-
+        takeASolutionSnap_initial();
+        this.INITIAL_SOLUTION.normalize();
+        System.out.println(this.INITIAL_SOLUTION);
         allpossibleSteps = completeNeighbourhood(timetable);
         for(Change change : allpossibleSteps){
                 change.setFinalEffect(stepBenefit(change));
@@ -2835,30 +2930,13 @@ public class HillClimbing {
         if(!allpossibleSteps.isEmpty())
         while(allpossibleSteps.get(0).getFinalEffect() > 1  ){
             iCounter++;
-            if(iCounter == 2)break; //for testing
+
 
             //very optimistic algorithm, looking for the local minimum
             Change dataCopy = copyChange(allpossibleSteps.get(0));
-            System.out.println(dataCopy.toString() + " ICOUNTER : " + iCounter);
-            System.out.println();
-            /*Timeperiod temp = available.getTimePeriod().get(0);
-                HeuristicEvaluation stepEval = heuristicEvaluation_function_Changed_TimeSlot(sgt, temp.getsDay(), temp.getiTime(), temp.getiDate(), temp.getiMonth(), temp.getiYear(), 1.5, 1, 0.5);
-                HeuristicEvaluation stepEval_percentage = heuristicEvaluation_percentage_newTimeslot(sgt, temp.getsDay(), temp.getiTime(), 1.5, 1, 0.5, timetable, 0);
-                stepEval.setiHour(temp.getiTime());
-                stepEval.setsDayOfWeek(temp.getsDay());
-                stepEval.setsHall(available.getsHall());
-                stepEval.setiDate(temp.getiDate());
-                stepEval.setiMonth(temp.getiMonth());
-                stepEval.setiYear(temp.getiYear());
-                stepEval.mergeHeuristicEvaluations(stepEval_percentage);
-                change.setEvalSecondary(stepEval);
-                //change.setSgtMain(new SGT(sgt.getsLect(), sgt.getDayAssigned(), sgt.getsLectureHall(), sgt.getiHourScheduled(), sgt.getiHours(), sgt.getiAdditionalCode(), sgt.getCodesOfStudentsAssigned(), sgt.getiDayScheduled(), sgt.getiMonthScheduled(), sgt.getiYearScheduled()));
-                change.setSgtMain(sgt);
-                //change.setEvalMain(sgt.getEvaluation());
-                change.setsDaySecondary(temp.getsDay());
-                change.setiHourSecondary(temp.getiTime());
+//            System.out.println(dataCopy.toString() + " ICOUNTER : " + iCounter);
+//            System.out.println();
 
-            * */
 
             implementChange(timetable, allpossibleSteps.get(0));               //later on to be subbed with more complex algo
             updateAllDependencies(timetable);
@@ -2872,6 +2950,7 @@ public class HillClimbing {
             if(bestSolutionFound.compareTo(solutionIterated)  < 0){
                 bestSolutionFound = solutionIterated;
                 takeASolutionSnap();
+//                System.out.println(bestSolutionFound);
             }
 
 
@@ -2886,6 +2965,8 @@ public class HillClimbing {
             if(allpossibleSteps.isEmpty()) break;
 
         }
+        bestSolutionFound.normalize();
+        System.out.println(bestSolutionFound);
 
         Thread.sleep(0);
     }
@@ -2933,8 +3014,10 @@ public class HillClimbing {
         timetable.setHalls(grdAlg.hallsAvailability_Tutorials(timetable.getsStartDay(), timetable.getsEndDay()));
 
         //this algorithm can be run without trying to comply to soft cinstraints
-        //algorithmAssigning_5050filtering(timetable, iNumberOfIterations,minNumForTutorials, 1);                                  //apply the same thing for years 1 and 2
+        // apply the same thing for years 1 and 2
+        algorithmAssigning_5050filtering(timetable, iNumberOfIterations,minNumForTutorials, maxNumForTutorials , 1);                                  //apply the same thing for years 1 and 2
         algorithmAssigning_5050filtering(timetable, iNumberOfIterations,minNumForTutorials, maxNumForTutorials , 2);                                  //apply the same thing for years 1 and 2
+        algorithmAssigning_5050filtering(timetable, iNumberOfIterations,minNumForTutorials, maxNumForTutorials , 3);                                  //apply the same thing for years 1 and 2
         updateAllDependencies(timetable);                         //writes to stidents' assignedSGT
         //take a snap of the current solution/starting point;
 
@@ -2989,15 +3072,64 @@ public class HillClimbing {
     }
 
 
+//    public int checkStudents_TimeDependency(SGT sgtInitial, SGT sgtSecondary){
+//        //additional calculation to assure that the two sgts do not overlap an event once they have been swapped
+//        for(int kingsCode : sgtInitial.getCodesOfStudentsAssigned()){
+//            Student student = this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(kingsCode);
+//            for(SGT assigned : student.getCourses()){
+//                if(assigned.getsLect().equals(sgtInitial.getsLect())) continue;
+//                if(assigned.getsDayOfWeek().equals(sgtSecondary.getsDayOfWeek())){
+//                    if(assigned.getiHourScheduled() >= sgtSecondary.getiHourScheduled() && assigned.getiHourScheduled() < sgtSecondary.getiHourScheduled() + sgtSecondary.getiHours()*100){
+//                        //overlap of the event being swapped occurs:
+//                        return 0;
+//                    }
+//                }
+//            }
+//
+//        }
+//
+//
+//        for(int kingsCode : sgtSecondary.getCodesOfStudentsAssigned()){
+//            Student student = this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(kingsCode);
+//            for(SGT assigned : student.getCourses()){
+//                if(assigned.getsLect().equals(sgtSecondary.getsLect())) continue;
+//                if(assigned.getsDayOfWeek().equals(sgtInitial.getsDayOfWeek())){
+//                    if(assigned.getiHourScheduled() >= sgtInitial.getiHourScheduled() && assigned.getiHourScheduled() < sgtInitial.getiHourScheduled() + sgtInitial.getiHours()*100){
+//                        //overlap of the event being reassigned occurs:
+//                        return 0;
+//                    }
+//                }
+//            }
+//
+//        }
+//
+//
+//        return 1;
+//    }
+
+    //updated:
     public int checkStudents_TimeDependency(SGT sgtInitial, SGT sgtSecondary){
         //additional calculation to assure that the two sgts do not overlap an event once they have been swapped
+//        if(sgtInitial.getsLect().equals("4CCS1PRP") && sgtSecondary.getsLect().equals("5CCS2ENM")){
+//            int hello = 0;
+//        }
+
+        if(overlap_lecture(sgtInitial, sgtSecondary.getiHourScheduled(), sgtSecondary.getiHours() ,sgtSecondary.getsDayOfWeek()) == 1) return 0;
+        if(overlap_lecture(sgtSecondary, sgtInitial.getiHourScheduled(), sgtInitial.getiHours() ,sgtInitial.getsDayOfWeek()) == 1) return 0;
+        //
+
+
         for(int kingsCode : sgtInitial.getCodesOfStudentsAssigned()){
             Student student = this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(kingsCode);
             for(SGT assigned : student.getCourses()){
                 if(assigned.getsLect().equals(sgtInitial.getsLect())) continue;
                 if(assigned.getsDayOfWeek().equals(sgtSecondary.getsDayOfWeek())){
-                    if(assigned.getiHourScheduled() >= sgtSecondary.getiHourScheduled() && assigned.getiHourScheduled() < sgtSecondary.getiHourScheduled() + sgtSecondary.getiHours()*100){
-                        //overlap of the event being swapped occurs:
+//                    if(assigned.getiHourScheduled() >= sgtSecondary.getiHourScheduled() && assigned.getiHourScheduled() < sgtSecondary.getiHourScheduled() + sgtSecondary.getiHours()*100){
+//                        //overlap of the event being swapped occurs:
+//
+//                        return 0;
+//                    }
+                    if(overlaps_time(sgtInitial, assigned) == 1){
                         return 0;
                     }
                 }
@@ -3011,12 +3143,22 @@ public class HillClimbing {
             for(SGT assigned : student.getCourses()){
                 if(assigned.getsLect().equals(sgtSecondary.getsLect())) continue;
                 if(assigned.getsDayOfWeek().equals(sgtInitial.getsDayOfWeek())){
-                    if(assigned.getiHourScheduled() >= sgtInitial.getiHourScheduled() && assigned.getiHourScheduled() < sgtInitial.getiHourScheduled() + sgtInitial.getiHours()*100){
-                        //overlap of the event being reassigned occurs:
+//                    if(assigned.getiHourScheduled() >= sgtInitial.getiHourScheduled() && assigned.getiHourScheduled() < sgtInitial.getiHourScheduled() + sgtInitial.getiHours()*100){
+//                        //overlap of the event being reassigned occurs:
+//                        //added this following line after submitting
+//                        if(assigned.getiHourScheduled() + 100*assigned.getiHours() >= sgtInitial.getiHourScheduled() && assigned.getiHourScheduled() < sgtInitial.getiHourScheduled()+ sgtInitial.getiHours()*100 )
+//                        return 0;
+//                    }
+//                    if(assigned.getiHourScheduled() + 100*assigned.getiHours() >= sgtInitial.getiHourScheduled() && assigned.getiHourScheduled() < sgtInitial.getiHourScheduled()+ sgtInitial.getiHours()*100 ){
+//                        return 0;
+//                    }
+                    if(overlaps_time(sgtSecondary, assigned) == 1){
                         return 0;
                     }
+
                 }
             }
+
 
         }
 
@@ -3239,7 +3381,8 @@ public class HillClimbing {
 
                         if (students.size() > halls.getiCapacity()) {
 
-                            if (students.size() == halls.getiCapacity() && availableForFiltering(students.size(), halls.getiCapacity()) < 20030010L) { //NEEDS TO BE REVIEWED// SO THAT NO MEMORY OVERFLOW WOULD OCCUR//FILTER ADDED HERE TO CHOSE WHO OF THE STUDENTS WILL GET ASSIGNED, ONLY WORKS ON SPECIFIC SIZES BEFORE EXPONENTIAL GROWTH
+//                            if (students.size() == halls.getiCapacity() && availableForFiltering(students.size(), halls.getiCapacity()) < 20030010L) { //NEEDS TO BE REVIEWED// SO THAT NO MEMORY OVERFLOW WOULD OCCUR//FILTER ADDED HERE TO CHOSE WHO OF THE STUDENTS WILL GET ASSIGNED, ONLY WORKS ON SPECIFIC SIZES BEFORE EXPONENTIAL GROWTH
+                            if (students.size() == halls.getiCapacity() && availableForFiltering(students.size(), halls.getiCapacity()) < 0L) { //NEEDS TO BE REVIEWED// SO THAT NO MEMORY OVERFLOW WOULD OCCUR//FILTER ADDED HERE TO CHOSE WHO OF THE STUDENTS WILL GET ASSIGNED, ONLY WORKS ON SPECIFIC SIZES BEFORE EXPONENTIAL GROWTH
 
                                 int st2 = 0;
                                 for (int st = 0; st < students.size(); st++) {
@@ -3336,22 +3479,37 @@ public class HillClimbing {
 
                                     // change this to the size of the array assigning which is of course == capacity of the hall
                                     //the only place where adding to the students' assigned sgts happens
-                                    for (int stdItr = 0; stdItr < students.size(); stdItr++) {
-                                        //increase the number of attending students for this sgt
-                                        tempAssign.remove(students.get(stdItr));
-                                        temp_sgt.setiNumberOfStudentsAttending(stdItr + 1);
-                                        //temp_sgt.addToCodesOfStudentsAssigned(students.get(stdItr).getKings_id());
-                                        this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(stdItr).getKings_id()).addToCourses(temp_sgt);                                 //so now when the sgt updates itself, the update would reflect inside the student's array of sgts
-                                        this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(stdItr).getKings_id()).increaseAssignedCoursesNumber();
-                                        this.ASSIGNED_STUDENTS_GLOBAL.put((students.get(stdItr).getKings_id()), this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(stdItr).getKings_id()));
-
-                                    }
+//                                    for (int stdItr = 0; stdItr < students.size(); stdItr++) {
+//                                        //increase the number of attending students for this sgt
+//                                        tempAssign.remove(students.get(stdItr));
+//                                        temp_sgt.setiNumberOfStudentsAttending(stdItr + 1);
+//                                        //temp_sgt.addToCodesOfStudentsAssigned(students.get(stdItr).getKings_id());
+//                                        this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(stdItr).getKings_id()).addToCourses(temp_sgt);                                 //so now when the sgt updates itself, the update would reflect inside the student's array of sgts
+//                                        this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(stdItr).getKings_id()).increaseAssignedCoursesNumber();
+//                                        this.ASSIGNED_STUDENTS_GLOBAL.put((students.get(stdItr).getKings_id()), this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(stdItr).getKings_id()));
+//
+//                                    }
 
                                     //carry on assigning people until all people are assigned, if there is
                                     //no available spot for the rest of the people/ all of them then
                                     //try at random, and if again, then add to the unsuccessfully assigned lectures
 
                                     //now remove them from the data so that they are not retrieved again
+
+
+                                    for(DataSetStudents student : students){
+                                        //increase the number of attending students for this sgt
+
+                                        temp_sgt.setiNumberOfStudentsAttending(temp_sgt.getiNumberOfStudentsAttending() +  1);
+                                        //temp_sgt.addToCodesOfStudentsAssigned(students.get(my_itr).getKings_id());
+                                        this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(student.getKings_id()).addToCourses(temp_sgt);                                 //so now when the sgt updates itself, the update would reflect inside the student's array of sgts
+                                        this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(student.getKings_id()).increaseAssignedCoursesNumber();
+                                        this.ASSIGNED_STUDENTS_GLOBAL.put((student.getKings_id()), this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(student.getKings_id()));
+                                    }
+                                    tempAssign.removeAll(students);
+
+
+
                                     updateAvailailitySlotsSGT_AllEvents(temp_sgt);
                                     this.ASSIGNED_SGTS_CURRENTWEEK_GLOBAL.add(temp_sgt);//or a clone, this is inside the first for(!)
 
@@ -3454,15 +3612,27 @@ public class HillClimbing {
 
 
                                         // change this to the size of the array assigning which is of course == capacity of the hall
-                                        for (int my_itr = 0; my_itr < students.size(); my_itr++) {
+//                                        for (int my_itr = 0; my_itr < students.size(); my_itr++) {
+//                                            //increase the number of attending students for this sgt
+//                                            tempAssign.remove(students.get(my_itr));
+//                                            temp_sgt.setiNumberOfStudentsAttending(my_itr + 1);
+//                                            //temp_sgt.addToCodesOfStudentsAssigned(students.get(my_itr).getKings_id());
+//                                            this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(my_itr).getKings_id()).addToCourses(temp_sgt);                                 //so now when the sgt updates itself, the update would reflect inside the student's array of sgts
+//                                            this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(my_itr).getKings_id()).increaseAssignedCoursesNumber();
+//                                            this.ASSIGNED_STUDENTS_GLOBAL.put((students.get(my_itr).getKings_id()), this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(my_itr).getKings_id()));
+//                                        }
+
+
+                                        for(DataSetStudents student : students){
                                             //increase the number of attending students for this sgt
-                                            tempAssign.remove(students.get(my_itr));
-                                            temp_sgt.setiNumberOfStudentsAttending(my_itr + 1);
+
+                                            temp_sgt.setiNumberOfStudentsAttending(temp_sgt.getiNumberOfStudentsAttending() +  1);
                                             //temp_sgt.addToCodesOfStudentsAssigned(students.get(my_itr).getKings_id());
-                                            this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(my_itr).getKings_id()).addToCourses(temp_sgt);                                 //so now when the sgt updates itself, the update would reflect inside the student's array of sgts
-                                            this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(my_itr).getKings_id()).increaseAssignedCoursesNumber();
-                                            this.ASSIGNED_STUDENTS_GLOBAL.put((students.get(my_itr).getKings_id()), this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(students.get(my_itr).getKings_id()));
+                                            this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(student.getKings_id()).addToCourses(temp_sgt);                                 //so now when the sgt updates itself, the update would reflect inside the student's array of sgts
+                                            this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(student.getKings_id()).increaseAssignedCoursesNumber();
+                                            this.ASSIGNED_STUDENTS_GLOBAL.put((student.getKings_id()), this.STUDENTS_TO_BE_ASSINGED_GLOBAL.get(student.getKings_id()));
                                         }
+                                        tempAssign.removeAll(students);
 
                                         //carry on assigning people until all people are assigned, if there is
                                         //no available spot for the rest of the people/ all of them then

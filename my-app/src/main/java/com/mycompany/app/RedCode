@@ -1737,3 +1737,24 @@ HillClimbing hillClimbing = new HillClimbing(connection);
         }
         return cp;
     }
+
+
+//from the hillClimbing() function:
+/*Timeperiod temp = available.getTimePeriod().get(0);
+                HeuristicEvaluation stepEval = heuristicEvaluation_function_Changed_TimeSlot(sgt, temp.getsDay(), temp.getiTime(), temp.getiDate(), temp.getiMonth(), temp.getiYear(), 1.5, 1, 0.5);
+                HeuristicEvaluation stepEval_percentage = heuristicEvaluation_percentage_newTimeslot(sgt, temp.getsDay(), temp.getiTime(), 1.5, 1, 0.5, timetable, 0);
+                stepEval.setiHour(temp.getiTime());
+                stepEval.setsDayOfWeek(temp.getsDay());
+                stepEval.setsHall(available.getsHall());
+                stepEval.setiDate(temp.getiDate());
+                stepEval.setiMonth(temp.getiMonth());
+                stepEval.setiYear(temp.getiYear());
+                stepEval.mergeHeuristicEvaluations(stepEval_percentage);
+                change.setEvalSecondary(stepEval);
+                //change.setSgtMain(new SGT(sgt.getsLect(), sgt.getDayAssigned(), sgt.getsLectureHall(), sgt.getiHourScheduled(), sgt.getiHours(), sgt.getiAdditionalCode(), sgt.getCodesOfStudentsAssigned(), sgt.getiDayScheduled(), sgt.getiMonthScheduled(), sgt.getiYearScheduled()));
+                change.setSgtMain(sgt);
+                //change.setEvalMain(sgt.getEvaluation());
+                change.setsDaySecondary(temp.getsDay());
+                change.setiHourSecondary(temp.getiTime());
+
+            * */

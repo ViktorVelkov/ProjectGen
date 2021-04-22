@@ -88,6 +88,19 @@ public class HeuristicEvaluation implements Cloneable{
         return evaluation;
     }
 
+    public void normalizeHeuristicEvaluations(int numAssignedSGTs){
+
+        this.dHeuristics /= numAssignedSGTs;
+        this.numPeopleCompleteSatisfiability /= numAssignedSGTs;
+        this.numPeopleWithZeroPercent /= numAssignedSGTs;
+        this.percentSatisfiability /= numAssignedSGTs;
+        this.numPeopleImpossibleHeuristics /= numAssignedSGTs;
+        this.rawHeuristics /= numAssignedSGTs;
+        this.scaledHeuristics /= numAssignedSGTs;
+
+
+    }
+
     public int getNumPeopleImpossibleHeuristics() {
         return numPeopleImpossibleHeuristics;
     }
